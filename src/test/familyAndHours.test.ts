@@ -24,7 +24,7 @@ describe("family role", () => {
 
 describe("hours report", () => {
   it("counts scheduled length of completed visits per Monday week", () => {
-    const client = { id: "PS-001", hseApprovedHoursPerWeek: 14 } as ServiceUser;
+    const client = { id: "PS-001", hseApprovedHoursPerWeek: 14 } as unknown as ServiceUser;
     const v = (id: string, start: string, status: Visit["status"]) => ({ id, clientId: "PS-001", staffIds: [], scheduledStart: start, scheduledEnd: new Date(new Date(start).getTime() + 45 * 60000).toISOString(), status }) as unknown as Visit;
     const rows = hoursByClientWeek([v("a", "2026-10-13T08:00:00", "completed"), v("b", "2026-10-14T08:00:00", "missed"), v("c", "2026-10-15T08:00:00", "scheduled")], [client]);
     expect(rows).toHaveLength(1);

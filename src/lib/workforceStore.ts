@@ -265,7 +265,7 @@ const staffSeeds: StaffSeed[] = [
   // Niamh — Frontline Riverside key worker.
   {
     id: "STAFF-NIAMH", profile: "frontline", expected: RIV_FRONTLINE, rota: "A",
-    quals: [qual("q-firstaid", 360, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-pbs", 320, 24), ...homeQuals({ "q-garda-vetting": -5 })],
+    quals: [qual("q-firstaid", 360, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-pbs", 320, 24), ...homeQuals({ "q-garda-vetting": 10 })],
   },
   // Orla — Frontline Elm Grove. Epilepsy Meds DUE SOON.
   {

@@ -1,3 +1,4 @@
+import { useIsHomeSupportOrg } from "@/lib/sitesStore";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -32,6 +33,7 @@ const WorkforceOverview = () => {
   const expiring = expiringSoonCount();
   const expired = expiredCount();
   const missing = missingCriticalCount();
+  const homeSupport = useIsHomeSupportOrg();
   const cov = todaysCoverageBreakdown();
   const allStaff = workforceStore.getStaff();
   const staff = allStaff.filter((s) => s.assignedSiteIds.some((id) => scopedSiteIds.has(id)) && s.operationalProfile !== "governance_view_only");

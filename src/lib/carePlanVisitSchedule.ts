@@ -18,7 +18,7 @@ export function validateVisitSchedule(templates: CarePlanVisitTemplate[]): strin
 }
 
 export function cloneVisitSchedule(templates: CarePlanVisitTemplate[]): CarePlanVisitTemplate[] {
-  return templates.map((t) => ({ ...t, daysOfWeek: [...t.daysOfWeek], tasks: [...t.tasks], medications: t.medications.map((m) => ({ ...m })) }));
+  return templates.map((t) => ({ id: t.id, callType: t.callType, windowStart: t.windowStart, windowEnd: t.windowEnd, durationMinutes: t.durationMinutes, carersRequired: t.carersRequired, daysOfWeek: [...t.daysOfWeek], tasks: [...t.tasks], medications: t.medications.map((m) => ({ ...m })) }));
 }
 
 export function visitScheduleText(templates: CarePlanVisitTemplate[]): string {

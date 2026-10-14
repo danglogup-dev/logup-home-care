@@ -672,7 +672,7 @@ export default function PersonDetail() {
                 {(() => {
                   const currentKeys = new Set(current.sections.map((s) => s.key));
                   const draftAdded = draft ? draft.sections.filter((s) => !currentKeys.has(s.key)) : [];
-                  const orderedCurrent: CarePlanSection[] = current.sectionOrderOverride ? current.sections.slice() : [
+                  const orderedCurrent: CarePlanSection[] = current.sectionOrderOverride || current.templateVersion ? current.sections.slice() : [
                     ...SECTION_ORDER.filter((k) => currentKeys.has(k)).map((k) => current.sections.find((s) => s.key === k)!),
                     ...current.sections.filter((s) => !(SECTION_ORDER as readonly string[]).includes(s.key)),
                   ];
@@ -830,8 +830,8 @@ export default function PersonDetail() {
 
                         {!isEditing && (
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {canEditPlan && (
-                              <Button size="sm" variant="outline" disabled={key === VISIT_SCHEDULE_KEY} onClick={() => startEdit(key)}>
+                            {canEditPlan && key !== VISIT_SCHEDULE_KEY && (
+                              <Button size="sm" variant="outline" onClick={() => startEdit(key)}>
                                 <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit section
                               </Button>
                             )}

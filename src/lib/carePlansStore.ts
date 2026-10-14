@@ -1490,6 +1490,11 @@ export const carePlansStore = {
       key: ts.sectionKey, body: "", label: ts.displayName,
       isCustom: ts.sectionKey.startsWith("custom_") || undefined, addedInVersionId: draft.id,
     });
+    if (tpl.serviceType === "home_support" && byKey.has("fallsRisk") && !tplKeys.has("fallsRisk")) {
+      const moving = ordered.find((s) => s.key === "mobility");
+      const falls = byKey.get("fallsRisk");
+      if (moving && falls?.body && !moving.body.includes(falls.body)) moving.body = [moving.body, falls.body].filter(Boolean).join("\n\n");
+    }
     const keptCustom = draft.sections.filter((x) => !tplKeys.has(x.key) && x.isCustom && !x.key.startsWith("custom_SEC"));
     const removed = draft.sections.filter((x) => !tplKeys.has(x.key) && !keptCustom.includes(x));
     const added = latest.sections.filter((ts) => !byKey.has(ts.sectionKey));
@@ -1980,7 +1985,7 @@ export function sectionKeysForCategories(personId: string, categories: SecCat[])
   const v = tpl ? tplPublished(tpl) : undefined;
   const out: string[] = [];
   categories.forEach((c) => {
-    const fromTpl = v?.sections.filter((x) => x.category === c).map((x) => x.sectionKey) ?? [];
+    const fromTpl = v?.sections.filter((x) => x.category === c || x.additionalCategories?.includes(c)).map((x) => x.sectionKey) ?? [];
     const keys = fromTpl.length ? fromTpl : (Object.entries(STANDARD_KEYS) as [SecCat, string][]).filter(([k]) => k === c).map(([, k]) => k);
     keys.forEach((k) => { if (!out.includes(k)) out.push(k); });
   });

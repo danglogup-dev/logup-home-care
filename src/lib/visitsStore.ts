@@ -175,6 +175,7 @@ function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutco
 interface State { templates: VisitTemplate[]; visits: Visit[] }
 const initialTemplates = seedTemplates();
 let state: State = { templates: initialTemplates, visits: generateVisits(initialTemplates) };
+const appliedScheduleVersions = new Set<string>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -198,7 +199,7 @@ export const visitsStore = {
     const error = validateVisitSchedule(templates);
     if (error) throw new Error(error);
     if (!serviceUsersStore.getById(clientId)) throw new Error("Client not found.");
-    if (state.templates.some((t) => t.clientId === clientId && t.carePlanVersionId === carePlanVersionId)) return;
+    if (appliedScheduleVersions.has(`${clientId}:${carePlanVersionId}`)) return;
     const at = now.toISOString();
     const versioned: VisitTemplate[] = cloneVisitSchedule(templates).map((t) => ({ ...t, id: `VT-${clientId}-${carePlanVersionId}-${t.id}`, clientId, carePlanVersionId }));
     const visits = state.visits.map((v) => {
@@ -213,6 +214,7 @@ export const visitsStore = {
     }));
     const ids = new Set(visits.map((v) => v.id));
     state = { templates: [...state.templates.map((t) => t.clientId === clientId && !t.supersededAt ? { ...t, supersededAt: at } : t), ...versioned], visits: [...visits, ...generated.filter((v) => !ids.has(v.id))] };
+    appliedScheduleVersions.add(`${clientId}:${carePlanVersionId}`);
     emit();
   },
   visitsForClient: (clientId: ServiceUserId) => state.visits.filter((v) => v.clientId === clientId),

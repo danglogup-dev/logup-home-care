@@ -63,6 +63,7 @@ export interface TemplateSection {
   sectionKey: string;
   displayName: string;
   category: SectionCategory;
+  additionalCategories?: SectionCategory[];
   guidance: string;
   fields: TemplateField[];
   required: boolean;
@@ -212,7 +213,7 @@ function homeSupportTemplate(): CarePlanTemplate {
   const template = seedTemplate("TPL-HS", "Home support plan", "home_support", [], 6);
   template.versions[0].versionNumber = 2;
   template.versions[0].sections = HOME_SECTIONS.map(([category, sectionKey, displayName]) =>
-    defaultSection(category, "home_support", { id: `SEC-${sectionKey}`, sectionKey, displayName }));
+    defaultSection(category, "home_support", { id: `SEC-${sectionKey}`, sectionKey, displayName, ...(sectionKey === "mobility" ? { additionalCategories: ["falls" as const] } : {}) }));
   return template;
 }
 

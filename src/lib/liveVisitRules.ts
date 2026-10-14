@@ -39,8 +39,12 @@ export function liveVisitAlerts(today: readonly Visit[], events: readonly Incide
     const client = v ? clients.get(v.clientId) : undefined;
     if (!v || !client || !canCoordinateVisit(client.siteId, role) || (e.serviceUserId && e.serviceUserId !== v.clientId)) continue;
     if (e.lifecycleStatus === "Closed" || e.column === "complete") continue;
-    const at = e.submission?.capturedAt ?? e.timeline[0]?.ts ?? e.dateTime;
-    const stamp = new Date(at);
+    const captured = e.reporterSignOff?.confirmedAt ?? e.submission?.capturedAt ?? e.timeline[0]?.ts ?? e.dateTime;
+    // Legacy capture stamps omit the year ("14 Oct · 17:45"). Resolve only
+    // for alert display/filtering; never rewrite submitted provenance.
+    const legacy = captured.match(/^(\d{1,2}) ([A-Za-z]{3}) · (\d{2}:\d{2})$/);
+    const stamp = new Date(legacy ? `${legacy[1]} ${legacy[2]} ${now.getFullYear()} ${legacy[3]}` : captured);
+    const at = Number.isNaN(stamp.getTime()) ? captured : stamp.toISOString();
     const isToday = stamp.getFullYear() === now.getFullYear() && stamp.getMonth() === now.getMonth() && stamp.getDate() === now.getDate();
     if (!e.urgent && (e.column !== "new" || !isToday)) continue;
     alerts.push({ id: `event-${e.id}`, kind: e.urgent ? "sos" : "event", visitId: v.id, eventId: e.id, clientId: v.clientId,

@@ -26,7 +26,7 @@ export default function LiveVisits() {
   const { users } = useServiceUsers();
   const [events, setEvents] = useState(() => incidentsStore.getPending());
   const [now, setNow] = useState(() => new Date());
-  useEffect(() => incidentsStore.subscribe(setEvents), []);
+  useEffect(() => { const unsubscribe = incidentsStore.subscribe(setEvents); return () => { unsubscribe(); }; }, []);
   useEffect(() => {
     const refresh = () => setNow(new Date());
     const timer = window.setInterval(refresh, 15000);

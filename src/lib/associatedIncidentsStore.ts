@@ -14,6 +14,7 @@
 
 import { useSyncExternalStore } from "react";
 import { SCENARIO_EVENTS, toAssociatedIncident } from "./demoScenario";
+import { isManagerRole, type Role } from "./roleStore";
 
 export type IncidentCategory =
   | "Falls"
@@ -261,8 +262,8 @@ export function summarize(rows: AssociatedIncident[]): AssociatedIncidentSummary
 
 // -------- Permissions -------------------------------------------------------
 
-export type ImpactActor = "admin" | "manager" | "frontline" | "viewonly" | "external";
+export type ImpactActor = Role;
 
 export function canCompleteImpactReview(role: ImpactActor): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin" || isManagerRole(role);
 }

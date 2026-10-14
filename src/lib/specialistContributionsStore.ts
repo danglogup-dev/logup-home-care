@@ -3,7 +3,7 @@
 // changes still go through the normal approval chain.
 
 import { useSyncExternalStore } from "react";
-import type { Role } from "@/lib/roleStore";
+import { isManagerRole, type Role } from "@/lib/roleStore";
 
 export type RegistrationBody =
   | "CORU"
@@ -517,5 +517,5 @@ export function useSpecialistContributions() {
 }
 
 export function canInviteSpecialists(role: Role): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin" || isManagerRole(role);
 }

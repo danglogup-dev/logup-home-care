@@ -33,6 +33,7 @@ const AppLayout = () => {
 
   // External specialists have no main-app access. They must use /external/* only.
   if (role.role === "external") return <Navigate to="/signin" replace />;
+  if (role.role === "family") return <Navigate to="/family" replace />;
 
 
   const handleNotificationClick = (n: Notification) => {

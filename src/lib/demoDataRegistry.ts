@@ -331,9 +331,10 @@ export type StaffId =
   | "STAFF-FIONA" | "STAFF-MAEVE" | "STAFF-DARRAGH"
   | "STAFF-CONOR" | "STAFF-AINE"
   | "STAFF-CIARAN"
-  | "STAFF-SARAH" | "STAFF-BRIAN";
+  | "STAFF-SARAH" | "STAFF-BRIAN"
+  | "STAFF-FAMILY-MARY";
 
-export type AccessRole = "Admin" | "Manager" | "Frontline" | "View Only" | "External";
+export type AccessRole = "Admin" | "Manager" | "Frontline" | "View Only" | "External" | "Family";
 
 export interface DemoStaff {
   id: StaffId;
@@ -384,6 +385,8 @@ export const STAFF: readonly DemoStaff[] = [
   // External specialists
   { id: "STAFF-SARAH",   name: "Sarah Keane",       roleLabel: "Dietitian",       accessRole: "External", scopeSiteIds: [], external: true, registrationBody: "CORU", registrationNumber: "DT12345", linkedPersonSupportedIds: ["PS-002"] },
   { id: "STAFF-BRIAN",   name: "Brian O’Donnell",   roleLabel: "Physiotherapist", accessRole: "External", scopeSiteIds: [], external: true, registrationBody: "CORU", registrationNumber: "PT67890", linkedPersonSupportedIds: ["PS-001"] },
+  // Family contacts (read-only portal; linked to one client by ID)
+  { id: "STAFF-FAMILY-MARY", name: "Mary Murphy", roleLabel: "Family · Daughter", accessRole: "Family", scopeSiteIds: [], external: true, readOnly: true, linkedPersonSupportedIds: ["PS-001"] },
 ];
 
 export const STAFF_BY_ID: Record<StaffId, DemoStaff> = STAFF.reduce(

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTerms } from "@/hooks/useTerms";
 import { useRole } from "@/hooks/useRole";
 import { scopedSiteIds } from "@/lib/roleStore";
-import { useSites } from "@/lib/sitesStore";
+import { useSites, isHomeSupportOrg } from "@/lib/sitesStore";
 import { serviceUsersStore, useServiceUsers } from "@/lib/serviceUsersStore";
 import { DIRECTORY_FIELDS, DIRECTORY_SOURCE } from "@/lib/residentDirectory";
 import { getSiteName, type SiteId } from "@/lib/demoDataRegistry";
@@ -29,6 +29,7 @@ export default function ResidentDirectory() {
   const to = params.get("to") ?? "";
   const setParam = (k: string, v: string) => { const n = new URLSearchParams(params); if (v && v !== "any") n.set(k, v); else n.delete(k); setParams(n, { replace: true }); };
 
+  if (isHomeSupportOrg(sites)) return <div className="p-6"><NoAccessPanel moduleLabel="Directory of Residents" /></div>;
   if (role.role !== "admin" && role.role !== "manager") return <div className="p-6"><NoAccessPanel moduleLabel="Directory of Residents" /></div>;
 
   // A resident belongs to a site's directory if they were ever admitted or transferred there.

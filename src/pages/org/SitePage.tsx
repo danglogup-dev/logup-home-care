@@ -18,7 +18,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";
 import { scopedSiteIds } from "@/lib/roleStore";
 import { isModuleKeyReleased } from "@/lib/featureFlags";
-import { sitesStore, useSites, CENTRE_TYPE_LABELS } from "@/lib/sitesStore";
+import { sitesStore, useSites, useIsHomeSupportOrg, CENTRE_TYPE_LABELS } from "@/lib/sitesStore";
 import { useServiceUsers } from "@/lib/serviceUsersStore";
 import { useCarePlans, formatDate } from "@/lib/carePlansStore";
 import { allEvents } from "@/lib/insightSignals";
@@ -43,6 +43,7 @@ export default function SitePage() {
   const terms = useTerms();
   const navigate = useNavigate();
   const sites = useSites();
+  const homeSupportOrg = useIsHomeSupportOrg();
   const { users, events: lifecycle } = useServiceUsers();
   const cp = useCarePlans();
   useIncidentsStoreVersion();
@@ -68,6 +69,7 @@ export default function SitePage() {
     return <div className="p-6 md:p-8"><NoAccessPanel moduleLabel="this site" /></div>;
   }
 
+  const homeSupport = site.centreType === "home_support";
   const capacity = site.registeredCapacity ?? 0;
   const occupied = residents.filter((u) => u.status === "active" || u.status === "temporary_absence").length;
   const shownResidents = residents.filter((u) =>
@@ -117,8 +119,9 @@ export default function SitePage() {
               {site.status !== "active" && <Badge variant="outline" className="capitalize">{site.status}</Badge>}
             </div>
             <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-              <span>HIQA centre ID: {site.hiqaCentreId || "—"}</span>
+              {!homeSupport && <span>HIQA centre ID: {site.hiqaCentreId || "—"}</span>}
               <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{site.address}</span>
+              {homeSupport && site.coverageTowns?.length ? <span>Covers {site.coverageTowns.join(", ")}</span> : null}
               {site.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{site.phone}</span>}
             </div>
             <dl className="grid sm:grid-cols-3 gap-2 text-sm pt-1">
@@ -128,10 +131,10 @@ export default function SitePage() {
             </dl>
           </div>
           <div className="space-y-3 text-sm">
-            <div>
+            {!homeSupport && <div>
               <p className="font-medium">{capacity ? `${occupied} of ${capacity} registered places` : `${occupied} — registered places not recorded`}</p>
               {capacity > 0 && <Progress value={Math.min(100, (occupied / capacity) * 100)} className="h-2 mt-1" />}
-            </div>
+            </div>}
             <p><span className="text-muted-foreground">Registration renewal:</span> {site.registrationRenewalDate ? formatDate(site.registrationRenewalDate) : "—"}</p>
             <p><span className="text-muted-foreground">Last inspection:</span> {site.lastInspectionDate ? formatDate(site.lastInspectionDate) : "—"}
               {site.lastInspectionReportUrl && <a href={site.lastInspectionReportUrl} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-primary hover:underline">Report <ExternalLink className="h-3 w-3" /></a>}
@@ -162,7 +165,7 @@ export default function SitePage() {
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
-        {(role.role === "admin" || role.role === "manager") && (
+        {(role.role === "admin" || role.role === "manager") && !homeSupportOrg && (
           <Button variant="outline" size="sm" className="ml-2" onClick={() => window.open(`/print/directory?site=${site.id}`, "_blank")}>Directory of Residents</Button>
         )}
 
@@ -272,11 +275,11 @@ function SiteDetails({ site, editable }: { site: DemoSite; editable: boolean }) 
             <SelectContent>{Object.entries(CENTRE_TYPE_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        {text("hiqaCentreId", "HIQA centre ID")}
+        {f.centreType !== "home_support" && text("hiqaCentreId", "HIQA centre ID")}
         {text("address", "Address")}
         {text("phone", "Phone")}
         {text("registeredProvider", "Registered provider")}
-        {text("registeredCapacity", "Registered places", "number")}
+        {f.centreType !== "home_support" && text("registeredCapacity", "Registered places", "number")}
         {staffSelect("personInChargeStaffId", "Person in charge", false)}
         {staffSelect("ppimStaffId", "Person participating in management", true)}
         {text("registrationRenewalDate", "Registration renewal date", "date")}

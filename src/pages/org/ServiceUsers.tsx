@@ -19,7 +19,7 @@ import { useServiceUsers, useAdmissionDrafts, admissionDraftsStore } from "@/lib
 import { missingDirectoryFields } from "@/lib/residentDirectory";
 import { DirectoryIncompleteBadge } from "@/components/DirectoryIncompleteBadge";
 import { carePlansStore, useCarePlans, statusLabel } from "@/lib/carePlansStore";
-import { useSites } from "@/lib/sitesStore";
+import { useSites, useIsHomeSupportOrg } from "@/lib/sitesStore";
 import { STAFF, getStaffName, type SiteId, type StaffId } from "@/lib/demoDataRegistry";
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -38,6 +38,7 @@ export default function ServiceUsers() {
   const { users } = useServiceUsers();
   useCarePlans();
   const sites = useSites();
+  const homeSupportOrg = useIsHomeSupportOrg();
   const canManage = role.role === "admin" || role.role === "manager";
   const scopeIds = useMemo(() => new Set<string>(scopedSiteIds(role)), [role]);
   const inScope = users.filter((u) => scopeIds.has(u.siteId));
@@ -67,7 +68,7 @@ export default function ServiceUsers() {
         </div>
         {canManage && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => window.open(`/print/directory${site !== "any" ? `?site=${site}` : ""}`, "_blank")}>Directory of Residents</Button>
+            {!homeSupportOrg && <Button variant="outline" onClick={() => window.open(`/print/directory${site !== "any" ? `?site=${site}` : ""}`, "_blank")}>Directory of Residents</Button>}
             <Button onClick={() => navigate("/app/org/service-users/admit")}><Plus className="mr-1 h-4 w-4" /> Admit a {terms.singular}</Button>
           </div>
         )}

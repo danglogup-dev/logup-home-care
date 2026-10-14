@@ -1,14 +1,26 @@
-import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation, useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { CalendarDays, Users, SquarePen, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Guarded } from "@/components/Guarded";
 import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";
+import { visitsStore } from "@/lib/visitsStore";
+import { accessibleVisit } from "@/lib/visitActions";
+import VisitSos from "@/components/visits/VisitSos";
 
 export default function VisitsLayout() {
   const role = useRole();
   const terms = useTerms();
   const { pathname } = useLocation();
+  const { id } = useParams();
+  useEffect(() => {
+    visitsStore.refreshStatuses();
+    const timer = window.setInterval(() => visitsStore.refreshStatuses(), 15000);
+    const refresh = () => visitsStore.refreshStatuses();
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, []);
   if (role.role === "external") return <Navigate to="/signin" replace />;
   const tabs = [
     { path: "today", label: "Today", icon: CalendarDays },
@@ -22,7 +34,7 @@ export default function VisitsLayout() {
         <header className="border-b bg-card px-4 pt-[env(safe-area-inset-top)]">
           <div className="mx-auto flex min-h-16 max-w-xl items-center justify-between gap-4">
             <span className="font-heading text-2xl font-bold text-primary">LogUp</span>
-            <span className="text-sm font-semibold">Home Care</span>
+            {id && accessibleVisit(id, role) ? <VisitSos key={id} visitId={id} /> : <span className="text-sm font-semibold">Home Care</span>}
           </div>
         </header>
         <main className="mx-auto max-w-xl pb-[calc(6rem+env(safe-area-inset-bottom))]">

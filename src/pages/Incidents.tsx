@@ -12,12 +12,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { incidentsStore } from "@/lib/incidentsStore";
 import {
   detectLanguage, translateToEnglish, LANGUAGE_LABELS, type SourceLanguage,
 } from "@/lib/translation";
+import { CareVoiceRecorder } from "@/components/visits/CareVoiceRecorder";
+import { accessibleVisit } from "@/lib/visitActions";
 import { useRole } from "@/hooks/useRole";
 import { inScope } from "@/lib/roleStore";
 import { serviceUsersStore, useServiceUsers } from "@/lib/serviceUsersStore";
@@ -503,20 +505,25 @@ const acknowledge = (field: keyof Captured, c: Captured): string => {
 const Incidents = () => {
   const terms = useTerms();
   const role = useRole();
+  const location = useLocation();
+  const candidate = location.state?.visitNotePrefill as { visitId: string; clientId: string; text: string } | undefined;
+  const linkedVisit = candidate ? accessibleVisit(candidate.visitId, role) : undefined;
+  const prefill = candidate && linkedVisit?.clientId === candidate.clientId ? candidate : undefined;
+  const prefillClient = prefill ? serviceUsersStore.getById(prefill.clientId) : undefined;
   // If only one site is in scope, default the capture to it.
   const SITE_OPTIONS = [
     { id: "oakfield",  name: "East Cork"  },
     { id: "riverside", name: "West Waterford" },
     { id: "elmgrove",  name: "West Waterford"  },
   ].filter(s => inScope(s.name, role.role, role.scope));
-  const [site, setSite] = useState(SITE_OPTIONS.length === 1 ? SITE_OPTIONS[0].id : "");
-  const [resident, setResident] = useState(""); // serviceUserId
+  const [site, setSite] = useState(prefillClient ? SITE_OPTIONS.find((s) => siteIdByName(s.name) === prefillClient.siteId)?.id ?? "" : SITE_OPTIONS.length === 1 ? SITE_OPTIONS[0].id : "");
+  const [resident, setResident] = useState(prefill?.clientId ?? ""); // serviceUserId
   useServiceUsers();
   const siteId = siteIdByName(SITE_OPTIONS.find(s => s.id === site)?.name ?? "");
   const siteServiceUsers = serviceUsersStore.list(role).filter(u => u.siteId === siteId && u.status === "active");
   useEffect(() => { if (resident && !siteServiceUsers.some(u => u.id === resident)) setResident(""); }, [site]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE);
-  const [eventTypeConfirmed, setEventTypeConfirmed] = useState(false);
+  const [eventType, setEventType] = useState<EventType>(prefill ? "Concern" : DEFAULT_EVENT_TYPE);
+  const [eventTypeConfirmed, setEventTypeConfirmed] = useState(!!prefill);
   const [incidentTypeKey, setIncidentTypeKey] = useState("");
   const [language, setLanguage] = useState<SourceLanguage | "auto">("auto");
 
@@ -524,9 +531,8 @@ const Incidents = () => {
   const [captured, setCaptured] = useState<Captured>({});
   const [messages, setMessages] = useState<Msg[]>([]);
   const [pendingField, setPendingField] = useState<keyof Captured | "done">("what");
-  const [draft, setDraft] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [draft, setDraft] = useState(prefill?.text ?? "");
+  const [voiceSource, setVoiceSource] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [evidence, setEvidence] = useState<EvidenceItem[]>(() => incidentsStore.getDraftEvidence());
   const knownEvidenceIds = useRef<Set<string>>(new Set(evidence.map(e => e.id)));
@@ -566,7 +572,6 @@ const Incidents = () => {
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const navigate = useNavigate();
 
@@ -604,20 +609,6 @@ const Incidents = () => {
       inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 140) + "px";
     }
   }, [draft]);
-
-  // Recording timer
-  useEffect(() => {
-    if (isRecording) {
-      setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime((t) => t + 1), 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [isRecording]);
-
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   // Detect language as the staff member types
   const detectedLang = useMemo(() => detectLanguage(draft), [draft]);
@@ -680,29 +671,14 @@ const Incidents = () => {
       toast("Complete the start details", { description: `Pick the site, ${terms.singular} and event type before starting.` });
       return;
     }
-    sendUserTurn(draft);
+    sendUserTurn(draft, { voice: voiceSource });
+    setVoiceSource(false);
   };
 
   const handleSuggestion = (s: string) => sendUserTurn(s);
 
-  const handleMicToggle = () => {
-    if (!anchorsOk) {
-      toast("Complete the start details", { description: `Pick the site, ${terms.singular} and event type before recording.` });
-      return;
-    }
-    if (isRecording) {
-      // "Transcribe": for the prototype we surface a placeholder that the user
-      // can edit before sending, so the chat reads naturally.
-      setIsRecording(false);
-      const placeholder = `[voice note · ${formatTime(recordingTime)}] `;
-      setDraft(placeholder);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setIsRecording(true);
-    }
-  };
-
   const handleSubmitDraft = () => {
+    if (incidentsStore.getDraft()) { toast("An Event draft is already open", { description: "Finish or discard that draft before starting another. Your capture remains here." }); return; }
     // Translate the longest narrative ("what" + "response") if needed
     const sourceLanguage: SourceLanguage =
       language === "auto" ? detectedLang.language : language;
@@ -732,6 +708,7 @@ const Incidents = () => {
       site,
       resident,
       serviceUserId: (serviceUsersStore.getById(resident)?.id),
+      visitId: prefill?.visitId,
       // Severity is suggested on the review screen and confirmed by the reporter there.
       severity: "",
       location: captured.whereDetail || "",
@@ -1220,33 +1197,9 @@ const Incidents = () => {
 
             {/* Input bar */}
             <div className="px-3 py-3 border-t border-border bg-secondary/10 mt-auto">
-              {isRecording ? (
-                <div className="flex items-center gap-3 px-3">
-                  <div className="relative">
-                    <span className="absolute inset-0 rounded-full bg-destructive/30 animate-ping" />
-                    <div className="relative h-9 w-9 rounded-full bg-destructive flex items-center justify-center">
-                      <Mic className="h-4 w-4 text-destructive-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Recording…</p>
-                    <p className="text-[11px] text-muted-foreground font-mono">{formatTime(recordingTime)}</p>
-                  </div>
-                  <Button onClick={handleMicToggle} size="sm" variant="destructive" className="rounded-xl">
-                    <Square className="h-4 w-4 mr-1" /> Stop
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-end gap-2">
-                  <button
-                    type="button"
-                    onClick={handleMicToggle}
-                    disabled={!anchorsOk}
-                    className="h-10 w-10 rounded-xl bg-background border border-border text-foreground hover:bg-secondary/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 transition-colors"
-                    aria-label="Record voice"
-                  >
-                    <Mic className="h-4 w-4" />
-                  </button>
+              {prefill && <p className="mb-3 break-words text-sm font-semibold">Linked visit · {prefill.visitId}</p>}
+              <div className="mb-3"><CareVoiceRecorder disabled={!anchorsOk || pendingField === "done"} onTranscript={(text) => { setDraft((old) => old ? `${old}\n${text}` : text); setVoiceSource(true); inputRef.current?.focus(); }} /></div>
+              <div className="flex items-end gap-2">
                   <textarea
                     ref={inputRef}
                     value={draft}
@@ -1272,7 +1225,6 @@ const Incidents = () => {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
               {language === "auto" && draft.trim().length > 0 && detectedLang.language !== "en" && (
                 <div className="mt-2 px-2 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Languages className="h-3 w-3" />

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin, LogIn, LogOut, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,10 @@ import { useVisits, visitsStore, VISIT_STATUS_LABELS, MEDICATION_SUPPORT_LABELS,
 import { accessibleVisit } from "@/lib/visitActions";
 import { clientDisplayName } from "@/lib/visitPresentation";
 import { browserLocation } from "@/lib/visitLocation";
+import { VisitNoteEditor } from "@/components/visits/VisitNoteEditor";
+import { visitNotesStore, useVisitNotes, type VisitNote } from "@/lib/visitNotesStore";
+import { NOTE_SECTIONS, noteRiskMentions, noteText } from "@/lib/visitNoteRules";
+import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
 
 const taskOptions: { value: TaskOutcome; label: string }[] = [{ value: "done", label: "Done" }, { value: "refused", label: "Refused" }, { value: "not_needed", label: "Not needed" }];
 const medicationOptions: { value: MedicationOutcome; label: string }[] = [{ value: "given", label: "Given" }, { value: "prompted", label: "Prompted" }, { value: "refused", label: "Refused" }, { value: "not_available", label: "Not available" }];
@@ -17,6 +21,11 @@ const timestamp = (iso: string) => new Date(iso).toLocaleString("en-IE", { day: 
 export default function VisitDetail() {
   const { id } = useParams();
   const role = useRole();
+  const navigate = useNavigate();
+  const notes = useVisitNotes();
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [savedNote, setSavedNote] = useState<VisitNote>();
+  useEffect(() => { if (id) visitNotesStore.load(id, role).catch(() => {}); }, [id, role.staffId]);
   const { templates } = useVisits();
   const { users } = useServiceUsers();
   const visit = id ? accessibleVisit(id, role) : undefined;
@@ -40,7 +49,8 @@ export default function VisitDetail() {
       if (!visit.checkInAt) visitsStore.checkIn(visit.id, await browserLocation(), role.staffId);
       else {
         if (unsavedMedication) throw new Error("Save each medication outcome before checking out.");
-        visitsStore.checkOut(visit.id, role.staffId);
+        if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i)) || template?.medications.some((_, i) => !visit.medicationRecords?.some((r) => r.index === i))) throw new Error("Record every task and medication before checking out.");
+        setNoteOpen(true);
       }
     } catch (e) { setError(e instanceof Error ? e.message : "Could not record this visit."); }
     finally { setBusy(false); }
@@ -60,11 +70,14 @@ export default function VisitDetail() {
       </div>
       <div className="space-y-3">
         {error && <p role="alert" className="text-base font-medium text-emergency">{error}</p>}
-        {completed ? <p role="status" className="flex items-center gap-2 text-lg font-bold"><Check aria-hidden="true" />{visit.log ? "Visit completed & log recorded" : "Visit completed"}</p> : <Button className="min-h-16 w-full whitespace-normal text-lg font-bold" disabled={busy || cancelled} onClick={contextAction}>{visit.checkInAt ? <LogOut aria-hidden="true" /> : <LogIn aria-hidden="true" />}{busy ? "Recording…" : cancelled ? "Visit cancelled" : visit.checkInAt ? "Check out & log" : "Check in"}</Button>}
+        {completed ? <p role="status" className="flex items-center gap-2 text-lg font-bold"><Check aria-hidden="true" />{visit.log ? "Visit completed & log recorded" : "Visit completed"}</p> : <Button className="min-h-16 w-full whitespace-normal text-lg font-bold" disabled={busy || cancelled || noteOpen} onClick={contextAction}>{visit.checkInAt ? <LogOut aria-hidden="true" /> : <LogIn aria-hidden="true" />}{busy ? "Recording…" : cancelled ? "Visit cancelled" : visit.checkInAt ? "Check out & log" : "Check in"}</Button>}
         {visit.checkInAt && <p className="text-base">Checked in {timestamp(visit.checkInAt)}{visit.checkInLocation ? " · Location recorded" : ""}</p>}
         {visit.checkOutAt && <p className="text-base">Checked out {timestamp(visit.checkOutAt)}</p>}
         {visit.sosEventIds?.map((eventId) => <p key={eventId} className="break-words text-base font-semibold text-emergency">Urgent SOS recorded · {eventId}</p>)}
       </div>
+      {noteOpen && <VisitNoteEditor visitId={visit.id} clientId={visit.clientId} onCancel={() => setNoteOpen(false)} onSaved={(note) => { setSavedNote(note); act(() => { visitsStore.checkOut(visit.id, role.staffId); setNoteOpen(false); }); }} />}
+      {notes.filter((note) => note.visit_id === visit.id).map((note) => <div key={note.id} className="space-y-3 border-t pt-5"><h2 className="text-2xl font-bold">Human confirmed</h2><p className="text-sm">{STAFF_BY_ID[note.confirmed_by_staff_id]?.name ?? note.confirmed_by_staff_id} · {timestamp(note.confirmed_at)}</p>{NOTE_SECTIONS.map(({ key, label }) => <div key={key}><h3 className="text-lg font-semibold">{label}</h3><p className="whitespace-pre-wrap break-words text-base">{note.final_text[key]}</p></div>)}<details><summary className="min-h-12 cursor-pointer font-semibold">Source / AI draft</summary><p className="whitespace-pre-wrap break-words">{note.transcript}</p><h3 className="mt-4 font-semibold">AI draft</h3><p className="whitespace-pre-wrap break-words">{noteText(note.ai_draft)}</p></details></div>)}
+      {savedNote && noteRiskMentions(savedNote.final_text).length > 0 && <div className="space-y-3 border-t pt-5"><h2 className="text-xl font-bold">LogUp suggestion</h2><p className="text-base">Note mentions: {noteRiskMentions(savedNote.final_text).join(", ")}</p><Button className="min-h-12 w-full" onClick={() => navigate("/app/visits/log-event", { state: { visitNotePrefill: { visitId: visit.id, clientId: visit.clientId, noteId: savedNote.id, text: noteText(savedNote.final_text) } } })}>Log an event?</Button><Button variant="ghost" className="min-h-12 w-full" onClick={() => setSavedNote(undefined)}>Not now</Button></div>}
       <div className="border-t pt-5">
         <h2 className="text-2xl font-heading font-bold">Tasks</h2>
         {!template?.tasks.length && <p className="mt-3 text-base">No tasks listed for this visit.</p>}

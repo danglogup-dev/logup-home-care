@@ -53,6 +53,6 @@ Deno.serve(async (req) => {
     try { while (true) { const { done, value } = await reader.read(); if (done) break; parser.feed(decoder.decode(value, { stream: true })); } parser.feed(decoder.decode()); } finally { reader.releaseLock(); }
     if (failure || !completed) return json({ message: failure || "The summary did not complete." }, 502);
     const result = z.object({ lines: z.array(z.string().min(1).max(500)).min(2).max(4) }).parse(JSON.parse(output));
-    return json({ lines: result.lines, noteIds: sources.notes.map((n) => n.visitId) }, 200);
+    return json({ lines: result.lines, notedVisitIds: sources.notes.map((n) => n.visitId) }, 200);
   } catch (e) { return json({ message: e instanceof Error ? e.message : "Summary failed." }, req.signal.aborted ? 499 : 400); }
 });

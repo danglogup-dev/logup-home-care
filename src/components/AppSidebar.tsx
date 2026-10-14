@@ -31,7 +31,37 @@ type ModuleItem = {
   basePath: string;
   defaultPath: string;
   subItems?: SubItem[];
+  /** Permission key for single-link items. */
+  key?: ModuleKey;
 };
+
+/**
+ * Home Care primary navigation. Legacy residential modules (Insights, Events,
+ * Care Planning, Audits, Tasks, Organisation, Team) are hidden here, not deleted;
+ * their routes stay live for deep links.
+ */
+const homeCareModules: ModuleItem[] = [
+  { title: "Home", icon: Sparkles, basePath: "/app/home", defaultPath: "/app/home", key: "insights.overview" },
+  {
+    title: "Schedule & Visits",
+    icon: HeartPulse,
+    basePath: "/app/visits",
+    defaultPath: "/app/visits/live",
+    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
+  },
+  { title: "Clients", icon: Users, basePath: "/app/org/service-users", defaultPath: "/app/org/service-users", key: "org.serviceUsers" },
+  {
+    title: "Policy Hub",
+    icon: BookOpen,
+    basePath: "/app/policies",
+    defaultPath: "/app/policies/library",
+    subItems: [
+      { title: "Library", url: "/app/policies/library", key: "policies.library" },
+      { title: "Approval Queue", url: "/app/policies/approvals", key: "policies.approvals" },
+    ],
+  },
+  { title: "Workforce", icon: ShieldCheck, basePath: "/app/workforce", defaultPath: "/app/workforce/overview", key: "workforce.overview" },
+];
 
 const modules: ModuleItem[] = [
   {

@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Visit notes: 90-second recording / typed source, real transcription and structured AI draft, explicit human confirmation, saved provenance, risk-to-Events prefill, reuse transcription in Events; test phone-width flows.
+- [x] Visit notes implementation: bounded WAV recording / typed source, authenticated transcription and AI drafting, explicit confirmation, append-only provenance, risk-to-Events prefill, shared Events voice control; 11 client tests and edge schema test pass, checkout verified at 390px.
+- [ ] Authenticated live verification: real spoken audio → transcript → AI draft → edited human-confirmed save → readback → linked Events capture. Blocker: new Cloud project has no auth users; first Google sign-in is required. Staff attribution remains explicitly demo identity until a separate trusted staff-account mapping is requested.
 - Visit notes scope: new visitNotesStore, note rules/AI client, shared audio/sign-in controls, visit note editor, edge functions and append-only Cloud tables/tests; VisitDetail.tsx (checkout), Incidents.tsx (real voice + linked prefill), AGENTS.md and roadmap.md only, plus Cloud-generated integrations/dependencies.
 
 - [x] Prompt 1: feature flags, role homes, frontline submit redirect, guard unguarded routes

@@ -97,7 +97,7 @@ type Captured = {
 
 type Msg =
   | { id: string; role: "bot"; text: string; suggestions?: string[]; ts: string }
-  | { id: string; role: "user"; text: string; voice?: boolean; ts: string };
+  | { id: string; role: "user"; text: string; voice?: boolean; originalTranscript?: string; ts: string };
 
 const stamp = () => {
   const d = new Date();
@@ -533,6 +533,7 @@ const Incidents = () => {
   const [pendingField, setPendingField] = useState<keyof Captured | "done">("what");
   const [draft, setDraft] = useState(prefill?.text ?? "");
   const [voiceSource, setVoiceSource] = useState(false);
+  const [originalTranscript, setOriginalTranscript] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [evidence, setEvidence] = useState<EvidenceItem[]>(() => incidentsStore.getDraftEvidence());
   const knownEvidenceIds = useRef<Set<string>>(new Set(evidence.map(e => e.id)));
@@ -639,6 +640,7 @@ const Incidents = () => {
       role: "user",
       text,
       voice: opts?.voice,
+      originalTranscript: opts?.voice ? originalTranscript : undefined,
       ts: stamp(),
     };
     const isFirstUserTurn = !messages.some(m => m.role === "user");
@@ -673,6 +675,7 @@ const Incidents = () => {
     }
     sendUserTurn(draft, { voice: voiceSource });
     setVoiceSource(false);
+    setOriginalTranscript("");
   };
 
   const handleSuggestion = (s: string) => sendUserTurn(s);
@@ -688,7 +691,7 @@ const Incidents = () => {
     // AI-polished draft.
     const verbatim = messages
       .filter(m => m.role === "user")
-      .map(m => (m.voice ? `[Voice note] ${m.text}` : m.text))
+      .map(m => (m.voice ? `[Voice transcript] ${m.originalTranscript ?? m.text}${m.originalTranscript && m.originalTranscript !== m.text ? `\n[Reporter correction] ${m.text}` : ""}` : m.text))
       .join("\n\n")
       .trim();
 
@@ -1198,7 +1201,7 @@ const Incidents = () => {
             {/* Input bar */}
             <div className="px-3 py-3 border-t border-border bg-secondary/10 mt-auto">
               {prefill && <p className="mb-3 break-words text-sm font-semibold">Linked visit · {prefill.visitId}</p>}
-              <div className="mb-3"><CareVoiceRecorder disabled={!anchorsOk || pendingField === "done"} onTranscript={(text) => { setDraft((old) => old ? `${old}\n${text}` : text); setVoiceSource(true); inputRef.current?.focus(); }} /></div>
+              <div className="mb-3"><CareVoiceRecorder disabled={!anchorsOk || pendingField === "done"} onTranscript={(text) => { setDraft((old) => old ? `${old}\n${text}` : text); setOriginalTranscript((old) => old ? `${old}\n${text}` : text); setVoiceSource(true); inputRef.current?.focus(); }} /></div>
               <div className="flex items-end gap-2">
                   <textarea
                     ref={inputRef}

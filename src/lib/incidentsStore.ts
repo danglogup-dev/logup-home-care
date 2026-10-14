@@ -231,6 +231,9 @@ export function suggestNotifications(d: DraftDetails): NotificationSuggestion[] 
 
 export interface IncidentCard {
   id: string;
+  visitId?: string;
+  urgent?: boolean;
+  capturedLocation?: import("./visitsStore").CheckLocation;
   /** Display label only — derived from serviceUserId when linked. */
   resident: string;
   /** Linked service user (shared serviceUsersStore id). */
@@ -296,6 +299,9 @@ export interface IncidentCard {
 
 
 export interface DraftDetails {
+  visitId?: string;
+  urgent?: boolean;
+  capturedLocation?: import("./visitsStore").CheckLocation;
   // Anchor
   site: string;
   /** Legacy free-text field; prefer serviceUserId. */
@@ -592,9 +598,10 @@ export const incidentsStore = {
     notificationSuggestions?: NotificationSuggestion[];
     fieldProvenance?: FieldProvenance[];
     reporterSignOff?: ReporterSignOff;
-  }): IncidentCard | null {
-    if (!pendingDraft) return null;
-    const d = pendingDraft;
+  }, independentDraft?: DraftDetails): IncidentCard | null {
+    const d = independentDraft ?? pendingDraft;
+    if (!d) return null;
+    const clarifications = independentDraft ? [] : pendingClarifications;
     const id = `INC-${DEMO_YEAR}-${String(counter++).padStart(3, "0")}`;
     const ts = nowStamp();
     const createdBy = extras?.createdBy || "Unknown reporter";
@@ -647,7 +654,7 @@ export const incidentsStore = {
       translatedText: d.translatedText?.trim(),
       voiceDurationSec: d.voiceDurationSec,
       draftSections: buildDraftSections(d),
-      clarifications: [...pendingClarifications],
+      clarifications: [...clarifications],
       outstandingFlags: outstandingFor(d, severity, incidentType, notifiable),
 
       eventType: d.eventType || DEFAULT_EVENT_TYPE,
@@ -674,7 +681,7 @@ export const incidentsStore = {
       openDisclosure: d.openDisclosure || { required: "Not yet decided" },
     };
 
-    const carriedEvidence = [...pendingEvidence];
+    const carriedEvidence = independentDraft ? [] : [...pendingEvidence];
 
     const evidenceTimeline: TimelineEntry[] = carriedEvidence.map((e, i) => ({
       id: `t-ev-${Date.now()}-${i}`,
@@ -685,6 +692,9 @@ export const incidentsStore = {
 
     const card: IncidentCard = {
       id,
+      visitId: d.visitId,
+      urgent: d.urgent,
+      capturedLocation: d.capturedLocation,
       resident: su?.name ?? "No service user linked",
       serviceUserId: su?.id,
       noServiceUserInvolved: !su && d.resident === "__none__",
@@ -718,7 +728,7 @@ export const incidentsStore = {
               ? "Incident captured via voice note"
               : "Incident captured (typed note)",
         },
-        ...pendingClarifications.map((c, i) => ({
+        ...clarifications.map((c, i) => ({
           id: `t${Date.now() + i + 1}`,
           ts: c.ts,
           who: createdBy,
@@ -736,9 +746,11 @@ export const incidentsStore = {
       submission,
     };
     pending = [card, ...pending];
-    pendingDraft = null;
-    pendingClarifications = [];
-    pendingEvidence = [];
+    if (!independentDraft) {
+      pendingDraft = null;
+      pendingClarifications = [];
+      pendingEvidence = [];
+    }
     emit();
     emitEvidence();
     if (su) {

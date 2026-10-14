@@ -59,6 +59,7 @@ export function VisitsToday() {
           const town = clientTown(client);
           return (
             <li key={visit.id} className="rounded-lg border bg-card p-4">
+              <Link to={`/app/visits/${visit.id}`} className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Open visit for ${clientDisplayName(client)} at ${time(visit.scheduledStart)}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-lg font-bold tabular-nums"><Clock3 className="h-5 w-5" aria-hidden="true" />{windowLabel}</p>
                 <span className={`rounded-md border px-2 py-1 text-sm font-semibold ${STATUS_TONES[visit.status]}`}>{VISIT_STATUS_LABELS[visit.status]}</span>
@@ -67,6 +68,7 @@ export function VisitsToday() {
               {client.preferredName && client.preferredName !== client.name && <p className="mt-1 text-base">{client.name}</p>}
               <p className="mt-2 flex items-start gap-2 text-base"><MapPin className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{town || client.homeAddress || "Town not recorded"}</p>
               <p className="mt-2 text-base">{time(visit.scheduledStart)} scheduled · {template?.durationMinutes ?? Math.round((Date.parse(visit.scheduledEnd) - Date.parse(visit.scheduledStart)) / 60000)} min</p>
+              </Link>
               <div className="mt-4"><Directions client={client} /></div>
             </li>
           );

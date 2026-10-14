@@ -23,7 +23,12 @@ import {
 
 // ---------- Types ----------
 
-export type Role = "admin" | "manager" | "frontline" | "viewonly" | "external";
+export type Role = "admin" | "manager" | "coordinator" | "frontline" | "viewonly" | "external";
+
+/** Demo access only; Cloud authorization remains authenticated and server-enforced. */
+export function isManagerRole(role: Role): boolean {
+  return role === "manager" || role === "coordinator";
+}
 
 export const ALL_SITES = SITES.map((s) => s.name) as unknown as readonly string[];
 export type SiteName = (typeof ALL_SITES)[number];
@@ -92,6 +97,9 @@ export const ROLE_PRESETS: RolePreset[] = [
   presetFromStaff("manager-multi",     "Manager · Multi-site",       "East Cork + West Waterford",             "STAFF-SIOBHAN","manager",   ["SITE-ECK", "SITE-WWD"]),
   presetFromStaff("manager-single",    "Manager · Single site",      "East Cork only",                          "STAFF-DANIEL", "manager",   ["SITE-ECK"]),
   presetFromStaff("manager-elm",       "Manager · Elm Grove",        "West Waterford only",                         "STAFF-CLAIRE", "manager",   ["SITE-WWD"]),
+  presetFromStaff("coordinator", "Coordinator · East Cork", "East Cork service area", "STAFF-DANIEL", "coordinator", ["SITE-ECK"], { title: "Coordinator" }),
+  presetFromStaff("coordinator-waterford", "Coordinator · West Waterford", "West Waterford service area", "STAFF-CLAIRE", "coordinator", ["SITE-WWD"], { title: "Coordinator" }),
+  presetFromStaff("coordinator-multi", "Coordinator · Both areas", "East Cork + West Waterford", "STAFF-SIOBHAN", "coordinator", ["SITE-ECK", "SITE-WWD"], { title: "Coordinator" }),
   presetFromStaff("frontline",         "Frontline staff",            "Support Worker · East Cork",              "STAFF-LIAM",   "frontline", ["SITE-ECK"]),
   presetFromStaff("keyworker-emma",    "Frontline · Key worker",     "Emma Ryan · Key worker for Patrick",           "STAFF-EMMA",   "frontline", ["SITE-ECK"]),
   presetFromStaff("keyworker-aisling", "Frontline · Key worker",     "Aisling Doherty · Key worker for Mary",        "STAFF-AISLING","frontline", ["SITE-ECK"]),
@@ -151,6 +159,7 @@ export const roleStore = {
 // ---------- Capability matrix (module-level sidebar/route access) ----------
 
 export type ModuleKey =
+  | "visits.live"
   | "visits.today"
   | "incidents.overview"
   | "incidents.board"
@@ -192,8 +201,9 @@ export type ModuleKey =
   | "org.serviceUsers"
   | "debug.permissions";
 
-const MATRIX: Record<Role, Set<ModuleKey>> = {
+const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
   admin: new Set<ModuleKey>([
+    "visits.live",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library","policies.approvals","policies.chainTemplates",
@@ -207,6 +217,7 @@ const MATRIX: Record<Role, Set<ModuleKey>> = {
     "debug.permissions",
   ]),
   manager: new Set<ModuleKey>([
+    "visits.live",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library",
@@ -245,7 +256,7 @@ const MATRIX: Record<Role, Set<ModuleKey>> = {
 };
 
 export function canAccess(key: ModuleKey, role: Role = state.role): boolean {
-  return MATRIX[role].has(key);
+  return MATRIX[role === "coordinator" ? "manager" : role].has(key);
 }
 
 // ---------- Action-level capabilities ----------

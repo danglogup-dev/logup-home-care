@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const ROLE_META: Record<Role, { label: string; icon: typeof ShieldCheck; tone: string }> = {
   admin:     { label: "Admin",            icon: ShieldCheck, tone: "bg-primary/10 text-primary border-primary/20" },
   manager:   { label: "Manager",          icon: Briefcase,   tone: "bg-amber-50 text-amber-900 border-amber-200" },
+  coordinator: { label: "Coordinator", icon: Briefcase, tone: "bg-accent text-accent-foreground border-border" },
   frontline: { label: "Frontline staff",  icon: HardHat,     tone: "bg-emerald-50 text-emerald-900 border-emerald-200" },
   viewonly:  { label: "View only",        icon: Eye,         tone: "bg-slate-100 text-slate-700 border-slate-200" },
   external:  { label: "External specialist", icon: Building2, tone: "bg-violet-50 text-violet-900 border-violet-200" },

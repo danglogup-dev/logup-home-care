@@ -10,7 +10,7 @@
 // settings, the default per Event Type, and the access helpers.
 
 import type { EventType } from "./eventTypes";
-import type { Role } from "./roleStore";
+import { isManagerRole, type Role } from "./roleStore";
 
 export type VisibilityMode =
   | "submitter_full"     // Submitter can view full submitted record
@@ -84,7 +84,7 @@ export function isRestricted(mode: VisibilityMode | undefined): boolean {
 
 /** Manager / Admin can manage visibility on records they're authorised for. */
 export function canManageVisibility(role: Role): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin" || isManagerRole(role);
 }
 
 /**
@@ -103,7 +103,7 @@ export function canViewFullRecord(args: {
 }): boolean {
   const { role, scope, viewerStaffId, recordSite, submitterStaffId, visibility } = args;
   if (role === "admin") return true;
-  if (role === "manager") return !recordSite || scope.includes(recordSite);
+  if (isManagerRole(role)) return !recordSite || scope.includes(recordSite);
   // viewonly: respect the same access rules as restricted (no full record)
   if (role === "viewonly") return !isRestricted(visibility);
   // frontline
@@ -120,7 +120,7 @@ export function canViewFullRecord(args: {
  * statements, etc.
  */
 export function canViewInternalNotes(role: Role): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin" || isManagerRole(role);
 }
 
 /** Site-level event (no resident by nature): fire alarm / environmental, or logged with "No service user involved". */

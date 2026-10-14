@@ -112,6 +112,8 @@ export interface FieldProvenance {
 
 export interface DemoPersonSupported {
   id: PersonSupportedId;
+  /** Direct client number only; never substitute a representative's number. */
+  phone?: string;
   name: string;
   siteId: SiteId;
   siteName: string;
@@ -335,6 +337,8 @@ export type AccessRole = "Admin" | "Manager" | "Frontline" | "View Only" | "Exte
 
 export interface DemoStaff {
   id: StaffId;
+  /** Optional direct carer contact; missing numbers must not be invented. */
+  phone?: string;
   name: string;
   roleLabel: string;
   accessRole: AccessRole;

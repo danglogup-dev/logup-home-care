@@ -35,6 +35,13 @@ type ModuleItem = {
 
 const modules: ModuleItem[] = [
   {
+    title: "Visits",
+    icon: HeartPulse,
+    basePath: "/app/visits",
+    defaultPath: "/app/visits/live",
+    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }],
+  },
+  {
     title: "Insights",
     icon: Sparkles,
     basePath: "/app/insights",

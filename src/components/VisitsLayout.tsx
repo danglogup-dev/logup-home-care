@@ -1,4 +1,4 @@
-import { Navigate, NavLink, Outlet } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Users, SquarePen, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LogUpLogo from "@/components/LogUpLogo";
@@ -9,6 +9,7 @@ import { useTerms } from "@/hooks/useTerms";
 export default function VisitsLayout() {
   const role = useRole();
   const terms = useTerms();
+  const { pathname } = useLocation();
   if (role.role === "external") return <Navigate to="/signin" replace />;
   const tabs = [
     { path: "today", label: "Today", icon: CalendarDays },
@@ -31,8 +32,8 @@ export default function VisitsLayout() {
         <nav aria-label="Carer navigation" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)]">
           <div className="mx-auto grid max-w-xl grid-cols-4 gap-1 px-2 py-2">
             {tabs.map(({ path, label, icon: Icon }) => (
-              <Button key={path} asChild variant="ghost" className="h-auto min-h-16 min-w-0 whitespace-normal rounded-md p-1">
-                <NavLink to={`/app/visits/${path}`} className={({ isActive }) => `flex flex-col gap-1 text-center text-sm font-semibold ${isActive ? "bg-accent text-accent-foreground" : "text-foreground"}`}>
+              <Button key={path} asChild variant="ghost" className={`h-auto min-h-16 min-w-0 flex-col gap-1 whitespace-normal rounded-md p-1 text-center text-sm font-semibold ${pathname === `/app/visits/${path}` ? "bg-accent text-accent-foreground" : "text-foreground"}`}>
+                <NavLink to={`/app/visits/${path}`}>
                   <Icon className="!h-6 !w-6" aria-hidden="true" />
                   <span className="break-words leading-tight">{label}</span>
                 </NavLink>

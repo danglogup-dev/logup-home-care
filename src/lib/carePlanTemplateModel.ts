@@ -38,6 +38,8 @@ export const STANDARD_SECTION_KEYS = {
 
 /** Category for an existing plan-section key, so current plans keep working. */
 export function categoryForSectionKey(key: string): SectionCategory {
+  if (key === "homeAccess") return "risks";
+  if (key === "visitSchedule") return "personal_care";
   const hit = (Object.entries(STANDARD_SECTION_KEYS) as [SectionCategory, string][]).find(([, k]) => k === key);
   return hit ? hit[0] : "other";
 }
@@ -166,7 +168,22 @@ export function defaultSection(category: SectionCategory, centreType: CentreType
 
 const OLDER: SectionCategory[] = ["about", "communication", "personal_care", "mobility", "falls", "nutrition", "medication", "health", "skin_integrity", "safeguarding", "restrictive_practice", "risks", "goals", "family", "review_notes"];
 const DISABILITY: SectionCategory[] = ["about", "communication", "decision_support", "personal_care", "mobility", "health", "skin_integrity", "safeguarding", "restrictive_practice", "risks", "goals", "family", "review_notes"];
-const HOME: SectionCategory[] = ["about", "personal_care", "mobility", "medication", "skin_integrity", "safeguarding", "goals", "family", "review_notes"];
+export const VISIT_SCHEDULE_KEY = "visitSchedule";
+const HOME_SECTIONS: Array<[SectionCategory, string, string]> = [
+  ["about", "about", "About me and what matters to me"],
+  ["risks", "homeAccess", "My home and access"],
+  ["personal_care", VISIT_SCHEDULE_KEY, "My visit schedule"],
+  ["personal_care", "personalCare", "Personal care"],
+  ["nutrition", "nutrition", "Eating and drinking"],
+  ["medication", "medication", "Medication support"],
+  ["mobility", "mobility", "Moving and falls"],
+  ["skin_integrity", "skinIntegrity", "Skin"],
+  ["communication", "communication", "Communication"],
+  ["family", "family", "My family and circle of care"],
+  ["risks", "risksControls", "Risks in the home"],
+  // Keep the protected LogUp review trail alongside the requested care sections.
+  ["review_notes", "reviewNotes", "Review notes"],
+];
 const CHILDREN: SectionCategory[] = ["about", "communication", "personal_care", "health", "safeguarding", "restrictive_practice", "goals", "family", "review_notes"];
 const SUPPORTED: SectionCategory[] = ["about", "communication", "personal_care", "mobility", "nutrition", "medication", "health", "skin_integrity", "safeguarding", "restrictive_practice", "risks", "goals", "family", "review_notes"];
 
@@ -185,10 +202,32 @@ export function seedTemplates(): CarePlanTemplate[] {
   return [
     seedTemplate("TPL-NH", "Older Persons / Nursing Home Plan", "older_persons", OLDER, 6),
     seedTemplate("TPL-DIS", "Disability / Personal Plan", "disability", DISABILITY, 12),
-    seedTemplate("TPL-HS", "Home Support Plan", "home_support", HOME, 6),
+    homeSupportTemplate(),
     seedTemplate("TPL-CR", "Children's Residential Placement Plan", "childrens_residential", CHILDREN, 3),
     seedTemplate("TPL-CORE", "Supported Living Plan", "supported_living", SUPPORTED, 6),
   ];
+}
+
+function homeSupportTemplate(): CarePlanTemplate {
+  const template = seedTemplate("TPL-HS", "Home support plan", "home_support", [], 6);
+  template.versions[0].versionNumber = 2;
+  template.versions[0].sections = HOME_SECTIONS.map(([category, sectionKey, displayName]) =>
+    defaultSection(category, "home_support", { id: `SEC-${sectionKey}`, sectionKey, displayName }));
+  return template;
+}
+
+/** Append the new built-in template; never rewrite a published version or customer draft. */
+export function upgradeHomeSupportTemplate(templates: CarePlanTemplate[]): CarePlanTemplate[] {
+  const seed = homeSupportTemplate();
+  if (!templates.some((t) => t.id === seed.id)) return [...templates, seed];
+  return templates.map((t) => {
+    if (t.id !== seed.id || t.versions.some((v) => v.sections.some((s) => s.sectionKey === VISIT_SCHEDULE_KEY))) return t;
+    const versionNumber = Math.max(...t.versions.map((v) => v.versionNumber)) + 1;
+    return { ...t, name: seed.name, versions: [
+      ...t.versions.map((v) => v.status === "published" ? { ...v, status: "superseded" as const } : v),
+      { ...seed.versions[0], versionNumber },
+    ] };
+  });
 }
 
 export const publishedVersion = (t: CarePlanTemplate): TemplateVersion | undefined =>

@@ -46,8 +46,8 @@ const homeCareModules: ModuleItem[] = [
     title: "Schedule & Visits",
     icon: HeartPulse,
     basePath: "/app/visits",
-    defaultPath: "/app/visits/live",
-    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
+    defaultPath: "/app/visits/roster",
+    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
   },
   { title: "Clients", icon: Users, basePath: "/app/org/service-users", defaultPath: "/app/org/service-users", key: "org.serviceUsers" },
   {
@@ -68,8 +68,8 @@ const modules: ModuleItem[] = [
     title: "Visits",
     icon: HeartPulse,
     basePath: "/app/visits",
-    defaultPath: "/app/visits/live",
-    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
+    defaultPath: "/app/visits/roster",
+    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
   },
   {
     title: "Insights",

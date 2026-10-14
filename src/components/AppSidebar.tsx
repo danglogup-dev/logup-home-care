@@ -31,7 +31,37 @@ type ModuleItem = {
   basePath: string;
   defaultPath: string;
   subItems?: SubItem[];
+  /** Permission key for single-link items. */
+  key?: ModuleKey;
 };
+
+/**
+ * Home Care primary navigation. Legacy residential modules (Insights, Events,
+ * Care Planning, Audits, Tasks, Organisation, Team) are hidden here, not deleted;
+ * their routes stay live for deep links.
+ */
+const homeCareModules: ModuleItem[] = [
+  { title: "Home", icon: Sparkles, basePath: "/app/home", defaultPath: "/app/home", key: "insights.overview" },
+  {
+    title: "Schedule & Visits",
+    icon: HeartPulse,
+    basePath: "/app/visits",
+    defaultPath: "/app/visits/live",
+    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
+  },
+  { title: "Clients", icon: Users, basePath: "/app/org/service-users", defaultPath: "/app/org/service-users", key: "org.serviceUsers" },
+  {
+    title: "Policy Hub",
+    icon: BookOpen,
+    basePath: "/app/policies",
+    defaultPath: "/app/policies/library",
+    subItems: [
+      { title: "Library", url: "/app/policies/library", key: "policies.library" },
+      { title: "Approval Queue", url: "/app/policies/approvals", key: "policies.approvals" },
+    ],
+  },
+  { title: "Workforce", icon: ShieldCheck, basePath: "/app/workforce", defaultPath: "/app/workforce/overview", key: "workforce.overview" },
+];
 
 const modules: ModuleItem[] = [
   {
@@ -174,8 +204,13 @@ export function AppSidebar() {
   // Filter modules and sub-items by role. Hide a module entirely if it has
   // sub-items and none of them are accessible. Team is always visible.
   const visibleModules = useMemo<ModuleItem[]>(() => {
-    return modules
+    const source = homeSupport
+      ? [...homeCareModules, ...modules.filter((m) => m.title === "Admin")]
+      : modules;
+    return source
+      .filter((m) => !m.key || (isModuleKeyReleased(m.key) && canAccess(m.key, role.role)))
       .map((m) => {
+        if (m.key === "org.serviceUsers") return { ...m, title: terms.Plural };
         if (!m.subItems) return m;
         const subs = m.subItems
           .filter((s) => isModuleKeyReleased(s.key) && canAccess(s.key, role.role))

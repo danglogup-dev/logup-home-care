@@ -73,7 +73,7 @@ function canViewLinked(kind: LinkedSource["kind"], role: ReturnType<typeof useRo
 
 
 
-export default function Insights() {
+export default function Insights({ asHome = false }: { asHome?: boolean } = {}) {
   const terms = useTerms();
   const r = useRole();
   const navigate = useNavigate();
@@ -311,9 +311,9 @@ export default function Insights() {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             AI-assisted insight
           </div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Insights</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{asHome ? "Home" : "Insights"}</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Possible patterns, hotspots and governance gaps surfaced from your LogUp records.
+            {asHome ? "What is happening across the service, and what needs my attention? " : "Possible patterns, hotspots and governance gaps surfaced from your LogUp records. "}
             A manager reviews, confirms or dismisses each insight — AI does not take action.
           </p>
         </div>

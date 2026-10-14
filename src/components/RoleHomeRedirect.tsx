@@ -5,10 +5,10 @@ import { featureFlags } from "@/lib/featureFlags";
 
 /** App-level landing page per role (used when no module fallback is given). */
 const ROLE_HOME: Record<string, string> = {
-  admin: "/app/incidents/board",
-  manager: "/app/incidents/board",
-  coordinator: "/app/visits/live",
-  viewonly: "/app/insights/overview",
+  admin: "/app/home",
+  manager: "/app/home",
+  coordinator: "/app/home",
+  viewonly: "/app/home",
   frontline: "/app/visits/today",
   family: "/family",
 };
@@ -44,8 +44,7 @@ export function RoleHomeRedirect({
     }
     return <Navigate to={fallback} replace />;
   }
-  const home = !featureFlags.visits && r.role === "frontline" ? "/app/care-plans/plans"
-    : !featureFlags.visits && r.role === "coordinator" ? "/app/incidents/board" : ROLE_HOME[r.role];
+  const home = !featureFlags.visits && r.role === "frontline" ? "/app/care-plans/plans" : ROLE_HOME[r.role];
   return <Navigate to={home ?? "/app/incidents/board"} replace />;
 }
 

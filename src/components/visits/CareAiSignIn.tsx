@@ -1,0 +1,11 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+export function CareAiSignIn({ children }: { children: React.ReactNode }) {
+  const [signedIn, setSignedIn] = useState(false); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  useEffect(() => { supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session)); const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session)); return () => data.subscription.unsubscribe(); }, []);
+  if (signedIn) return <>{children}</>;
+  return <div className="space-y-3 border-t pt-4"><h3 className="text-lg font-semibold">Sign in for voice & notes</h3><Button variant="outline" className="min-h-12 w-full" onClick={async () => { setError(""); const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin }); if (result.error) setError(result.error.message); }}>Continue with Google</Button><form className="space-y-3" onSubmit={async (event) => { event.preventDefault(); setBusy(true); setError(""); try { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } catch (e) { setError(e instanceof Error ? e.message : "Sign-in failed."); } finally { setBusy(false); } }}><label className="block">Email<Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="min-h-12" /></label><label className="block">Password<Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="min-h-12" /></label><Button disabled={busy} className="min-h-12 w-full">{busy ? "Signing in…" : "Sign in"}</Button></form>{error && <p role="alert" className="text-destructive">{error}</p>}</div>;
+}

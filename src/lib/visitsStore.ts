@@ -199,7 +199,7 @@ function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutco
         if (shift === 0 || free.length > staffIds.length) { start = s0; end = e0; staffIds = free; }
         if (free.length >= t.carersRequired) break;
       }
-      if (past && staffIds.length < t.carersRequired) return;
+      if (demoOutcomes && (past || start.getTime() <= now) && staffIds.length < t.carersRequired) return;
       const createdAt = new Date(first.getTime() - 86400000).toISOString();
       const v: Visit = {
         id: t.carePlanVersionId ? `VIS-${dayKey}-${t.id}` : `VIS-${dayKey}-${t.clientId}-${t.callType}`, templateId: t.id,

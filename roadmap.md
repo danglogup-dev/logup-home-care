@@ -19,3 +19,4 @@
 - Visit recording scope: visitsStore + new visit rules/actions/location helper/detail page/tests (care recording), VisitPages + VisitsLayout + App (navigation and SOS), event model/store as required (visit/location link), index.css + Tailwind tokens (SOS red), AGENTS.md and roadmap.md (rules and tracking).
 - Files in scope: `src/App.tsx` (routes), `src/components/RoleHomeRedirect.tsx` (frontline home), `src/lib/roleStore.ts` (visit permissions), new visit layout/pages/helpers/tests (mobile experience), `AGENTS.md` (layout rule), `roadmap.md` (task tracking). Existing desktop pages and visit records stay unchanged.
 - [x] Family role, approved daily summaries, hours report, home support rails, hide Shift coverage
+- [x] Phase 4 roster foundation: Roster page, by visit/carer, manual assign with reasons, overlap override audit, one-off visits, drafts hidden from carers until published.

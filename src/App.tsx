@@ -6,6 +6,7 @@ import SignIn from "./pages/SignIn";
 import AppLayout from "./components/AppLayout";
 import VisitsLayout from "./components/VisitsLayout";
 import { VisitsToday, VisitClients, VisitsMe } from "./pages/visits/VisitPages";
+import VisitDetail from "./pages/visits/VisitDetail";
 import Incidents from "./pages/Incidents";
 import IncidentDraft from "./pages/IncidentDraft";
 import MyReports from "./pages/MyReports";
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="clients" element={<VisitClients />} />
             <Route path="log-event" element={<Guarded moduleKey="incidents.capture" moduleLabel="Log an Event"><Incidents /></Guarded>} />
             <Route path="me" element={<VisitsMe />} />
+            <Route path=":id" element={<VisitDetail />} />
           </Route>
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<RoleHomeRedirect />} />

@@ -30,6 +30,9 @@ import PolicyHistory from "./pages/policies/PolicyHistory";
 import ApprovalQueue from "./pages/policies/ApprovalQueue";
 import ApprovalChainTemplates from "./pages/policies/ApprovalChainTemplates";
 import WorkforceOverview from "./pages/workforce/WorkforceOverview";
+import HomeCareWorkforce from "./pages/workforce/HomeCareWorkforce";
+import { HomeCareClientList, HomeCareClientRecord } from "./pages/org/HomeCareClients";
+import { HomeSupportSwitch } from "@/components/HomeSupportSwitch";
 import StaffQualifications from "./pages/workforce/StaffQualifications";
 import SiteRequirements from "./pages/workforce/SiteRequirements";
 import ShiftCoverage from "./pages/workforce/ShiftCoverage";
@@ -133,7 +136,7 @@ const App = () => (
 
             {/* Workforce Compliance & Coverage module */}
             <Route path="workforce" element={<RoleHomeRedirect fallback="/app/workforce/overview" frontlinePath="/app/workforce/qualifications" />} />
-            <Route path="workforce/overview" element={<Guarded moduleKey="workforce.overview" moduleLabel="Workforce overview"><WorkforceOverview /></Guarded>} />
+            <Route path="workforce/overview" element={<Guarded moduleKey="workforce.overview" moduleLabel="Workforce overview"><HomeSupportSwitch home={<HomeCareWorkforce />} residential={<WorkforceOverview />} /></Guarded>} />
             <Route path="workforce/qualifications" element={<Guarded moduleKey="workforce.qualifications" moduleLabel="Staff qualifications"><StaffQualifications /></Guarded>} />
             <Route path="workforce/requirements" element={<Guarded moduleKey="workforce.requirements" moduleLabel="Site requirements"><SiteRequirements /></Guarded>} />
             <Route path="workforce/coverage" element={<Guarded moduleKey="workforce.coverage" moduleLabel="Shift coverage"><NotForHomeSupport moduleLabel="Shift coverage"><ShiftCoverage /></NotForHomeSupport></Guarded>} />
@@ -182,9 +185,9 @@ const App = () => (
             <Route path="org" element={<Navigate to="/app/org/sites" replace />} />
             <Route path="org/sites" element={<Guarded moduleKey="org.sites" moduleLabel="Sites"><OrgSites /></Guarded>} />
             <Route path="org/sites/:siteId" element={<Guarded moduleKey="org.sites" moduleLabel="Site"><OrgSitePage /></Guarded>} />
-            <Route path="org/service-users" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service users"><OrgServiceUsers /></Guarded>} />
+            <Route path="org/service-users" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service users"><HomeSupportSwitch home={<HomeCareClientList />} residential={<OrgServiceUsers />} /></Guarded>} />
             <Route path="org/service-users/admit" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Admit"><OrgAdmitResident /></Guarded>} />
-            <Route path="org/service-users/:id" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service user"><OrgServiceUserProfile /></Guarded>} />
+            <Route path="org/service-users/:id" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service user"><HomeSupportSwitch home={<HomeCareClientRecord />} residential={<OrgServiceUserProfile />} /></Guarded>} />
             <Route path="team" element={<Guarded moduleKey="team" moduleLabel="Team"><Team /></Guarded>} />
 
             {/* Admin */}

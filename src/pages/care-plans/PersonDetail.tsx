@@ -67,6 +67,8 @@ import { categoryForSectionKey } from "@/lib/carePlansStore";
 import { getStaffName, type StaffId, type ServiceUserId } from "@/lib/demoDataRegistry";
 import { proposeCarePlanChanges, type ChangeSet } from "@/lib/carePlanAssistant";
 import { CONTENT_STATE_LABELS, type Consultation } from "@/lib/carePlansStore";
+import VisitScheduleEditor from "@/components/care-plans/VisitScheduleEditor";
+import { VISIT_SCHEDULE_KEY } from "@/lib/carePlanTemplateModel";
 
 // ---------- helpers ----------
 
@@ -670,7 +672,7 @@ export default function PersonDetail() {
                 {(() => {
                   const currentKeys = new Set(current.sections.map((s) => s.key));
                   const draftAdded = draft ? draft.sections.filter((s) => !currentKeys.has(s.key)) : [];
-                  const orderedCurrent: CarePlanSection[] = current.sectionOrderOverride ? current.sections.slice() : [
+                  const orderedCurrent: CarePlanSection[] = current.sectionOrderOverride || current.templateVersion ? current.sections.slice() : [
                     ...SECTION_ORDER.filter((k) => currentKeys.has(k)).map((k) => current.sections.find((s) => s.key === k)!),
                     ...current.sections.filter((s) => !(SECTION_ORDER as readonly string[]).includes(s.key)),
                   ];
@@ -691,7 +693,7 @@ export default function PersonDetail() {
                       .reduce((n, s) => n + s.sources.length, 0);
                     const secTasks = openTasks.length;
                     const draftSec = draft?.sections.find((s) => s.key === key);
-                    const draftDiffers = !!draft && !added && !!draftSec && draftSec.body !== sec.body;
+                    const draftDiffers = !!draft && !added && !!draftSec && (draftSec.body !== sec.body || JSON.stringify(draftSec.visitTemplates) !== JSON.stringify(sec.visitTemplates));
                     const isEditing = editingSection === key;
 
                     const badgeLabel = added
@@ -805,6 +807,8 @@ export default function PersonDetail() {
                           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{displayBody || <span className="text-muted-foreground italic">Empty — click Edit section to add content to the draft.</span>}</p>
                         )}
 
+                        {key === VISIT_SCHEDULE_KEY && <VisitScheduleEditor clientId={person.id as ServiceUserId} section={draftSec ?? sec} actor={role} editable={canEditPlan && (!draft || draft.status === "draft_in_progress")} />}
+
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span>Last updated {formatDate(current.publishedAt)}</span>
                           <span className="flex items-center gap-1"><LinkIcon className="h-3 w-3" /> {secEvidence} evidence</span>
@@ -826,7 +830,7 @@ export default function PersonDetail() {
 
                         {!isEditing && (
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {canEditPlan && (
+                            {canEditPlan && key !== VISIT_SCHEDULE_KEY && (
                               <Button size="sm" variant="outline" onClick={() => startEdit(key)}>
                                 <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit section
                               </Button>

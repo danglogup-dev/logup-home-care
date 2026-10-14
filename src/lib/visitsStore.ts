@@ -4,6 +4,8 @@
 import { useSyncExternalStore } from "react";
 import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
 import { timedVisitStatus } from "./visitRules";
+import { serviceUsersStore } from "./serviceUsersStore";
+import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
 
 // 0 = Sunday … 6 = Saturday (matches Date.getDay)
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -19,6 +21,8 @@ export interface VisitMedication {
 
 export interface VisitTemplate {
   id: string;
+  carePlanVersionId?: string;
+  supersededAt?: string;
   clientId: ServiceUserId;
   callType: VisitCallType;
   daysOfWeek: Weekday[];
@@ -54,6 +58,7 @@ export interface Visit {
   medicationRecords?: VisitMedicationRecord[];
   log?: VisitLog;
   sosEventIds?: string[];
+  scheduleChange?: { carePlanVersionId: string; byStaffId: StaffId; at: string; reason: string };
 }
 
 export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
@@ -123,11 +128,11 @@ const at = (day: Date, hhmm: string, addMin = 0) => {
   const d = new Date(day); d.setHours(h, m + addMin, 0, 0); return d;
 };
 
-function generateVisits(templates: VisitTemplate[], from = new Date()): Visit[] {
+function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutcomes = true): Visit[] {
   const out: Visit[] = [];
   const today = new Date(from); today.setHours(0, 0, 0, 0);
   const now = from.getTime();
-  const clientSite = new Map(PEOPLE_SUPPORTED.map((p) => [p.id, p] as const));
+  const clientSite = new Map(serviceUsersStore.getState().users.map((p) => [p.id, p] as const));
   let n = 0;
   for (let d = 0; d < DAYS_AHEAD; d++) {
     const day = new Date(today); day.setDate(today.getDate() + d);
@@ -137,17 +142,18 @@ function generateVisits(templates: VisitTemplate[], from = new Date()): Visit[] 
       const client = clientSite.get(t.clientId);
       if (!client) return;
       const pool = FRONTLINE_BY_SITE(client.siteId);
+      if (!pool.length) return;
       const first = pool.includes(client.keyWorkerStaffId) && (d + ti) % 3 !== 0 ? client.keyWorkerStaffId : pool[(d + ti) % pool.length];
       const staffIds = [first];
       for (let k = 1; k < t.carersRequired && pool.length > k; k++) staffIds.push(pool[(pool.indexOf(first) + k) % pool.length]);
       const start = at(day, t.windowStart);
       const end = at(day, t.windowStart, t.durationMinutes);
       const v: Visit = {
-        id: `VIS-${start.toISOString().slice(0, 10)}-${t.clientId}-${t.callType}`, templateId: t.id,
+        id: t.carePlanVersionId ? `VIS-${start.toISOString().slice(0, 10)}-${t.id}` : `VIS-${start.toISOString().slice(0, 10)}-${t.clientId}-${t.callType}`, templateId: t.id,
         clientId: t.clientId, staffIds, scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: "scheduled",
       };
       // Today's calls that have already started get a realistic, deterministic outcome.
-      if (d === 0 && start.getTime() <= now) {
+      if (demoOutcomes && d === 0 && start.getTime() <= now) {
         n++;
         if (n % 17 === 0) v.status = timedVisitStatus(v, t, from);
         else {
@@ -169,6 +175,7 @@ function generateVisits(templates: VisitTemplate[], from = new Date()): Visit[] 
 interface State { templates: VisitTemplate[]; visits: Visit[] }
 const initialTemplates = seedTemplates();
 let state: State = { templates: initialTemplates, visits: generateVisits(initialTemplates) };
+const appliedScheduleVersions = new Set<string>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -187,7 +194,29 @@ const patchVisit = (id: string, patch: Partial<Visit>) => {
 export const visitsStore = {
   subscribe,
   getState,
-  templatesForClient: (clientId: ServiceUserId) => state.templates.filter((t) => t.clientId === clientId),
+  templatesForClient: (clientId: ServiceUserId) => state.templates.filter((t) => t.clientId === clientId && !t.supersededAt),
+  applyPublishedSchedule(clientId: ServiceUserId, carePlanVersionId: string, templates: CarePlanVisitTemplate[], byStaffId: StaffId, now = new Date()) {
+    const error = validateVisitSchedule(templates);
+    if (error) throw new Error(error);
+    if (!serviceUsersStore.getById(clientId)) throw new Error("Client not found.");
+    if (appliedScheduleVersions.has(`${clientId}:${carePlanVersionId}`)) return;
+    const at = now.toISOString();
+    const versioned: VisitTemplate[] = cloneVisitSchedule(templates).map((t) => ({ ...t, id: `VT-${clientId}-${carePlanVersionId}-${t.id}`, clientId, carePlanVersionId }));
+    const visits = state.visits.map((v) => {
+      if (v.clientId !== clientId || v.checkInAt || v.checkOutAt || v.log || v.taskRecords?.length || v.medicationRecords?.length || v.sosEventIds?.length || v.status !== "scheduled" || new Date(v.scheduledStart) < now) return v;
+      return { ...v, status: "cancelled" as const, scheduleChange: { carePlanVersionId, byStaffId, at, reason: "Replaced by published care plan schedule" } };
+    });
+    const active = visits.filter((v) => v.clientId === clientId && v.status !== "cancelled");
+    const generated = generateVisits(versioned, now, false).filter((v) => new Date(v.scheduledStart) >= now && !active.some((old) => {
+      const oldTemplate = state.templates.find((t) => t.id === old.templateId);
+      const nextTemplate = versioned.find((t) => t.id === v.templateId);
+      return old.scheduledStart.slice(0, 10) === v.scheduledStart.slice(0, 10) && oldTemplate?.callType === nextTemplate?.callType;
+    }));
+    const ids = new Set(visits.map((v) => v.id));
+    state = { templates: [...state.templates.map((t) => t.clientId === clientId && !t.supersededAt ? { ...t, supersededAt: at } : t), ...versioned], visits: [...visits, ...generated.filter((v) => !ids.has(v.id))] };
+    appliedScheduleVersions.add(`${clientId}:${carePlanVersionId}`);
+    emit();
+  },
   visitsForClient: (clientId: ServiceUserId) => state.visits.filter((v) => v.clientId === clientId),
   visitsForStaff: (staffId: StaffId) => state.visits.filter((v) => v.staffIds.includes(staffId)),
   getVisit: (id: string) => state.visits.find((v) => v.id === id),

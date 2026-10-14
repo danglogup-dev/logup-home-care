@@ -270,7 +270,7 @@ export type Capability =
 export function can(cap: Capability, role: Role = state.role): boolean {
   if (role === "viewonly" || role === "external") return false;
   if (role === "admin") return true;
-  if (role === "manager") {
+  if (isManagerRole(role)) {
     if (cap === "policy.publish") return false;
     if (cap === "policy.approve") return false;
     if (cap === "policy.editChainTemplates") return false;
@@ -319,6 +319,11 @@ export function personInScope(
   return inScopeSite(p.siteId, s);
 }
 
+/** Live coordination is restricted to manager-level roles and known client areas. */
+export function canCoordinateVisit(clientSiteId: SiteId | undefined, s: RoleState = state): boolean {
+  return Boolean(clientSiteId && canAccess("visits.live", s.role) && inScopeSite(clientSiteId, s));
+}
+
 // ---------- Identity ----------
 
 export function isKeyWorkerFor(personId: PersonSupportedId | string, s: RoleState = state): boolean {
@@ -342,11 +347,11 @@ export function canLogEvent(siteId: SiteId, s: RoleState = state): boolean {
   return inScopeSite(siteId, s);
 }
 export function canReviewEvents(siteId: SiteId, s: RoleState = state): boolean {
-  if (s.role !== "admin" && s.role !== "manager") return false;
+  if (s.role !== "admin" && !isManagerRole(s.role)) return false;
   return inScopeSite(siteId, s);
 }
 export function canExportEvents(siteId: SiteId | undefined, s: RoleState = state): boolean {
-  if (s.role !== "admin" && s.role !== "manager") return false;
+  if (s.role !== "admin" && !isManagerRole(s.role)) return false;
   return inScopeSite(siteId, s);
 }
 
@@ -360,7 +365,7 @@ export interface AuditLike {
 export function canCompleteAudit(audit: AuditLike, s: RoleState = state): boolean {
   if (s.role === "viewonly" || s.role === "external") return false;
   if (s.role === "admin") return true;
-  if (s.role === "manager") return inScopeSite(audit.siteId ?? undefined, s);
+  if (isManagerRole(s.role)) return inScopeSite(audit.siteId ?? undefined, s);
   // frontline
   return Boolean(
     audit.assignedStaffIds?.includes(s.staffId) ||
@@ -368,7 +373,7 @@ export function canCompleteAudit(audit: AuditLike, s: RoleState = state): boolea
   );
 }
 export function canReviewAudit(siteId: SiteId, s: RoleState = state): boolean {
-  if (s.role !== "admin" && s.role !== "manager") return false;
+  if (s.role !== "admin" && !isManagerRole(s.role)) return false;
   return inScopeSite(siteId, s);
 }
 export function canEditAuditTemplates(s: RoleState = state): boolean {
@@ -388,7 +393,7 @@ export function canViewPublishedPolicy(policy: PolicyLike | undefined, s: RoleSt
   return policy.restrictedTo.includes(s.staffId) || s.role === "admin";
 }
 export function canProposePolicyUpdate(s: RoleState = state): boolean {
-  return s.role === "admin" || s.role === "manager";
+  return s.role === "admin" || isManagerRole(s.role);
 }
 export function canApprovePolicy(s: RoleState = state): boolean { return s.role === "admin"; }
 export function canPublishPolicy(s: RoleState = state): boolean { return s.role === "admin"; }
@@ -398,7 +403,7 @@ export function canPublishPolicy(s: RoleState = state): boolean { return s.role 
 export function canViewWorkforceForSite(siteId: SiteId, s: RoleState = state): boolean {
   if (s.role === "external") return false;
   if (s.role === "admin") return true;
-  if (s.role === "manager" || s.role === "viewonly") return inScopeSite(siteId, s);
+  if (isManagerRole(s.role) || s.role === "viewonly") return inScopeSite(siteId, s);
   return false;
 }
 export function canViewOwnQualifications(staffId: StaffId, s: RoleState = state): boolean {
@@ -407,11 +412,11 @@ export function canViewOwnQualifications(staffId: StaffId, s: RoleState = state)
   if (s.role === "admin") return true;
   const target = STAFF_BY_ID[staffId];
   if (!target) return false;
-  if (s.role === "manager") return target.scopeSiteIds.some((sid) => inScopeSite(sid, s));
+  if (isManagerRole(s.role)) return target.scopeSiteIds.some((sid) => inScopeSite(sid, s));
   return false;
 }
 export function canEditWorkforce(siteId: SiteId, s: RoleState = state): boolean {
-  if (s.role !== "admin" && s.role !== "manager") return false;
+  if (s.role !== "admin" && !isManagerRole(s.role)) return false;
   return inScopeSite(siteId, s);
 }
 
@@ -433,7 +438,7 @@ export interface TaskLike {
 export function canViewTask(task: TaskLike, s: RoleState = state): boolean {
   if (s.role === "external") return false;
   if (s.role === "admin") return true;
-  if (s.role === "manager" || s.role === "viewonly") return inScopeSite(task.siteId ?? undefined, s);
+  if (isManagerRole(s.role) || s.role === "viewonly") return inScopeSite(task.siteId ?? undefined, s);
   // frontline / key worker
   if (task.assignedStaffIds?.includes(s.staffId)) return true;
   if (task.personSupportedId && isKeyWorkerFor(task.personSupportedId, s)) return true;
@@ -444,7 +449,7 @@ export function canCompleteTask(task: TaskLike, s: RoleState = state): boolean {
   return canViewTask(task, s);
 }
 export function canAssignTask(siteId: SiteId, s: RoleState = state): boolean {
-  if (s.role !== "admin" && s.role !== "manager") return false;
+  if (s.role !== "admin" && !isManagerRole(s.role)) return false;
   return inScopeSite(siteId, s);
 }
 

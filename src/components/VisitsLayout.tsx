@@ -1,6 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation, useParams } from "react-router-dom";
 import { useEffect } from "react";
-import { CalendarDays, Users, SquarePen, UserRound } from "lucide-react";
+import { CalendarDays, Users, BookOpen, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Guarded } from "@/components/Guarded";
 import { useRole } from "@/hooks/useRole";
@@ -27,7 +27,7 @@ export default function VisitsLayout() {
   const tabs = [
     { path: "today", label: "Today", icon: CalendarDays },
     { path: "clients", label: terms.Plural, icon: Users },
-    { path: "log-event", label: "Log event", icon: SquarePen },
+    { path: "policy-help", label: "Policy Help", icon: BookOpen },
     { path: "me", label: "Me", icon: UserRound },
   ];
   return (

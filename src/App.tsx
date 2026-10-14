@@ -93,6 +93,7 @@ const App = () => (
             <Route path="today" element={<VisitsToday />} />
             <Route path="clients" element={<VisitClients />} />
             <Route path="log-event" element={<Guarded moduleKey="incidents.capture" moduleLabel="Log an Event"><Incidents /></Guarded>} />
+            <Route path="policy-help" element={<Guarded moduleKey="policies.library" moduleLabel="Policy Help"><div className="px-2 py-4"><PolicyLibrary /></div></Guarded>} />
             <Route path="me" element={<VisitsMe />} />
             <Route path=":id" element={<VisitDetail />} />
           </Route>

@@ -1,0 +1,192 @@
+// Home visits store — visit templates (the care schedule) and generated visits.
+// In-memory store, demo-only. Subscribe pattern matches tasksStore.
+// Clients and staff are referenced by ID only; names come from serviceUsersStore / STAFF.
+import { useSyncExternalStore } from "react";
+import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
+
+// 0 = Sunday … 6 = Saturday (matches Date.getDay)
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type VisitCallType = "morning" | "lunch" | "tea" | "bed";
+export type MedicationSupportLevel = "prompt" | "assist" | "administer";
+export type VisitStatus = "scheduled" | "in_progress" | "completed" | "late" | "missed" | "cancelled";
+
+export interface VisitMedication {
+  name: string;
+  dose?: string;
+  supportLevel: MedicationSupportLevel;
+}
+
+export interface VisitTemplate {
+  id: string;
+  clientId: ServiceUserId;
+  callType: VisitCallType;
+  daysOfWeek: Weekday[];
+  /** Earliest and latest start, "HH:MM". */
+  windowStart: string;
+  windowEnd: string;
+  durationMinutes: number;
+  carersRequired: number;
+  tasks: string[];
+  medications: VisitMedication[];
+}
+
+export interface CheckLocation { lat: number; lng: number; accuracyM?: number }
+
+export interface Visit {
+  id: string;
+  templateId?: string;
+  clientId: ServiceUserId;
+  staffIds: StaffId[];
+  scheduledStart: string; // ISO
+  scheduledEnd: string;   // ISO
+  checkInAt?: string;
+  checkOutAt?: string;
+  checkInLocation?: CheckLocation;
+  status: VisitStatus;
+}
+
+export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
+  scheduled: "Scheduled", in_progress: "In progress", completed: "Completed",
+  late: "Late", missed: "Missed", cancelled: "Cancelled",
+};
+export const MEDICATION_SUPPORT_LABELS: Record<MedicationSupportLevel, string> = {
+  prompt: "Prompt", assist: "Assist", administer: "Administer",
+};
+
+// ---------- Seed ----------
+
+const ALL_DAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
+const WEEKDAYS: Weekday[] = [1, 2, 3, 4, 5];
+const DAYS_AHEAD = 14;
+
+const CALLS: Record<VisitCallType, { start: string; end: string; minutes: number; tasks: string[] }> = {
+  morning: { start: "07:30", end: "09:00", minutes: 45, tasks: ["Personal care and wash", "Help to dress", "Prepare breakfast", "Empty commode / check continence"] },
+  lunch:   { start: "12:00", end: "13:30", minutes: 30, tasks: ["Prepare lunch", "Encourage fluids", "Tidy kitchen"] },
+  tea:     { start: "16:30", end: "18:00", minutes: 30, tasks: ["Prepare tea", "Encourage fluids", "Check home is warm and secure"] },
+  bed:     { start: "20:00", end: "21:30", minutes: 30, tasks: ["Help to undress", "Personal care", "Settle in bed", "Lock up and use key safe"] },
+};
+
+/** Calls a client gets, from their HSE approved hours (or risk when hours are unknown). */
+function callsFor(hours: number | undefined, risk: string): VisitCallType[] {
+  const h = hours ?? (risk === "High" ? 18 : risk === "Medium" ? 10 : 5);
+  if (h >= 16) return ["morning", "lunch", "tea", "bed"];
+  if (h >= 10) return ["morning", "tea", "bed"];
+  if (h >= 7) return ["morning", "tea"];
+  return ["morning"];
+}
+
+const MEDS: VisitMedication[][] = [
+  [{ name: "Paracetamol", dose: "1 g", supportLevel: "prompt" }],
+  [{ name: "Amlodipine", dose: "5 mg", supportLevel: "assist" }, { name: "Atorvastatin", dose: "20 mg", supportLevel: "prompt" }],
+  [{ name: "Levothyroxine", dose: "50 mcg", supportLevel: "administer" }],
+  [{ name: "Metformin", dose: "500 mg", supportLevel: "assist" }],
+];
+
+function seedTemplates(): VisitTemplate[] {
+  const out: VisitTemplate[] = [];
+  PEOPLE_SUPPORTED.forEach((p, i) => {
+    if (p.status === "discharged" || p.status === "deceased") return;
+    const calls = callsFor(p.hseApprovedHoursPerWeek, p.risk);
+    const lowNeed = calls.length === 1;
+    calls.forEach((c) => {
+      const def = CALLS[c];
+      const meds = c === "morning" ? MEDS[i % MEDS.length] : c === "bed" && p.risk !== "Low" ? [{ name: "Zopiclone", dose: "3.75 mg", supportLevel: "administer" as const }] : [];
+      const tasks = [...def.tasks, ...(p.primaryFocus.includes("Falls") ? ["Check walking frame within reach"] : []), ...(p.primaryFocus.includes("Skin") ? ["Check pressure areas"] : [])];
+      out.push({
+        id: `VT-${p.id}-${c}`, clientId: p.id, callType: c,
+        daysOfWeek: lowNeed ? WEEKDAYS : ALL_DAYS,
+        windowStart: def.start, windowEnd: def.end, durationMinutes: def.minutes,
+        carersRequired: p.risk === "High" && (c === "morning" || c === "bed") ? 2 : 1,
+        tasks, medications: meds,
+      });
+    });
+  });
+  return out;
+}
+
+const FRONTLINE_BY_SITE = (siteId: SiteId): StaffId[] =>
+  STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(siteId)).map((s) => s.id);
+
+const at = (day: Date, hhmm: string, addMin = 0) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(day); d.setHours(h, m + addMin, 0, 0); return d;
+};
+
+function generateVisits(templates: VisitTemplate[], from = new Date()): Visit[] {
+  const out: Visit[] = [];
+  const today = new Date(from); today.setHours(0, 0, 0, 0);
+  const now = from.getTime();
+  const clientSite = new Map(PEOPLE_SUPPORTED.map((p) => [p.id, p] as const));
+  let n = 0;
+  for (let d = 0; d < DAYS_AHEAD; d++) {
+    const day = new Date(today); day.setDate(today.getDate() + d);
+    const dow = day.getDay() as Weekday;
+    templates.forEach((t, ti) => {
+      if (!t.daysOfWeek.includes(dow)) return;
+      const client = clientSite.get(t.clientId);
+      if (!client) return;
+      const pool = FRONTLINE_BY_SITE(client.siteId);
+      const first = pool.includes(client.keyWorkerStaffId) && (d + ti) % 3 !== 0 ? client.keyWorkerStaffId : pool[(d + ti) % pool.length];
+      const staffIds = [first];
+      for (let k = 1; k < t.carersRequired && pool.length > k; k++) staffIds.push(pool[(pool.indexOf(first) + k) % pool.length]);
+      const start = at(day, t.windowStart);
+      const end = at(day, t.windowStart, t.durationMinutes);
+      const v: Visit = {
+        id: `VIS-${start.toISOString().slice(0, 10)}-${t.clientId}-${t.callType}`, templateId: t.id,
+        clientId: t.clientId, staffIds, scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: "scheduled",
+      };
+      // Today's calls that have already started get a realistic, deterministic outcome.
+      if (d === 0 && start.getTime() <= now) {
+        n++;
+        const late = at(day, t.windowEnd).getTime();
+        if (n % 17 === 0) v.status = now > late ? "missed" : "late";
+        else {
+          const inAt = new Date(start.getTime() + ((n % 4) * 5) * 60000);
+          v.checkInAt = inAt.toISOString();
+          v.checkInLocation = { lat: 51.9 + (n % 10) / 100, lng: -8.0 + (n % 10) / 100, accuracyM: 15 };
+          if (end.getTime() <= now) { v.checkOutAt = new Date(inAt.getTime() + t.durationMinutes * 60000).toISOString(); v.status = "completed"; }
+          else v.status = "in_progress";
+        }
+      }
+      out.push(v);
+    });
+  }
+  return out;
+}
+
+// ---------- State + subscribe ----------
+
+interface State { templates: VisitTemplate[]; visits: Visit[] }
+const initialTemplates = seedTemplates();
+let state: State = { templates: initialTemplates, visits: generateVisits(initialTemplates) };
+const listeners = new Set<() => void>();
+const emit = () => listeners.forEach((l) => l());
+
+export const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => { listeners.delete(l); };
+};
+export const getState = (): State => state;
+
+const nowIso = () => new Date().toISOString();
+const patchVisit = (id: string, patch: Partial<Visit>) => {
+  state = { ...state, visits: state.visits.map((v) => (v.id === id ? { ...v, ...patch } : v)) };
+  emit();
+};
+
+export const visitsStore = {
+  subscribe,
+  getState,
+  templatesForClient: (clientId: ServiceUserId) => state.templates.filter((t) => t.clientId === clientId),
+  visitsForClient: (clientId: ServiceUserId) => state.visits.filter((v) => v.clientId === clientId),
+  visitsForStaff: (staffId: StaffId) => state.visits.filter((v) => v.staffIds.includes(staffId)),
+  getVisit: (id: string) => state.visits.find((v) => v.id === id),
+  checkIn(id: string, location?: CheckLocation) { patchVisit(id, { checkInAt: nowIso(), checkInLocation: location, status: "in_progress" }); },
+  checkOut(id: string) { patchVisit(id, { checkOutAt: nowIso(), status: "completed" }); },
+  setStatus(id: string, status: VisitStatus) { patchVisit(id, { status }); },
+  reassign(id: string, staffIds: StaffId[]) { patchVisit(id, { staffIds }); },
+};
+
+export function useVisits(): State {
+  return useSyncExternalStore(subscribe, getState, getState);
+}

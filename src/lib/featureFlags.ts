@@ -7,6 +7,7 @@ export const featureFlags = {
   tasks: true,
   policies: true,
   workforce: true,
+  visits: true,
 } as const;
 
 export type FeatureFlag = keyof typeof featureFlags;
@@ -16,6 +17,7 @@ const PREFIX_TO_FLAG: Record<string, FeatureFlag> = {
   tasks: "tasks",
   policies: "policies",
   workforce: "workforce",
+  visits: "visits",
 };
 
 /** Flag governing a module key such as "audits.my", or undefined if ungated. */

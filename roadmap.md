@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Visit notes: 90-second recording / typed source, real transcription and structured AI draft, explicit human confirmation, saved provenance, risk-to-Events prefill, reuse transcription in Events; test phone-width flows.
+- Visit notes scope: new visitNotesStore, note rules/AI client, shared audio/sign-in controls, visit note editor, edge functions and append-only Cloud tables/tests; VisitDetail.tsx (checkout), Incidents.tsx (real voice + linked prefill), AGENTS.md and roadmap.md only, plus Cloud-generated integrations/dependencies.
+
 - [x] Prompt 1: feature flags, role homes, frontline submit redirect, guard unguarded routes
 - [x] Prompt 2: shared sites + service users record (registry fields, serviceUsersStore, Events wiring, key worker by staff id, reporter identity)
 - [x] Prompt 3: Organisation area (Sites, Service users, profile, timeline, lifecycle actions)

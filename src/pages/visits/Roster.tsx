@@ -71,7 +71,7 @@ export default function Roster() {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border bg-card p-4">
         <span><strong className="text-xl tabular-nums">{active.length}</strong> visits</span>
         <span className={unassigned ? "text-destructive" : ""}><strong className="text-xl tabular-nums">{unassigned}</strong> unassigned</span>
-        <span className={partial ? "text-warning-foreground" : ""}><strong className="text-xl tabular-nums">{partial}</strong> partially assigned</span>
+        <span className={partial ? "text-warning" : ""}><strong className="text-xl tabular-nums">{partial}</strong> partially assigned</span>
         {conflicted.size > 0 && <span className="text-destructive"><strong className="text-xl tabular-nums">{conflicted.size}</strong> with schedule conflicts</span>}
         {drafts.length > 0 && <span><strong className="text-xl tabular-nums">{drafts.length}</strong> draft</span>}
         <div className="ml-auto flex flex-wrap items-center gap-4">
@@ -126,7 +126,7 @@ function RosterRow({ visit, client, name, conflict, onOpen }: { visit: Visit; cl
       </div>
       <button onClick={onOpen} className="rounded-md border px-3 py-2 text-left text-sm hover:bg-accent">
         {status === "unassigned" && !cancelled ? <span className="font-bold text-destructive">UNASSIGNED</span> : visit.staffIds.map((s) => <span key={s} className="block font-medium">{staffName(s)}</span>)}
-        {status === "partial" && !cancelled && <span className="block font-semibold text-warning-foreground">{ASSIGNMENT_LABELS.partial}</span>}
+        {status === "partial" && !cancelled && <span className="block font-semibold text-warning">{ASSIGNMENT_LABELS.partial}</span>}
       </button>
     </li>
   );

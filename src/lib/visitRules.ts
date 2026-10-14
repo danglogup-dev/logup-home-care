@@ -3,7 +3,7 @@ import type { Visit, VisitTemplate, VisitStatus } from "./visitsStore";
 export function timedVisitStatus(visit: Visit, template?: VisitTemplate, now = new Date()): VisitStatus {
   if (visit.checkInAt || visit.status === "completed" || visit.status === "cancelled") return visit.status;
   const start = new Date(visit.scheduledStart);
-  if (template) {
+  if (template && !visit.rosterHistory?.some((c) => c.kind === "changed")) {
     const [hours, minutes] = template.windowStart.split(":").map(Number);
     start.setHours(hours, minutes, 0, 0);
   }

@@ -32,7 +32,7 @@ import ApprovalChainTemplates from "./pages/policies/ApprovalChainTemplates";
 import WorkforceOverview from "./pages/workforce/WorkforceOverview";
 import HomeCareWorkforce from "./pages/workforce/HomeCareWorkforce";
 import { HomeCareClientList, HomeCareClientRecord } from "./pages/org/HomeCareClients";
-import { HomeSupportSwitch } from "./components/HomeSupportSwitch";
+import { HomeSupportSwitch } from "@/components/HomeSupportSwitch";
 import StaffQualifications from "./pages/workforce/StaffQualifications";
 import SiteRequirements from "./pages/workforce/SiteRequirements";
 import ShiftCoverage from "./pages/workforce/ShiftCoverage";

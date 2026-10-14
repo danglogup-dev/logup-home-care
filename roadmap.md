@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Coordinator: manager-equivalent demo permissions scoped by service-area IDs; live home, status-prioritised today's visits, contact actions, combined SOS/timing/new visit Event alerts, eight home-support event types and inference; tests and desktop/phone verification.
+
 - [x] Visit brief implementation: accessible published care plan + access notes + latest three confirmed notes + visible open Events; source-change refresh, 3–5 factual lines and streamed read aloud. Fifteen client tests pass; real model summary and speech calls succeed; signed-out phone/desktop display verified.
 - [ ] Visit brief authenticated end-to-end verification: blocked by no Cloud auth users; first sign-in required. Existing prototype Events and care plans remain client-side; notes remain account-owned, so cross-carer note access is not enabled.
 

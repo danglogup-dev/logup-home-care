@@ -24,7 +24,7 @@ import { canViewFullRecord } from "@/lib/eventVisibility";
 import { NOTE_SECTIONS } from "@/lib/visitNoteRules";
 import { buildTimeline } from "@/lib/serviceUserTimeline";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
-import { getStaffName } from "@/lib/demoDataRegistry";
+import { getStaffName, type StaffId } from "@/lib/demoDataRegistry";
 import { NoAccessPanel } from "@/components/RoleContextBanner";
 import {
   completedVisits, daysLabel, glanceFromPlan, minutesBetween, plannedWeeklyHours, upcomingVisits,
@@ -34,7 +34,7 @@ import { carePlanStatusText } from "./ServiceUsers";
 const FUNDING = { hse: "HSE", private: "Private", mixed: "Mixed (HSE and private)" } as const;
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
 const dayTime = (iso: string) => new Date(iso).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-const staffNames = (ids: string[]) => ids.length ? ids.map((id) => getStaffName(id)).join(", ") : "Not assigned";
+const staffNames = (ids: string[]) => ids.length ? ids.map((id) => getStaffName(id as StaffId)).join(", ") : "Not assigned";
 
 function publishedVersion(clientId: string) {
   return carePlansStore.getPlan(clientId)?.versions.find((v) => v.status === "published");
@@ -105,7 +105,7 @@ export function HomeCareClientList() {
                   <div className="font-semibold">{clientDisplayName(u)}</div>
                   {u.preferredName && <div className="text-xs text-muted-foreground">{u.name}</div>}
                 </div>
-                <Badge variant={u.risk === "high" ? "destructive" : "outline"}>{u.risk} risk</Badge>
+                <Badge variant={u.risk === "High" ? "destructive" : "outline"}>{u.risk.toLowerCase()} risk</Badge>
               </div>
               <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{clientTown(u) ?? "Town not recorded"} · {siteLabel(u.siteId)}</div>
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
@@ -156,7 +156,7 @@ export function HomeCareClientRecord() {
           <h1 className="text-lg font-semibold leading-tight">{u.preferredName ? `${u.preferredName} (${u.name})` : u.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{clientTown(u) ?? "—"} · {siteLabel(u.siteId)}</span>
-            <Badge variant={u.risk === "high" ? "destructive" : "outline"}>{u.risk} risk</Badge>
+            <Badge variant={u.risk === "High" ? "destructive" : "outline"}>{u.risk.toLowerCase()} risk</Badge>
             <span>Key worker: {getStaffName(u.keyWorkerStaffId)}</span>
           </div>
         </div>
@@ -324,7 +324,7 @@ function HistoryTab({ u, visits, events }: { u: ServiceUser; visits: Visit[]; ev
               {note ? (
                 <div className="rounded-md bg-secondary/50 p-3 text-sm space-y-1">
                   {NOTE_SECTIONS.map(({ key, label }) => note.final_text[key] ? <div key={key}><span className="font-medium">{label}:</span> {note.final_text[key]}</div> : null)}
-                  <div className="text-xs text-muted-foreground">Confirmed by {getStaffName(note.confirmed_by_staff_id)} · {dayTime(note.confirmed_at)}</div>
+                  <div className="text-xs text-muted-foreground">Confirmed by {getStaffName(note.confirmed_by_staff_id as StaffId)} · {dayTime(note.confirmed_at)}</div>
                 </div>
               ) : v.status === "completed" && <div className="text-xs text-muted-foreground">No confirmed visit note.</div>}
               {linked.map((e) => <Link key={e.id} to={`/app/incidents/board?eventId=${e.id}`} className="inline-flex items-center gap-1 text-sm text-destructive underline"><AlertTriangle className="h-3.5 w-3.5" />{e.eventType ?? e.category} · {e.id}</Link>)}

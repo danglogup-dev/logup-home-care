@@ -188,15 +188,18 @@ function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutco
       if (!client) return;
       const pool = FRONTLINE_BY_SITE(client.siteId);
       if (!pool.length) return;
-      const start = at(day, t.windowStart);
-      const end = at(day, t.windowStart, t.durationMinutes);
       const rotated = [...pool.slice((d + ti) % pool.length), ...pool.slice(0, (d + ti) % pool.length)];
       const preferred = pool.includes(client.keyWorkerStaffId) && (d + ti) % 3 !== 0 ? [client.keyWorkerStaffId, ...rotated.filter((x) => x !== client.keyWorkerStaffId)] : rotated;
-      const staffIds: StaffId[] = [];
-      for (const id of preferred) {
-        if (staffIds.length >= t.carersRequired) break;
-        if (past || !busy(id, start.getTime(), end.getTime())) staffIds.push(id);
+      // Try the preferred start, then up to 60 minutes later, for free carers (demo seeding only).
+      let start = at(day, t.windowStart), end = at(day, t.windowStart, t.durationMinutes);
+      let staffIds: StaffId[] = [];
+      for (let shift = 0; shift <= (demoOutcomes ? 60 : 0); shift += 15) {
+        const s0 = at(day, t.windowStart, shift), e0 = at(day, t.windowStart, shift + t.durationMinutes);
+        const free = preferred.filter((id) => !busy(id, s0.getTime(), e0.getTime())).slice(0, t.carersRequired);
+        if (shift === 0 || free.length > staffIds.length) { start = s0; end = e0; staffIds = free; }
+        if (free.length >= t.carersRequired) break;
       }
+      if (past && staffIds.length < t.carersRequired) return;
       const createdAt = new Date(first.getTime() - 86400000).toISOString();
       const v: Visit = {
         id: t.carePlanVersionId ? `VIS-${dayKey}-${t.id}` : `VIS-${dayKey}-${t.clientId}-${t.callType}`, templateId: t.id,

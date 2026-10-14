@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Navigation, MapPin, Clock3, ChevronRight, LogOut } from "lucide-react";
+import { Navigation, MapPin, Clock3, ChevronRight, LogOut, AlertTriangle } from "lucide-react";
+import { visitBriefSources } from "@/lib/visitBriefSources";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";
@@ -10,6 +11,7 @@ import { canAccess } from "@/lib/roleStore";
 import { isModuleKeyReleased } from "@/lib/featureFlags";
 import { clientDisplayName, clientTown, directionsUrl, myVisits, visitsOnDate } from "@/lib/visitPresentation";
 
+const CALL_LABELS = { morning: "Morning support", lunch: "Lunch call", tea: "Tea call", bed: "Bed call" } as const;
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 const STATUS_TONES: Record<VisitStatus, string> = {
   scheduled: "border-border bg-secondary text-foreground",
@@ -41,6 +43,12 @@ export function VisitsToday() {
     return () => window.clearInterval(timer);
   }, []);
   const today = visitsOnDate(myVisits(visits, users, role), now);
+  const alertFor = (visitId: string) => {
+    try {
+      const open = visitBriefSources(visitId, role).events.sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+      return open ? `Open concern: ${open.summary}` : undefined;
+    } catch { return undefined; }
+  };
   const completed = today.filter((v) => v.status === "completed").length;
   return (
     <section className="space-y-5 px-4 py-6" aria-labelledby="today-heading">
@@ -67,7 +75,8 @@ export function VisitsToday() {
               <h2 className="mt-3 break-words text-2xl font-heading font-bold">{clientDisplayName(client)}</h2>
               {client.preferredName && client.preferredName !== client.name && <p className="mt-1 text-base">{client.name}</p>}
               <p className="mt-2 flex items-start gap-2 text-base"><MapPin className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{town || client.homeAddress || "Town not recorded"}</p>
-              <p className="mt-2 text-base">{time(visit.scheduledStart)} scheduled · {template?.durationMinutes ?? Math.round((Date.parse(visit.scheduledEnd) - Date.parse(visit.scheduledStart)) / 60000)} min</p>
+              <p className="mt-2 text-base">{template ? `${CALL_LABELS[template.callType]} · ` : ""}{template?.durationMinutes ?? Math.round((Date.parse(visit.scheduledEnd) - Date.parse(visit.scheduledStart)) / 60000)} mins</p>
+              {alertFor(visit.id) && <p className="mt-3 flex items-start gap-2 rounded-md border border-warning bg-warning/10 p-2 text-base font-medium"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><span className="break-words">{alertFor(visit.id)}</span></p>}
               </Link>
               <div className="mt-4"><Directions client={client} /></div>
             </li>
@@ -98,7 +107,7 @@ export function VisitClients() {
             {client.accessNotes && <p className="mt-3 text-base leading-relaxed">{client.accessNotes}</p>}
             <div className="mt-4 space-y-2">
               <Directions client={client} />
-              <Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Care plan <ChevronRight aria-hidden="true" /></Link></Button>
+              <Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Approved care plan <ChevronRight aria-hidden="true" /></Link></Button>
             </div>
           </li>
         ))}
@@ -110,19 +119,16 @@ export function VisitClients() {
 export function VisitsMe() {
   const role = useRole();
   const links = [
-    { key: "tasks.today", label: "My tasks", path: "/app/tasks/today" },
-    { key: "audits.my", label: "My audits", path: "/app/audits/my" },
-    { key: "policies.library", label: "Policies", path: "/app/policies/library" },
     { key: "workforce.qualifications", label: "My qualifications", path: "/app/workforce/qualifications" },
-    { key: "incidents.capture", label: "My reports", path: "/app/incidents/mine" },
-    { key: "team", label: "Team & service areas", path: "/app/team" },
+    { key: "policies.library", label: "Policy Help", path: "/app/visits/policy-help" },
   ] as const;
   return (
     <section className="px-4 py-6" aria-labelledby="me-heading">
       <h1 id="me-heading" className="text-3xl font-heading font-bold">Me</h1>
       <h2 className="mt-5 break-words text-2xl font-semibold">{role.displayName}</h2>
       <p className="mt-2 text-lg">{role.title}</p>
-      <p className="mt-1 text-base">{role.scope.join(" · ")}</p>
+      <h3 className="mt-5 text-lg font-bold">My service areas</h3>
+      <p className="mt-1 text-base">{role.scope.join(" · ") || "None assigned"}</p>
       <div className="mt-6 space-y-2 border-t pt-4">
         {links.filter((l) => canAccess(l.key, role.role) && isModuleKeyReleased(l.key)).map((link) => (
           <Button asChild key={link.key} variant="outline" className="min-h-14 w-full justify-between whitespace-normal text-left text-base">

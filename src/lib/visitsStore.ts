@@ -36,7 +36,7 @@ export interface VisitTemplate {
 }
 
 export interface CheckLocation { lat: number; lng: number; accuracyM?: number }
-export type TaskOutcome = "done" | "refused" | "not_needed";
+export type TaskOutcome = "done" | "part_completed" | "refused" | "not_needed" | "concern";
 export type MedicationOutcome = "given" | "prompted" | "refused" | "not_available";
 export interface VisitTaskRecord { index: number; task: string; outcome: TaskOutcome; recordedByStaffId: StaffId; recordedAt: string }
 export interface VisitMedicationRecord { index: number; medication: VisitMedication; outcome: MedicationOutcome; reason: string; recordedByStaffId: StaffId; recordedAt: string }

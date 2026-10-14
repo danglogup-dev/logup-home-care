@@ -19,6 +19,10 @@ import {
   PROTECTED_SECTIONS as PROTECTED, STANDARD_SECTION_KEYS as STANDARD_KEYS, type CarePlanTemplate, type TemplateVersion, type TemplateSection, type SectionCategory as SecCat,
 } from "./carePlanTemplateModel";
 import type { CentreType } from "./demoDataRegistry";
+import { upgradeHomeSupportTemplate, VISIT_SCHEDULE_KEY } from "./carePlanTemplateModel";
+import { visitsStore } from "./visitsStore";
+import { cloneVisitSchedule, validateVisitSchedule, visitScheduleText, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
+import type { RoleState } from "./roleStore";
 
 // Local alias so the many call sites below stay compact. carePlanId defaults
 // to versionId (the two are conceptually the same in this frontend model).
@@ -120,6 +124,9 @@ export interface CarePlanSection {
   contentState?: ContentState;
   /** Kept on every later version: this text started as an AI draft. */
   aiOrigin?: AiOrigin;
+  visitTemplates?: CarePlanVisitTemplate[];
+  scheduleConfirmedByStaffId?: StaffId;
+  scheduleConfirmedAt?: string;
 }
 
 export type ContentState = "source" | "ai_draft" | "human_confirmed" | "approved";
@@ -698,6 +705,7 @@ function loadInitial(): State {
       if (!Array.isArray(parsed.templates) || !parsed.templates.every((t) => Array.isArray((t as CarePlanTemplate).versions))) {
         parsed.templates = seedTemplates();
       }
+      parsed.templates = upgradeHomeSupportTemplate(parsed.templates);
       return parsed;
     }
   } catch { /* ignore */ }
@@ -751,6 +759,18 @@ function stampTemplateVersions(s: State): State {
 }
 
 let state: State = stampTemplateVersions(syncPeopleFromServiceUsers(loadInitial()));
+const appliedVisitSchedules = new Set<string>();
+function syncPublishedVisitSchedules() {
+  for (const plan of state.plans) {
+    const version = plan.versions.find((v) => v.id === plan.currentVersionId);
+    const section = version?.sections.find((s) => s.key === VISIT_SCHEDULE_KEY);
+    const client = serviceUsersStore.getById(plan.personId);
+    if (!version || version.status !== "published" || !client || !section?.visitTemplates || !section.scheduleConfirmedByStaffId || appliedVisitSchedules.has(version.id)) continue;
+    visitsStore.applyPublishedSchedule(client.id, version.id, section.visitTemplates, section.scheduleConfirmedByStaffId);
+    appliedVisitSchedules.add(version.id);
+  }
+}
+syncPublishedVisitSchedules();
 const listeners = new Set<() => void>();
 serviceUsersStore.subscribe(() => {
   state = syncPeopleFromServiceUsers(state);
@@ -763,6 +783,7 @@ function persist() {
 
 function emit() {
   state = stampTemplateVersions(state);
+  syncPublishedVisitSchedules();
   persist();
   listeners.forEach((l) => l());
 }
@@ -775,6 +796,22 @@ function subscribe(fn: () => void): () => void {
 export const carePlansStore = {
   getState: (): State => state,
   subscribe,
+
+  saveDraftVisitSchedule(personId: string, templates: CarePlanVisitTemplate[], actor: RoleState, reason: string) {
+    const person = this.getPerson(personId);
+    const client = serviceUsersStore.getById(personId);
+    if (!person || !client || (actor.role !== "admin" && !actor.scopeSiteIds.includes(client.siteId)) || !canEditCarePlanFor(person, actor)) throw new Error("You cannot edit this plan.");
+    const error = validateVisitSchedule(templates);
+    if (error) throw new Error(error);
+    if (!reason.trim()) throw new Error("Give a reason for the schedule change.");
+    const draft = this.ensureDraft(personId, actor.displayName, actor.role, "manual", reason.trim());
+    if (!draft || draft.status !== "draft_in_progress" || !draft.sections.some((s) => s.key === VISIT_SCHEDULE_KEY)) throw new Error("Use the latest home support template in an editable draft first.");
+    const body = visitScheduleText(templates) || "No visits scheduled.";
+    this.updateDraftSection(personId, draft.id, VISIT_SCHEDULE_KEY, body, { actor: actor.displayName, actorRole: actor.role, reason: reason.trim() });
+    state = { ...state, plans: state.plans.map((p) => p.personId !== personId ? p : { ...p, versions: p.versions.map((v) => v.id !== draft.id ? v : { ...v, sections: v.sections.map((s) => s.key !== VISIT_SCHEDULE_KEY ? s : { ...s, visitTemplates: cloneVisitSchedule(templates), scheduleConfirmedByStaffId: actor.staffId, scheduleConfirmedAt: new Date().toISOString(), contentState: "human_confirmed" as const }) }) }) };
+    emit();
+    audit({ personId, versionId: draft.id, actor: actor.displayName, actorRole: actor.role, action: "section_edited", metadata: { sectionKey: VISIT_SCHEDULE_KEY, reason: reason.trim(), confirmedByStaffId: actor.staffId, visitTemplates: cloneVisitSchedule(templates) } });
+  },
 
   reset() { state = seed(); emit(); },
 
@@ -1449,8 +1486,8 @@ export const carePlansStore = {
     const now = new Date().toISOString();
     const byKey = new Map(draft.sections.map((x) => [x.key, x]));
     const tplKeys = new Set(latest.sections.map((x) => x.sectionKey));
-    const ordered: CarePlanSection[] = latest.sections.map((ts) => byKey.get(ts.sectionKey) ?? {
-      key: ts.sectionKey, body: "", label: ts.sectionKey.startsWith("custom_") ? ts.displayName : undefined,
+    const ordered: CarePlanSection[] = latest.sections.map((ts) => byKey.has(ts.sectionKey) ? { ...byKey.get(ts.sectionKey), key: ts.sectionKey, body: byKey.get(ts.sectionKey)?.body ?? "", label: ts.displayName } : {
+      key: ts.sectionKey, body: "", label: ts.displayName,
       isCustom: ts.sectionKey.startsWith("custom_") || undefined, addedInVersionId: draft.id,
     });
     const keptCustom = draft.sections.filter((x) => !tplKeys.has(x.key) && x.isCustom && !x.key.startsWith("custom_SEC"));

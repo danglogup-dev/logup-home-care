@@ -82,7 +82,6 @@ export const auditTemplatesSeed = [
 export const sitePICs: Record<string, string> = {
   "East Cork": "Mark Byrne",
   "West Waterford": "Siobhán Kelly",
-  "West Waterford": "Ciarán Walsh",
 };
 
 export const audits: AuditRecord[] = [

@@ -170,9 +170,8 @@ const Audits = () => {
   // deterministic per-day series so longer periods aggregate more samples
   // and values reconcile across views.
   const SITE_META: Record<string, { short: string; color: string; baseline: number }> = {
-    "East Cork":  { short: "Oakfield",  color: "hsl(var(--primary))",       baseline: 96 },
-    "West Waterford": { short: "Riverside", color: "hsl(var(--warning))",       baseline: 91 },
-    "West Waterford":  { short: "Elmgrove",  color: "hsl(var(--muted-foreground))", baseline: 94 },
+    "East Cork":  { short: "East Cork",  color: "hsl(var(--primary))",       baseline: 96 },
+    "West Waterford": { short: "W. Waterford", color: "hsl(var(--warning))",       baseline: 91 },
   };
 
   const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));

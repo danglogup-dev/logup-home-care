@@ -314,9 +314,8 @@ const EvidenceExportMain = () => {
       if (!hotspotOnly) return true;
       // Hotspot locations per site (mirrors the Overview "Repeat patterns & hotspots" cards)
       const HOTSPOT_LOCATIONS: Record<string, string[]> = {
-        "East Cork":  ["Corridor", "Med Room"],
-        "West Waterford": ["Med Room"],
-        "West Waterford":  ["Unit B"],
+        "East Cork":  ["Client home", "Car journey"],
+        "West Waterford": ["Client home"],
       };
       const allHotspots = Object.values(HOTSPOT_LOCATIONS).flat();
       const sites = siteFilter === "all" ? Object.keys(HOTSPOT_LOCATIONS) : [siteFilter];

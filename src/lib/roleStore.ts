@@ -151,6 +151,7 @@ export const roleStore = {
 // ---------- Capability matrix (module-level sidebar/route access) ----------
 
 export type ModuleKey =
+  | "visits.today"
   | "incidents.overview"
   | "incidents.board"
   | "incidents.capture"
@@ -218,6 +219,7 @@ const MATRIX: Record<Role, Set<ModuleKey>> = {
     "org.sites","org.serviceUsers",
   ]),
   frontline: new Set<ModuleKey>([
+    "visits.today",
     "incidents.capture",
     "audits.my",
     "policies.library",

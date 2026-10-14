@@ -4,6 +4,7 @@ import { serviceUsersStore } from "./serviceUsersStore";
 import { visitsStore, type CheckLocation } from "./visitsStore";
 import { myVisits } from "./visitPresentation";
 import { incidentsStore, type FieldProvenance } from "./incidentsStore";
+import { SITES } from "./demoDataRegistry";
 
 export function accessibleVisit(id: string, role: RoleState) {
   if (!featureFlags.visits) return undefined;
@@ -25,7 +26,7 @@ export function sendVisitSos(id: string, role: RoleState, location?: CheckLocati
     severityDecision: { suggestedSeverity: "Severe", suggestedSeverityReason: "Carer requested urgent assistance; harm severity still requires review." },
     reporterSignOff: { staffId: role.staffId, name: role.displayName, confirmedAt: iso, statement: "I am raising an urgent SOS for this visit. This does not confirm harm severity or contact emergency services." },
   }, {
-    site: role.scope.find((_, i) => role.scopeSiteIds[i] === client.siteId) ?? client.siteId,
+    site: SITES.find((site) => site.id === client.siteId)?.name ?? client.siteId,
     resident: client.id, serviceUserId: client.id, visitId: visit.id, urgent: true, capturedLocation: location,
     severity: "unsure", location: location ? `${location.lat}, ${location.lng}` : client.homeAddress ?? "Location unavailable",
     source: "text", text: rawNote, originalText: rawNote, eventType: "Incident / Accident", incidentType: "Other",

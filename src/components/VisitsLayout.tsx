@@ -14,6 +14,7 @@ export default function VisitsLayout() {
   const terms = useTerms();
   const { pathname } = useLocation();
   const { id } = useParams();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   useEffect(() => {
     visitsStore.refreshStatuses();
     const timer = window.setInterval(() => visitsStore.refreshStatuses(), 15000);

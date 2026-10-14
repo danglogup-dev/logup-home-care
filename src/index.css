@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* LogUp brand palette — refreshed June 2026
+       Primary: Vivid Blue #0C5BF5, Charcoal #2F3437, Evidence Orange #D15B1B
+       Backgrounds: white / #F8FAFC, Ice Blue #EAF4FF panels
+    */
+    --background: 210 33% 98%;          /* #F8FAFC */
+    --foreground: 204 7% 20%;           /* #2F3437 charcoal */
+
+    --card: 0 0% 100%;
+    --card-foreground: 204 7% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 204 7% 20%;
+
+    --primary: 220 92% 50%;             /* #0C5BF5 vivid blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 95%;           /* #EEF2F5 cool grey */
+    --secondary-foreground: 204 7% 20%;
+
+    --muted: 210 100% 96%;              /* #EAF4FF ice blue */
+    --muted-foreground: 220 14% 46%;    /* #667085 */
+
+    --accent: 210 100% 96%;             /* #EAF4FF */
+    --accent-foreground: 220 92% 50%;   /* vivid blue */
+
+    --soft-accent: 248 86% 96%;         /* #EEEAFE lavender */
+
+    --destructive: 21 78% 46%;          /* #D15B1B evidence orange — used sparingly */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;              /* #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 220 92% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 204 7% 20%;
+    --sidebar-primary: 220 92% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 100% 96%;     /* ice blue active bg */
+    --sidebar-accent-foreground: 220 92% 50%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 220 92% 50%;
+
+    --success: 170 45% 53%;             /* mint-aligned */
+    --warning: 21 78% 46%;              /* evidence orange */
+    --info: 220 92% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .font-body {
+    font-family: 'DM Sans', sans-serif;
+  }
+}
+
+/* Rich document styling — used in the Policy Hub editor and viewer. */
+@layer components {
+  .policy-body h1 {
+    @apply font-heading text-3xl font-semibold tracking-tight text-foreground mt-2 mb-4;
+  }
+  .policy-body h2 {
+    @apply font-heading text-xl font-semibold tracking-tight text-foreground mt-8 mb-2 pb-1 border-b border-border/60;
+  }
+  .policy-body h3 {
+    @apply font-heading text-base font-semibold text-foreground mt-5 mb-1.5;
+  }
+  .policy-body p {
+    @apply text-sm leading-relaxed text-foreground/90 mb-3;
+  }
+  .policy-body ul {
+    @apply list-disc pl-6 my-3 space-y-1.5 text-sm text-foreground/90;
+  }
+  .policy-body ol {
+    @apply list-decimal pl-6 my-3 space-y-1.5 text-sm text-foreground/90;
+  }
+  .policy-body li {
+    @apply leading-relaxed pl-1;
+  }
+  .policy-body li::marker {
+    @apply text-muted-foreground;
+  }
+  .policy-body strong {
+    @apply font-semibold text-foreground;
+  }
+  .policy-body em {
+    @apply italic;
+  }
+  .policy-body a {
+    @apply text-primary underline underline-offset-2 hover:opacity-80;
+  }
+  .policy-body hr {
+    @apply my-6 border-border;
+  }
+  .policy-body blockquote {
+    @apply border-l-2 border-primary/40 pl-4 italic text-foreground/80 my-3;
+  }
+  .policy-body[contenteditable="true"]:focus {
+    outline: none;
+  }
+}

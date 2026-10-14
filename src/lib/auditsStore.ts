@@ -144,7 +144,7 @@ export function useAllAuditRuns(): WalkthroughRun[] {
 export const CURRENT_AUDIT_USER = {
   name: "Siobhán Kelly",
   role: "Person in Charge",
-  onShiftSites: ["Oakfield Manor"],
+  onShiftSites: ["East Cork"],
 };
 
 export const progressOf = (r: WalkthroughRun) => {

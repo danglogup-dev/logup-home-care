@@ -343,9 +343,9 @@ export interface DraftDetails {
 }
 
 const SITE_MAP: Record<string, string> = {
-  oakfield: "Oakfield Manor",
-  riverside: "Riverside Lodge",
-  elmgrove: "Elm Grove House",
+  oakfield: "East Cork",
+  riverside: "West Waterford",
+  elmgrove: "West Waterford",
 };
 const SEVERITY_MAP: Record<string, Severity> = {
   low: "Low",

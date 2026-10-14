@@ -20,7 +20,7 @@ import { useRole } from "@/hooks/useRole";
 import { useMemo, useState } from "react";
 import { Search, MapPin, Plus, X, SlidersHorizontal, ChevronDown, Star } from "lucide-react";
 
-const SITES = ["Oakfield Manor", "Riverside Lodge", "Elm Grove House"] as const;
+const SITES = ["East Cork", "West Waterford", "West Waterford"] as const;
 
 function riskBadge(level: "low" | "medium" | "high") {
   const map = {

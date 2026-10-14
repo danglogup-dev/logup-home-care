@@ -505,9 +505,9 @@ const Incidents = () => {
   const role = useRole();
   // If only one site is in scope, default the capture to it.
   const SITE_OPTIONS = [
-    { id: "oakfield",  name: "Oakfield Manor"  },
-    { id: "riverside", name: "Riverside Lodge" },
-    { id: "elmgrove",  name: "Elm Grove House"  },
+    { id: "oakfield",  name: "East Cork"  },
+    { id: "riverside", name: "West Waterford" },
+    { id: "elmgrove",  name: "West Waterford"  },
   ].filter(s => inScope(s.name, role.role, role.scope));
   const [site, setSite] = useState(SITE_OPTIONS.length === 1 ? SITE_OPTIONS[0].id : "");
   const [resident, setResident] = useState(""); // serviceUserId

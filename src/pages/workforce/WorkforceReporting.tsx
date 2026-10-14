@@ -28,7 +28,7 @@ interface SavedReport { id: string; name: string; created: string; rowCount: num
 const savedReports: SavedReport[] = [
   { id: "r-q1", name: "Oakfield · Q1 epilepsy coverage proof", created: "2026-04-02", rowCount: 56 },
   { id: "r-q2", name: "All sites · Fire safety coverage (last 30 days)", created: "2026-04-15", rowCount: 84 },
-  { id: "r-q3", name: "Riverside Lodge · Behavioural support coverage (March)", created: "2026-04-04", rowCount: 42 },
+  { id: "r-q3", name: "West Waterford · Behavioural support coverage (March)", created: "2026-04-04", rowCount: 42 },
 ];
 
 const WorkforceReporting = () => {

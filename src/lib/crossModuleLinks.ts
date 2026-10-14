@@ -58,7 +58,7 @@ export const CARE_PLAN_LINKS: readonly CarePlanLink[] = [
   {
     carePlanId: "CP-PS001",
     personSupportedId: "PS-001",
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     keyWorkerId: "STAFF-EMMA",
     specialistContributorId: "STAFF-BRIAN",
     focus: "Falls / Mobility",
@@ -70,7 +70,7 @@ export const CARE_PLAN_LINKS: readonly CarePlanLink[] = [
   {
     carePlanId: "CP-PS002",
     personSupportedId: "PS-002",
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     keyWorkerId: "STAFF-AISLING",
     specialistContributorId: "STAFF-SARAH",
     focus: "Nutrition / Hydration",
@@ -81,7 +81,7 @@ export const CARE_PLAN_LINKS: readonly CarePlanLink[] = [
   {
     carePlanId: "CP-PS004",
     personSupportedId: "PS-004",
-    siteId: "SITE-RIV",
+    siteId: "SITE-WWD",
     keyWorkerId: "STAFF-NIAMH",
     focus: "Behaviour Support / Safeguarding",
     currentApprovedVersion: "v1",
@@ -91,7 +91,7 @@ export const CARE_PLAN_LINKS: readonly CarePlanLink[] = [
   {
     carePlanId: "CP-PS007",
     personSupportedId: "PS-007",
-    siteId: "SITE-ELM",
+    siteId: "SITE-WWD",
     keyWorkerId: "STAFF-ORLA",
     focus: "Epilepsy Support",
     currentApprovedVersion: "v1",
@@ -131,35 +131,35 @@ export const TASK_LINKS: readonly TaskLink[] = [
   {
     id: "TASK-1042-A",
     sourceType: "event", sourceId: eventId("paddy-fall-2d"),
-    personSupportedId: "PS-001", siteId: "SITE-OAK",
+    personSupportedId: "PS-001", siteId: "SITE-ECK",
     title: "Review Patrick’s falls controls",
     ownerId: "STAFF-EMMA", status: "Open",
   },
   {
     id: "TASK-1042-B",
     sourceType: "care_plan", sourceId: "CP-PS001-V4",
-    personSupportedId: "PS-001", siteId: "SITE-OAK",
+    personSupportedId: "PS-001", siteId: "SITE-ECK",
     title: "Confirm mobility aid placement in bedroom",
     ownerId: "STAFF-DANIEL", status: "Open",
   },
   {
     id: "TASK-2051-A",
     sourceType: "event", sourceId: eventId("mary-nutrition-4d"),
-    personSupportedId: "PS-002", siteId: "SITE-OAK",
+    personSupportedId: "PS-002", siteId: "SITE-ECK",
     title: "Record three-day fluid intake summary",
     ownerId: "STAFF-AISLING", status: "Open",
   },
   {
     id: "TASK-3062-A",
     sourceType: "event", sourceId: eventId("eileen-safeguarding"),
-    personSupportedId: "PS-004", siteId: "SITE-RIV",
+    personSupportedId: "PS-004", siteId: "SITE-WWD",
     title: "Complete safeguarding follow-up review",
     ownerId: "STAFF-SIOBHAN", status: "Overdue",
   },
   {
     id: "TASK-WF-001",
     sourceType: "workforce", sourceId: "QUAL-FIRSTAID-STAFF-EMMA",
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     title: "Emma Ryan first aid renewal due",
     ownerId: "STAFF-EMMA", status: "Due soon",
   },
@@ -191,27 +191,27 @@ export interface AuditLink {
 export const AUDIT_LINKS: readonly AuditLink[] = [
   {
     id: "AUD-001", title: "Medication management audit",
-    siteId: "SITE-OAK", siteName: "Oakfield Manor",
+    siteId: "SITE-ECK", siteName: "East Cork",
     ownerId: "STAFF-DANIEL", status: "Overdue",
     finding: "Medication competency evidence missing for one staff member.",
     linkedWorkforceRequirement: "Medication Administration",
   },
   {
     id: "AUD-002", title: "Falls and environment audit",
-    siteId: "SITE-OAK", siteName: "Oakfield Manor",
+    siteId: "SITE-ECK", siteName: "East Cork",
     ownerId: "STAFF-SIOBHAN", status: "Due soon",
     finding: "Repeat falls pattern requires environmental review.",
     linkedEventIds: [eventId("paddy-fall-2d"), eventId("paddy-fall-12d"), eventId("paddy-fall-45d"), eventId("paddy-fall-70d")],
   },
   {
     id: "AUD-003", title: "Fire safety checks audit",
-    siteId: "SITE-OAK", siteName: "Oakfield Manor",
+    siteId: "SITE-ECK", siteName: "East Cork",
     ownerId: "STAFF-DANIEL", status: "Completed",
     linkedEventIds: [eventId("riv-fire-alarm")],
   },
   {
     id: "AUD-004", title: "Safeguarding audit",
-    siteId: "SITE-RIV", siteName: "Riverside Lodge",
+    siteId: "SITE-WWD", siteName: "West Waterford",
     ownerId: "STAFF-SIOBHAN", status: "Overdue",
     linkedEventIds: [eventId("eileen-safeguarding")],
   },
@@ -304,7 +304,7 @@ export interface SiteRequirement {
 
 export const SITE_REQUIREMENTS: readonly SiteRequirement[] = [
   {
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     required: [
       "First Aid", "Manual Handling", "Safeguarding",
       "Fire Safety", "Medication Administration",
@@ -312,7 +312,7 @@ export const SITE_REQUIREMENTS: readonly SiteRequirement[] = [
     conditional: ["Nutrition / Dysphagia Awareness", "Falls response awareness"],
   },
   {
-    siteId: "SITE-RIV",
+    siteId: "SITE-WWD",
     required: [
       "First Aid", "Manual Handling", "Safeguarding",
       "Fire Safety", "Positive Behaviour Support",
@@ -320,7 +320,7 @@ export const SITE_REQUIREMENTS: readonly SiteRequirement[] = [
     conditional: ["Medication Administration"],
   },
   {
-    siteId: "SITE-ELM",
+    siteId: "SITE-WWD",
     required: [
       "First Aid", "Manual Handling", "Safeguarding",
       "Fire Safety", "Epilepsy Awareness",
@@ -389,7 +389,7 @@ export const INSIGHT_CARDS: readonly InsightCardLink[] = [
     sourceKind: "events",
     sourceRefs: [eventId("paddy-fall-2d"), eventId("paddy-fall-12d"), eventId("paddy-fall-45d"), eventId("paddy-fall-70d")],
     personSupportedId: "PS-001",
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     action: "Review care plan draft v4 and falls/environment audit.",
   },
   {
@@ -398,7 +398,7 @@ export const INSIGHT_CARDS: readonly InsightCardLink[] = [
     sourceKind: "events",
     sourceRefs: [eventId("mary-nutrition-4d"), eventId("mary-nutrition-20d")],
     personSupportedId: "PS-002",
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     action: "Review dietitian contribution and fluid intake task.",
   },
   {
@@ -414,7 +414,7 @@ export const INSIGHT_CARDS: readonly InsightCardLink[] = [
     title: "Audit overdue risk",
     sourceKind: "audits",
     sourceRefs: ["AUD-001", "AUD-004"],
-    risk: "Medication audit overdue in Oakfield Manor; Safeguarding audit overdue in Riverside Lodge.",
+    risk: "Medication audit overdue in East Cork; Safeguarding audit overdue in West Waterford.",
     action: "Open Audits reporting.",
   },
   {
@@ -422,7 +422,7 @@ export const INSIGHT_CARDS: readonly InsightCardLink[] = [
     title: "Fire alarm quarterly return item",
     sourceKind: "events",
     sourceRefs: [eventId("riv-fire-alarm")],
-    siteId: "SITE-OAK",
+    siteId: "SITE-ECK",
     action: "Review notification/quarterly return status if enabled.",
   },
 ] as const;

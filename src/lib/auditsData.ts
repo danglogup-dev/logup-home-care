@@ -80,16 +80,16 @@ export const auditTemplatesSeed = [
 ];
 
 export const sitePICs: Record<string, string> = {
-  "Oakfield Manor": "Mark Byrne",
-  "Riverside Lodge": "Siobhán Kelly",
-  "Elm Grove House": "Ciarán Walsh",
+  "East Cork": "Mark Byrne",
+  "West Waterford": "Siobhán Kelly",
+  "West Waterford": "Ciarán Walsh",
 };
 
 export const audits: AuditRecord[] = [
   // 1) AUD-001 — Overdue
   {
     id: "AUD-001", templateName: "Fire Safety Check", category: "Health & Safety",
-    site: "Oakfield Manor", assignedTo: "Gráinne Lynch",
+    site: "East Cork", assignedTo: "Gráinne Lynch",
     dueDate: "13 Apr 2026", daysUntilDue: -36, status: "Overdue",
     progress: 57, totalItems: 7, completedItems: 4, findings: 1, photos: 2,
     notes: "Missing fire blanket signage in kitchen.",
@@ -112,7 +112,7 @@ export const audits: AuditRecord[] = [
   // 2) AUD-002 — In progress
   {
     id: "AUD-002", templateName: "Falls Prevention Audit", category: "Clinical",
-    site: "Riverside Lodge", assignedTo: "Siobhán Kelly",
+    site: "West Waterford", assignedTo: "Siobhán Kelly",
     dueDate: "18 Apr 2026", daysUntilDue: -31, status: "On Track",
     progress: 50, totalItems: 6, completedItems: 3, findings: 2, photos: 1,
     notes: "Two residents missing updated falls risk assessment.",
@@ -129,7 +129,7 @@ export const audits: AuditRecord[] = [
   // 3) AUD-003 — In progress
   {
     id: "AUD-003", templateName: "Infection Prevention Audit", category: "Clinical",
-    site: "Oakfield Manor", assignedTo: "Joanne Walsh",
+    site: "East Cork", assignedTo: "Joanne Walsh",
     dueDate: "19 Apr 2026", daysUntilDue: -30, status: "On Track",
     progress: 33, totalItems: 8, completedItems: 3, findings: 0, photos: 0, notes: "",
   },
@@ -137,7 +137,7 @@ export const audits: AuditRecord[] = [
   // 4) AUD-004 — In progress
   {
     id: "AUD-004", templateName: "Medication Management Audit", category: "Medication",
-    site: "Elm Grove House", assignedTo: "Niamh Connolly",
+    site: "West Waterford", assignedTo: "Niamh Connolly",
     dueDate: "20 Apr 2026", daysUntilDue: -29, status: "Due Soon",
     progress: 50, totalItems: 6, completedItems: 3, findings: 1, photos: 1,
     notes: "PRN protocol missing for one resident.",
@@ -153,7 +153,7 @@ export const audits: AuditRecord[] = [
   // 5) AUD-005 — Completed
   {
     id: "AUD-005", templateName: "Care Plan Review Audit", category: "Clinical",
-    site: "Riverside Lodge", assignedTo: "Siobhán Kelly",
+    site: "West Waterford", assignedTo: "Siobhán Kelly",
     dueDate: "21 Apr 2026", daysUntilDue: -28, status: "Complete",
     progress: 100, totalItems: 6, completedItems: 6, findings: 1, photos: 0,
     notes: "All care plans reviewed within 4-month window.",
@@ -171,7 +171,7 @@ export const audits: AuditRecord[] = [
   // 6) AUD-006 — Completed
   {
     id: "AUD-006", templateName: "Safeguarding Audit", category: "Governance",
-    site: "Oakfield Manor", assignedTo: "Mark Byrne",
+    site: "East Cork", assignedTo: "Mark Byrne",
     dueDate: "22 Apr 2026", daysUntilDue: -27, status: "Complete",
     progress: 100, totalItems: 5, completedItems: 5, findings: 0, photos: 0,
     notes: "All safeguarding records compliant.",
@@ -181,7 +181,7 @@ export const audits: AuditRecord[] = [
   // 7) AUD-007 — Overdue
   {
     id: "AUD-007", templateName: "Environmental Safety Audit", category: "Health & Safety",
-    site: "Elm Grove House", assignedTo: "Tom Reed",
+    site: "West Waterford", assignedTo: "Tom Reed",
     dueDate: "15 Apr 2026", daysUntilDue: -34, status: "Overdue",
     progress: 60, totalItems: 5, completedItems: 3, findings: 2, photos: 2,
     notes: "Outdoor lighting fault and unsecured cleaning store.",
@@ -198,7 +198,7 @@ export const audits: AuditRecord[] = [
   // 8) AUD-008 — Overdue
   {
     id: "AUD-008", templateName: "Health & Safety / Environment Audit", category: "Health & Safety",
-    site: "Elm Grove House", assignedTo: "Brendan Tierney",
+    site: "West Waterford", assignedTo: "Brendan Tierney",
     dueDate: "10 Apr 2026", daysUntilDue: -39, status: "Overdue",
     progress: 80, totalItems: 6, completedItems: 5, findings: 2, photos: 3,
     notes: "Emergency lighting on corridor B flickering; waste store unlocked overnight.",
@@ -219,7 +219,7 @@ export const audits: AuditRecord[] = [
   // 9) AUD-009 — In progress
   {
     id: "AUD-009", templateName: "Staff Training Records Audit", category: "Governance",
-    site: "Oakfield Manor", assignedTo: "Daniel Walsh",
+    site: "East Cork", assignedTo: "Daniel Walsh",
     dueDate: "24 Apr 2026", daysUntilDue: -25, status: "On Track",
     progress: 40, totalItems: 4, completedItems: 2, findings: 1, photos: 0,
     notes: "Two staff missing refresher dates in training matrix.",
@@ -234,7 +234,7 @@ export const audits: AuditRecord[] = [
   // 10) AUD-010 — In progress
   {
     id: "AUD-010", templateName: "Complaints Register Audit", category: "Governance",
-    site: "Riverside Lodge", assignedTo: "Mark Byrne",
+    site: "West Waterford", assignedTo: "Mark Byrne",
     dueDate: "25 Apr 2026", daysUntilDue: -24, status: "On Track",
     progress: 25, totalItems: 5, completedItems: 1, findings: 0, photos: 0, notes: "",
   },
@@ -242,7 +242,7 @@ export const audits: AuditRecord[] = [
   // 11) AUD-011 — Completed
   {
     id: "AUD-011", templateName: "Documentation Control Audit", category: "Governance",
-    site: "Oakfield Manor", assignedTo: "Daniel Walsh",
+    site: "East Cork", assignedTo: "Daniel Walsh",
     dueDate: "16 Apr 2026", daysUntilDue: -33, status: "Complete",
     progress: 100, totalItems: 4, completedItems: 4, findings: 1, photos: 0,
     notes: "Obsolete moving & handling SOP still in circulation.",

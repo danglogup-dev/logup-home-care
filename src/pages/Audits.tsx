@@ -21,9 +21,9 @@ import {
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
 
 const SITE_ORDER = [
-  { site: "Oakfield Manor",  pic: "Siobhán Kelly" },
-  { site: "Riverside Lodge", pic: "Siobhán Kelly" },
-  { site: "Elm Grove House",  pic: "Ciarán Walsh" },
+  { site: "East Cork",  pic: "Siobhán Kelly" },
+  { site: "West Waterford", pic: "Siobhán Kelly" },
+  { site: "West Waterford",  pic: "Ciarán Walsh" },
 ];
 
 const CATEGORY_ORDER = ["Clinical", "Medication", "Health & Safety", "Governance"];
@@ -67,9 +67,9 @@ const Audits = () => {
   const filtered = useMemo(() => {
     if (siteFilter === "all") return scoped;
     const map: Record<string, string> = {
-      oakfield: "Oakfield Manor",
-      riverside: "Riverside Lodge",
-      elmgrove: "Elm Grove House",
+      oakfield: "East Cork",
+      riverside: "West Waterford",
+      elmgrove: "West Waterford",
     };
     return scoped.filter((a) => a.site === map[siteFilter]);
   }, [siteFilter, scoped]);
@@ -145,9 +145,9 @@ const Audits = () => {
 
   // Hotspots — repeated finding themes (mocked from finding text patterns)
   const HOTSPOT_DEFS = [
-    { area: "Oakfield · Fire doors (Unit B)",        site: "Oakfield Manor",  type: "Fire Safety",  match: (t: string) => /fire door/i.test(t) },
-    { area: "Elmgrove · Emergency lighting",         site: "Elm Grove House",  type: "Health & Safety", match: (t: string) => /emergency light/i.test(t) },
-    { area: "Riverside · Medication CD register",    site: "Riverside Lodge", type: "Medication",   match: (t: string) => /cd register|controlled drug/i.test(t) },
+    { area: "Oakfield · Fire doors (Unit B)",        site: "East Cork",  type: "Fire Safety",  match: (t: string) => /fire door/i.test(t) },
+    { area: "Elmgrove · Emergency lighting",         site: "West Waterford",  type: "Health & Safety", match: (t: string) => /emergency light/i.test(t) },
+    { area: "Riverside · Medication CD register",    site: "West Waterford", type: "Medication",   match: (t: string) => /cd register|controlled drug/i.test(t) },
   ];
   const hotspots = HOTSPOT_DEFS
     .filter((h) => allowedSites.has(h.site))
@@ -170,9 +170,9 @@ const Audits = () => {
   // deterministic per-day series so longer periods aggregate more samples
   // and values reconcile across views.
   const SITE_META: Record<string, { short: string; color: string; baseline: number }> = {
-    "Oakfield Manor":  { short: "Oakfield",  color: "hsl(var(--primary))",       baseline: 96 },
-    "Riverside Lodge": { short: "Riverside", color: "hsl(var(--warning))",       baseline: 91 },
-    "Elm Grove House":  { short: "Elmgrove",  color: "hsl(var(--muted-foreground))", baseline: 94 },
+    "East Cork":  { short: "Oakfield",  color: "hsl(var(--primary))",       baseline: 96 },
+    "West Waterford": { short: "Riverside", color: "hsl(var(--warning))",       baseline: 91 },
+    "West Waterford":  { short: "Elmgrove",  color: "hsl(var(--muted-foreground))", baseline: 94 },
   };
 
   const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
@@ -270,7 +270,7 @@ const Audits = () => {
 
   const sitesForChart = scopedSiteOrder.filter((s) => {
     if (siteFilter === "all") return true;
-    const map: Record<string, string> = { oakfield: "Oakfield Manor", riverside: "Riverside Lodge", elmgrove: "Elm Grove House" };
+    const map: Record<string, string> = { oakfield: "East Cork", riverside: "West Waterford", elmgrove: "West Waterford" };
     return s.site === map[siteFilter];
   });
 
@@ -372,9 +372,9 @@ const Audits = () => {
             <SelectTrigger className="h-9 w-[160px] rounded-xl bg-card text-xs"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All sites</SelectItem>
-              {allowedSites.has("Oakfield Manor")  && <SelectItem value="oakfield">Oakfield Manor</SelectItem>}
-              {allowedSites.has("Riverside Lodge") && <SelectItem value="riverside">Riverside Lodge</SelectItem>}
-              {allowedSites.has("Elm Grove House")  && <SelectItem value="elmgrove">Elm Grove House</SelectItem>}
+              {allowedSites.has("East Cork")  && <SelectItem value="oakfield">East Cork</SelectItem>}
+              {allowedSites.has("West Waterford") && <SelectItem value="riverside">West Waterford</SelectItem>}
+              {allowedSites.has("West Waterford")  && <SelectItem value="elmgrove">West Waterford</SelectItem>}
             </SelectContent>
           </Select>
           <Select value={period} onValueChange={setPeriod}>

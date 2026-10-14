@@ -126,7 +126,7 @@ const EvidenceExportMain = () => {
     const dt = searchParams.get("dateTo");
     const incidentId = searchParams.get("incidentId");
 
-    // Multi-site via `?siteIds=SITE-OAK,SITE-RIV` overrides single `?site=`.
+    // Multi-site via `?siteIds=SITE-ECK,SITE-WWD` overrides single `?site=`.
     const siteIdsParam = searchParams.get("siteIds");
     if (siteIdsParam) {
       const ids = siteIdsParam
@@ -314,9 +314,9 @@ const EvidenceExportMain = () => {
       if (!hotspotOnly) return true;
       // Hotspot locations per site (mirrors the Overview "Repeat patterns & hotspots" cards)
       const HOTSPOT_LOCATIONS: Record<string, string[]> = {
-        "Oakfield Manor":  ["Corridor", "Med Room"],
-        "Riverside Lodge": ["Med Room"],
-        "Elm Grove House":  ["Unit B"],
+        "East Cork":  ["Corridor", "Med Room"],
+        "West Waterford": ["Med Room"],
+        "West Waterford":  ["Unit B"],
       };
       const allHotspots = Object.values(HOTSPOT_LOCATIONS).flat();
       const sites = siteFilter === "all" ? Object.keys(HOTSPOT_LOCATIONS) : [siteFilter];
@@ -520,9 +520,9 @@ const EvidenceExportMain = () => {
             <SelectTrigger className="h-9 rounded-xl bg-background text-xs"><SelectValue placeholder="All sites" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All sites</SelectItem>
-              {inScope("Oakfield Manor",  role.role, role.scope) && <SelectItem value="Oakfield Manor">Oakfield Manor</SelectItem>}
-              {inScope("Riverside Lodge", role.role, role.scope) && <SelectItem value="Riverside Lodge">Riverside Lodge</SelectItem>}
-              {inScope("Elm Grove House",  role.role, role.scope) && <SelectItem value="Elm Grove House">Elm Grove House</SelectItem>}
+              {inScope("East Cork",  role.role, role.scope) && <SelectItem value="East Cork">East Cork</SelectItem>}
+              {inScope("West Waterford", role.role, role.scope) && <SelectItem value="West Waterford">West Waterford</SelectItem>}
+              {inScope("West Waterford",  role.role, role.scope) && <SelectItem value="West Waterford">West Waterford</SelectItem>}
             </SelectContent>
           </Select>
           <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); setSeveritySet([]); }}>

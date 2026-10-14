@@ -93,7 +93,7 @@ export type InsightKind =
 export interface PatternInsight {
   id: string;
   kind: InsightKind;
-  headline: string;     // e.g. "Possible pattern: 4 medication-related Events in last 30 days at Oakfield Manor."
+  headline: string;     // e.g. "Possible pattern: 4 medication-related Events in last 30 days at East Cork."
   detail?: string;
   count: number;
   windowDays: number;

@@ -17,7 +17,7 @@ import type { PrimaryCategory, LifecycleStatus, RegulatoryNotificationRecord } f
 // ---------------------------------------------------------------- version + reset
 
 /** Bump when the dataset changes; stored demo data from an older version is reseeded. */
-export const DEMO_DATA_VERSION = "2026.10-connected-2";
+export const DEMO_DATA_VERSION = "2026.10-homecare-1";
 const VERSION_KEY = "logup.demoDataVersion";
 const DEMO_KEY_PREFIX = "logup.";
 
@@ -127,7 +127,7 @@ const T = {
 
 const FEATURED: ScenarioEvent[] = [
   {
-    key: "paddy-fall-70d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
+    key: "paddy-fall-70d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
     at: T.paddy70, location: "Bedroom", severity: "Low", column: "complete", reporterStaffId: "STAFF-LIAM", reviewerStaffId: "STAFF-DANIEL",
     summary: "Paddy found sitting on the floor beside his bed early morning; no injury.",
     narrative: "Paddy was found sitting on the floor beside his bed at the start of the morning round. He said he slid off the edge while reaching for his slippers. He was alert and reported no pain.",
@@ -137,7 +137,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "no_review_required", impactReason: "Current falls plan already covers night-time supports; slippers moved within reach.",
   },
   {
-    key: "paddy-fall-45d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
+    key: "paddy-fall-45d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
     at: T.paddy45, location: "Bathroom", severity: "Low", column: "complete", reporterStaffId: "STAFF-PEADAR", reviewerStaffId: "STAFF-DANIEL",
     summary: "Paddy lost balance in the en-suite and was lowered to the floor by staff.",
     narrative: "While Paddy was standing at the sink, he lost his balance. The staff member with him lowered him gently to the floor. No knock to the head.",
@@ -147,7 +147,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "no_review_required", impactReason: "Assisted lowering, no injury; existing plan followed correctly.",
   },
   {
-    key: "paddy-fall-12d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
+    key: "paddy-fall-12d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
     at: T.paddy12, location: "Corridor", severity: "High", column: "complete", reporterStaffId: "STAFF-EMMA", reviewerStaffId: "STAFF-DANIEL",
     summary: "Paddy fell in the corridor and was transferred to hospital with a suspected hip fracture.",
     narrative: "Paddy was walking to breakfast with his frame when he fell in the corridor outside the day room. He reported severe pain in his left hip and could not bear weight.",
@@ -161,7 +161,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "care_plan_updated", sections: ["fallsRisk", "mobility"], draftVersion: 3,
   },
   {
-    key: "paddy-fall-2d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
+    key: "paddy-fall-2d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-001", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
     at: T.paddy2, location: "Bedroom", severity: "Moderate", column: "review", reporterStaffId: "STAFF-KEVIN", reviewerStaffId: "STAFF-DANIEL",
     summary: "Paddy found on his bedroom floor at night; bruising to right forearm.",
     narrative: "During the night check Paddy was found on the floor beside his chair. He said he tried to walk to the bathroom without his frame. Bruise on his right forearm.",
@@ -171,7 +171,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "review_suggested", sections: ["fallsRisk", "mobility"],
   },
   {
-    key: "mary-nutrition-20d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-002", category: "Nutrition / Hydration", primaryCategory: "Other", linkCategory: "Nutrition / hydration", incidentType: "Other",
+    key: "mary-nutrition-20d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-002", category: "Nutrition / Hydration", primaryCategory: "Other", linkCategory: "Nutrition / hydration", incidentType: "Other",
     at: T.mary20, location: "Dining room", severity: "Low", column: "complete", reporterStaffId: "STAFF-AISLING", reviewerStaffId: "STAFF-DANIEL",
     summary: "Mary ate less than a quarter of meals for two days; weight recorded.",
     narrative: "Mary ate less than a quarter of her lunch and dinner for two days running. She said food had no taste. Weight recorded as 1.2 kg down on last month.",
@@ -180,7 +180,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "no_review_required", impactReason: "Monitoring started under the existing nutrition plan; review if intake stays low.",
   },
   {
-    key: "mary-nutrition-4d", featured: true, siteId: "SITE-OAK", serviceUserId: "PS-002", category: "Nutrition / Hydration", primaryCategory: "Other", linkCategory: "Nutrition / hydration", incidentType: "Other",
+    key: "mary-nutrition-4d", featured: true, siteId: "SITE-ECK", serviceUserId: "PS-002", category: "Nutrition / Hydration", primaryCategory: "Other", linkCategory: "Nutrition / hydration", incidentType: "Other",
     at: T.mary4, location: "Dining room", severity: "Moderate", column: "review", reporterStaffId: "STAFF-GRAINNE", reviewerStaffId: "STAFF-DANIEL",
     summary: "Mary's intake low again; further 1 kg weight loss.",
     narrative: "Mary's food and fluid chart shows low intake on four of the last seven days. Weight down a further 1 kg. She said she feels full quickly.",
@@ -189,7 +189,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "review_suggested", sections: ["nutrition"],
   },
   {
-    key: "eileen-safeguarding", featured: true, siteId: "SITE-RIV", serviceUserId: "PS-004", category: "Safeguarding", primaryCategory: "Safeguarding", linkCategory: "Safeguarding", incidentType: "Suspected abuse / neglect",
+    key: "eileen-safeguarding", featured: true, siteId: "SITE-WWD", serviceUserId: "PS-004", category: "Safeguarding", primaryCategory: "Safeguarding", linkCategory: "Safeguarding", incidentType: "Suspected abuse / neglect",
     at: T.eileen, location: "Lounge", severity: "High", column: "review", reporterStaffId: "STAFF-FIONA", reviewerStaffId: "STAFF-SIOBHAN", restricted: true,
     summary: "Eileen disclosed that a visitor took money from her purse.",
     narrative: "Eileen told a staff member that a visitor took money from her purse during a visit on Sunday. She was upset but calm when talking about it.",
@@ -199,7 +199,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "review_required", sections: ["safeguarding"],
   },
   {
-    key: "tomas-pressure-ulcer", featured: true, siteId: "SITE-RIV", serviceUserId: "PS-005", category: "Skin integrity", primaryCategory: "Injury", linkCategory: "Pressure ulcer / skin integrity", incidentType: "Skin integrity",
+    key: "tomas-pressure-ulcer", featured: true, siteId: "SITE-WWD", serviceUserId: "PS-005", category: "Skin integrity", primaryCategory: "Injury", linkCategory: "Pressure ulcer / skin integrity", incidentType: "Skin integrity",
     at: T.tomas, location: "Bedroom", severity: "High", column: "actions", reporterStaffId: "STAFF-MAEVE", reviewerStaffId: "STAFF-SIOBHAN",
     summary: "Category 3 pressure ulcer found on Tomás's sacrum.",
     narrative: "During personal care a category 3 pressure ulcer was found on Tomás's sacrum. He had been spending more time in bed over the previous week.",
@@ -212,7 +212,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "draft_awaiting_approval", sections: ["health", "personalCare"], draftVersion: 2,
   },
   {
-    key: "bridget-medication", featured: true, siteId: "SITE-ELM", serviceUserId: "PS-006", category: "Restrictive practice", primaryCategory: "Restrictive Practice", linkCategory: "Restrictive practice / restraint", incidentType: "Restrictive practice",
+    key: "bridget-medication", featured: true, siteId: "SITE-WWD", serviceUserId: "PS-006", category: "Restrictive practice", primaryCategory: "Restrictive Practice", linkCategory: "Restrictive practice / restraint", incidentType: "Restrictive practice",
     at: T.bridget, location: "Kitchen", severity: "Moderate", column: "actions", reporterStaffId: "STAFF-CONOR", reviewerStaffId: "STAFF-CLAIRE",
     summary: "Kitchen door locked for a period while Bridget was nearby, without a recorded restrictive practice plan.",
     narrative: "The kitchen door was locked for about two hours during the morning while Bridget was in the area. There is no restrictive practice plan in place for this. Bridget asked staff why she could not get in. No harm observed.",
@@ -225,7 +225,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "review_required", sections: ["medication"],
   },
   {
-    key: "michael-seizure-fall", featured: true, siteId: "SITE-ELM", serviceUserId: "PS-007", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
+    key: "michael-seizure-fall", featured: true, siteId: "SITE-WWD", serviceUserId: "PS-007", category: "Fall", primaryCategory: "Fall", linkCategory: "Falls", incidentType: "Fall",
     at: T.michael, location: "Garden", severity: "Moderate", column: "review", reporterStaffId: "STAFF-AINE", reviewerStaffId: "STAFF-CLAIRE",
     summary: "Michael had a seizure in the garden and fell; cut to his chin needing stitches.",
     narrative: "Michael had a tonic-clonic seizure while walking in the garden and fell onto the path. Seizure lasted about two minutes. He had a cut to his chin.",
@@ -236,7 +236,7 @@ const FEATURED: ScenarioEvent[] = [
     careImpact: "review_suggested", sections: ["mobility", "fallsRisk"],
   },
   {
-    key: "riv-fire-alarm", featured: true, siteId: "SITE-RIV", category: "Fire alarm / environmental", primaryCategory: "Other", linkCategory: "Fire alarm / environmental", incidentType: "Other",
+    key: "riv-fire-alarm", featured: true, siteId: "SITE-WWD", category: "Fire alarm / environmental", primaryCategory: "Other", linkCategory: "Fire alarm / environmental", incidentType: "Other",
     at: T.fire, location: "Kitchen", severity: "Low", column: "complete", reporterStaffId: "STAFF-DARRAGH", reviewerStaffId: "STAFF-SIOBHAN",
     summary: "Fire alarm activated by kitchen toaster; building cleared, no fire.",
     narrative: "The fire alarm went off at 11:05 after a toaster in the kitchen produced smoke. The building was cleared in four minutes. No fire and no one was hurt.",
@@ -245,7 +245,7 @@ const FEATURED: ScenarioEvent[] = [
     notification: { formCode: "NF39", formTitle: "Quarterly report (fire alarm activations)", outcome: "quarterly", quarter: quarterLabel(T.fire) },
   },
   {
-    key: "oak-corridor-unlinked", featured: true, siteId: "SITE-OAK", category: "Behavioural", primaryCategory: "Behavioural", linkCategory: "Other", incidentType: "Behavioural",
+    key: "oak-corridor-unlinked", featured: true, siteId: "SITE-ECK", category: "Behavioural", primaryCategory: "Behavioural", linkCategory: "Other", incidentType: "Behavioural",
     at: T.john, location: "Corridor", severity: "Low", column: "new", reporterStaffId: "STAFF-ROISIN",
     summary: "Raised voices between two residents in the first-floor corridor.",
     narrative: "John and another resident raised their voices at each other in the first-floor corridor over a chair. Staff stepped in and both settled within a few minutes. No contact.",
@@ -293,7 +293,7 @@ const BACKGROUND: ScenarioEvent[] = BG.map(([key, id, cat, days, severity, colum
   const c = BG_CAT[cat];
   const at = daysAgo(days, 8 + (i % 12), (i * 7) % 60);
   const site = p.siteId;
-  const reviewer: StaffId = site === "SITE-OAK" ? "STAFF-DANIEL" : site === "SITE-RIV" ? "STAFF-SIOBHAN" : "STAFF-CLAIRE";
+  const reviewer: StaffId = site === "SITE-ECK" ? "STAFF-DANIEL" : site === "SITE-WWD" ? "STAFF-SIOBHAN" : "STAFF-CLAIRE";
   const open = column !== "complete";
   return {
     key, siteId: site, serviceUserId: id, ...c, at, severity, column, reporterStaffId: reporter, reviewerStaffId: reviewer, summary,
@@ -446,9 +446,9 @@ export function toAssociatedIncident(e: ScenarioEvent & { id: string }) {
 export interface ScenarioLifecycle { id: string; serviceUserId: PersonSupportedId; type: "temporary_absence" | "returned"; date: string; siteId: SiteId; recordedByStaffId: StaffId; note: string }
 
 export const SCENARIO_LIFECYCLE: ScenarioLifecycle[] = [
-  { id: "LCE-PS-001-ABS", serviceUserId: "PS-001", type: "temporary_absence", date: fmtIso(daysAgo(12, 7, 40)), siteId: "SITE-OAK", recordedByStaffId: "STAFF-DANIEL", note: "Hospital admission — Naas General Hospital (left hip fracture)." },
-  { id: "LCE-PS-001-RET", serviceUserId: "PS-001", type: "returned", date: fmtIso(daysAgo(7, 14, 0)), siteId: "SITE-OAK", recordedByStaffId: "STAFF-DANIEL", note: "Returned from Naas General Hospital." },
-  { id: "LCE-PS-005-ABS", serviceUserId: "PS-005", type: "temporary_absence", date: fmtIso(daysAgo(3, 11, 0)), siteId: "SITE-RIV", recordedByStaffId: "STAFF-SIOBHAN", note: `Hospital admission — St Luke’s General Hospital, Kilkenny. Expected back ${fmtDate(daysFromNow(4))}.` },
+  { id: "LCE-PS-001-ABS", serviceUserId: "PS-001", type: "temporary_absence", date: fmtIso(daysAgo(12, 7, 40)), siteId: "SITE-ECK", recordedByStaffId: "STAFF-DANIEL", note: "Hospital admission — Naas General Hospital (left hip fracture)." },
+  { id: "LCE-PS-001-RET", serviceUserId: "PS-001", type: "returned", date: fmtIso(daysAgo(7, 14, 0)), siteId: "SITE-ECK", recordedByStaffId: "STAFF-DANIEL", note: "Returned from Naas General Hospital." },
+  { id: "LCE-PS-005-ABS", serviceUserId: "PS-005", type: "temporary_absence", date: fmtIso(daysAgo(3, 11, 0)), siteId: "SITE-WWD", recordedByStaffId: "STAFF-SIOBHAN", note: `Hospital admission — St Luke’s General Hospital, Kilkenny. Expected back ${fmtDate(daysFromNow(4))}.` },
 ];
 function fmtIso(d: Date) { return d.toISOString().slice(0, 10); }
 
@@ -465,7 +465,7 @@ export function planTiming(id: PersonSupportedId, index: number): { versions: nu
   if (OVERDUE_PLAN_IDS.includes(id)) return { versions: 2 + (index % 2), publishedDaysAgo: id === "PS-050" ? 200 : 190 + index % 7 };
   const p = PERSON_BY_ID[id];
   const admittedDays = Math.round((Date.now() - new Date(p.admissionDate).getTime()) / 86400000);
-  const window = p.siteId === "SITE-ELM" ? 330 : 160;
+  const window = p.siteId === "SITE-WWD" ? 330 : 160;
   return { versions: 1 + (index % 4), publishedDaysAgo: Math.max(1, Math.min(admittedDays - 1, 5 + ((index * 17) % window))) };
 }
 

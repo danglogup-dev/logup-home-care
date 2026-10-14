@@ -88,16 +88,16 @@ function presetFromStaff(
 }
 
 export const ROLE_PRESETS: RolePreset[] = [
-  presetFromStaff("admin",             "Admin (Group)",              "Full access across all 3 sites",              "STAFF-AOIFE",  "admin",     ["SITE-OAK", "SITE-RIV", "SITE-ELM"]),
-  presetFromStaff("manager-multi",     "Manager · Multi-site",       "Oakfield Manor + Riverside Lodge",             "STAFF-SIOBHAN","manager",   ["SITE-OAK", "SITE-RIV"]),
-  presetFromStaff("manager-single",    "Manager · Single site",      "Oakfield Manor only",                          "STAFF-DANIEL", "manager",   ["SITE-OAK"]),
-  presetFromStaff("manager-elm",       "Manager · Elm Grove",        "Elm Grove House only",                         "STAFF-CLAIRE", "manager",   ["SITE-ELM"]),
-  presetFromStaff("frontline",         "Frontline staff",            "Support Worker · Oakfield Manor",              "STAFF-LIAM",   "frontline", ["SITE-OAK"]),
-  presetFromStaff("keyworker-emma",    "Frontline · Key worker",     "Emma Ryan · Key worker for Patrick",           "STAFF-EMMA",   "frontline", ["SITE-OAK"]),
-  presetFromStaff("keyworker-aisling", "Frontline · Key worker",     "Aisling Doherty · Key worker for Mary",        "STAFF-AISLING","frontline", ["SITE-OAK"]),
-  presetFromStaff("keyworker-niamh",   "Frontline · Key worker",     "Niamh Connolly · Riverside key worker",        "STAFF-NIAMH",  "frontline", ["SITE-RIV"]),
-  presetFromStaff("keyworker-orla",    "Frontline · Key worker",     "Orla McCarthy · Elm Grove key worker",         "STAFF-ORLA",   "frontline", ["SITE-ELM"]),
-  presetFromStaff("viewonly",          "View only",                  "Governance viewer · read-only, all sites",     "STAFF-CIARAN", "viewonly",  ["SITE-OAK", "SITE-RIV", "SITE-ELM"]),
+  presetFromStaff("admin",             "Admin (Group)",              "Full access across all 3 sites",              "STAFF-AOIFE",  "admin",     ["SITE-ECK", "SITE-WWD", "SITE-WWD"]),
+  presetFromStaff("manager-multi",     "Manager · Multi-site",       "East Cork + West Waterford",             "STAFF-SIOBHAN","manager",   ["SITE-ECK", "SITE-WWD"]),
+  presetFromStaff("manager-single",    "Manager · Single site",      "East Cork only",                          "STAFF-DANIEL", "manager",   ["SITE-ECK"]),
+  presetFromStaff("manager-elm",       "Manager · Elm Grove",        "West Waterford only",                         "STAFF-CLAIRE", "manager",   ["SITE-WWD"]),
+  presetFromStaff("frontline",         "Frontline staff",            "Support Worker · East Cork",              "STAFF-LIAM",   "frontline", ["SITE-ECK"]),
+  presetFromStaff("keyworker-emma",    "Frontline · Key worker",     "Emma Ryan · Key worker for Patrick",           "STAFF-EMMA",   "frontline", ["SITE-ECK"]),
+  presetFromStaff("keyworker-aisling", "Frontline · Key worker",     "Aisling Doherty · Key worker for Mary",        "STAFF-AISLING","frontline", ["SITE-ECK"]),
+  presetFromStaff("keyworker-niamh",   "Frontline · Key worker",     "Niamh Connolly · Riverside key worker",        "STAFF-NIAMH",  "frontline", ["SITE-WWD"]),
+  presetFromStaff("keyworker-orla",    "Frontline · Key worker",     "Orla McCarthy · Elm Grove key worker",         "STAFF-ORLA",   "frontline", ["SITE-WWD"]),
+  presetFromStaff("viewonly",          "View only",                  "Governance viewer · read-only, all sites",     "STAFF-CIARAN", "viewonly",  ["SITE-ECK", "SITE-WWD", "SITE-WWD"]),
   presetFromStaff("specialist-sarah",  "External specialist",        "Sarah Keane · Dietitian (linked to Mary)",     "STAFF-SARAH",  "external",  []),
   presetFromStaff("specialist-brian",  "External specialist",        "Brian O'Donnell · Physio (linked to Patrick)", "STAFF-BRIAN",  "external",  []),
 ];

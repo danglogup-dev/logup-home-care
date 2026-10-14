@@ -47,7 +47,7 @@ interface EditableChain {
 
 const EMPTY_CHAIN: EditableChain = {
   name: "", description: "", status: "draft",
-  scopeType: "site", scopeId: "Oakfield Manor", scopeLabel: "Oakfield Manor",
+  scopeType: "site", scopeId: "East Cork", scopeLabel: "East Cork",
   levels: [{ levelName: "Manager Review", rule: "any_one", approvers: [{ name: "", email: "", roleLabel: "" }] }],
 };
 
@@ -273,7 +273,7 @@ function ChainEditor({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Chain name</Label>
-              <Input value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} placeholder="e.g. Oakfield Manor Care Plan Approval Chain" />
+              <Input value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} placeholder="e.g. East Cork Care Plan Approval Chain" />
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>

@@ -17,7 +17,7 @@ const timestamp = (iso: string) => new Date(iso).toLocaleString("en-IE", { day: 
 export default function VisitDetail() {
   const { id } = useParams();
   const role = useRole();
-  const { visits, templates } = useVisits();
+  const { templates } = useVisits();
   const { users } = useServiceUsers();
   const visit = id ? accessibleVisit(id, role) : undefined;
   const client = users.find((u) => u.id === visit?.clientId);
@@ -73,7 +73,7 @@ export default function VisitDetail() {
           return <fieldset key={index} disabled={!editable} className="mt-5 min-w-0 border-b pb-5">
             <legend className="mb-3 text-lg font-semibold">{task}</legend>
             <div className="grid grid-cols-3 gap-2" role="group" aria-label={task}>
-              {taskOptions.map((option) => <Button key={option.value} variant={record?.outcome === option.value ? "default" : "outline"} aria-pressed={record?.outcome === option.value} className="min-h-12 px-1 text-sm whitespace-normal" onClick={() => act(() => visitsStore.recordTask(visit.id, index, option.value, role.staffId))}>{option.label}</Button>)}
+              {taskOptions.map((option) => <Button key={option.value} variant={record?.outcome === option.value ? "default" : "outline"} aria-pressed={record?.outcome === option.value} className={`min-h-12 px-1 text-sm whitespace-normal ${completed ? "disabled:opacity-100" : ""}`} onClick={() => act(() => visitsStore.recordTask(visit.id, index, option.value, role.staffId))}>{option.label}</Button>)}
             </div>
           </fieldset>;
         })}
@@ -88,10 +88,10 @@ export default function VisitDetail() {
             <legend className="text-lg font-bold">{medication.name} {medication.dose}</legend>
             <p className="mb-3 mt-1 text-base font-medium">Support: {MEDICATION_SUPPORT_LABELS[medication.supportLevel]}</p>
             <div className="grid grid-cols-2 gap-2" role="group" aria-label={`${medication.name} outcome`}>
-              {medicationOptions.map((option) => <Button key={option.value} variant={draft.outcome === option.value ? "default" : "outline"} aria-pressed={draft.outcome === option.value} className="min-h-12 whitespace-normal text-base" onClick={() => setMedDrafts((current) => ({ ...current, [index]: { ...draft, outcome: option.value } }))}>{option.label}</Button>)}
+              {medicationOptions.map((option) => <Button key={option.value} variant={draft.outcome === option.value ? "default" : "outline"} aria-pressed={draft.outcome === option.value} className={`min-h-12 whitespace-normal text-base ${completed ? "disabled:opacity-100" : ""}`} onClick={() => setMedDrafts((current) => ({ ...current, [index]: { ...draft, outcome: option.value } }))}>{option.label}</Button>)}
             </div>
             <label htmlFor={`med-reason-${index}`} className="mt-4 block text-base font-semibold">Reason / note</label>
-            <Textarea id={`med-reason-${index}`} value={draft.reason} className="mt-2 min-h-24 text-base" onChange={(e) => setMedDrafts((current) => ({ ...current, [index]: { ...draft, reason: e.target.value } }))} />
+            <Textarea id={`med-reason-${index}`} value={draft.reason} className={`mt-2 min-h-24 text-base ${completed ? "disabled:opacity-100" : ""}`} onChange={(e) => setMedDrafts((current) => ({ ...current, [index]: { ...draft, reason: e.target.value } }))} />
             {editable && <Button variant="secondary" className="mt-3 min-h-12 w-full text-base" disabled={!draft.outcome || !draft.reason.trim()} onClick={() => act(() => {
               if (!draft.outcome) return;
               visitsStore.recordMedication(visit.id, index, draft.outcome, draft.reason, role.staffId);

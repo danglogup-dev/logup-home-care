@@ -204,8 +204,13 @@ export function AppSidebar() {
   // Filter modules and sub-items by role. Hide a module entirely if it has
   // sub-items and none of them are accessible. Team is always visible.
   const visibleModules = useMemo<ModuleItem[]>(() => {
-    return modules
+    const source = homeSupport
+      ? [...homeCareModules, ...modules.filter((m) => m.title === "Admin")]
+      : modules;
+    return source
+      .filter((m) => !m.key || (isModuleKeyReleased(m.key) && canAccess(m.key, role.role)))
       .map((m) => {
+        if (m.key === "org.serviceUsers") return { ...m, title: terms.Plural };
         if (!m.subItems) return m;
         const subs = m.subItems
           .filter((s) => isModuleKeyReleased(s.key) && canAccess(s.key, role.role))

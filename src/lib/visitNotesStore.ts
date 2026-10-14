@@ -19,6 +19,13 @@ export const visitNotesStore = {
     if (error) throw new Error(error.message);
     notes = [...notes.filter((note) => note.client_id !== visit.clientId), ...(data as unknown as VisitNote[])]; emit();
   },
+  /** All confirmed notes for a client, for the client record's Visit History; requires an accessible visit for that client. */
+  async loadForClient(clientId: string, visitIds: string[], role: RoleState) {
+    if (!visitIds.some((id) => accessibleVisit(id, role)?.clientId === clientId)) throw new Error("Client unavailable.");
+    const { data, error } = await supabase.from("visit_notes").select("*").eq("client_id", clientId).order("confirmed_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    notes = [...notes.filter((note) => note.client_id !== clientId), ...(data as unknown as VisitNote[])]; emit();
+  },
   async load(visitId: string, role: RoleState) {
     if (!accessibleVisit(visitId, role)) throw new Error("Visit unavailable.");
     const { data, error } = await supabase.from("visit_notes").select("*").eq("visit_id", visitId).order("confirmed_at");

@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 import { useState, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -239,7 +240,7 @@ const IncidentDraft = () => {
 
   // === Confirmation screen ===================================================
   if (submittedCard) {
-    const canBoard = role.role === "manager" || role.role === "admin";
+    const canBoard = isManagerRole(role.role) || role.role === "admin";
     return (
       <div className="max-w-xl mx-auto px-4 py-10">
         <motion.div {...fade} className="bg-card rounded-2xl border border-border shadow-card p-6 text-center">

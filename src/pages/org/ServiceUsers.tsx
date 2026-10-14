@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useSearchParams } from "react-router-dom";
 import { useTerms } from "@/hooks/useTerms";
 import { useMemo, useState } from "react";
@@ -39,7 +40,7 @@ export default function ServiceUsers() {
   useCarePlans();
   const sites = useSites();
   const homeSupportOrg = useIsHomeSupportOrg();
-  const canManage = role.role === "admin" || role.role === "manager";
+  const canManage = role.role === "admin" || isManagerRole(role.role);
   const scopeIds = useMemo(() => new Set<string>(scopedSiteIds(role)), [role]);
   const inScope = users.filter((u) => scopeIds.has(u.siteId));
   const scopeSites = sites.filter((s) => scopeIds.has(s.id));

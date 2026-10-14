@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { SCENARIO_EVENTS, toBoardCard } from "@/lib/demoScenario";
 import { STAFF as REGISTRY_STAFF, STAFF_BY_ID } from "@/lib/demoDataRegistry";
 import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
@@ -491,7 +492,7 @@ const Board = () => {
       // Compliance: hide restricted Events from frontline / view-only users.
       // Managers/Admins still see them (subject to site scope above).
       .filter((c) => {
-        if (role.role === "admin" || role.role === "manager") return true;
+        if (role.role === "admin" || isManagerRole(role.role)) return true;
         return !isRestricted(c.visibility);
       })
       .filter((c) => {

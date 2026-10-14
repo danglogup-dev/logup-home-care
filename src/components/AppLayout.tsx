@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { Outlet, useNavigate, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -166,15 +167,15 @@ const AppLayout = () => {
 
 function GlobalRoleStrip({ role }: { role: ReturnType<typeof useRole> }) {
   let label = "";
-  if (role.role === "manager") {
-    label = `Manager scope · ${role.scope.length === 1 ? role.scope[0] : role.scope.join(" + ")}`;
+  if (isManagerRole(role.role)) {
+    label = `${role.role === "coordinator" ? "Coordinator" : "Manager"} scope · ${role.scope.length === 1 ? role.scope[0] : role.scope.join(" + ")}`;
   } else if (role.role === "frontline") {
     label = `Frontline view · ${role.scope[0] || ""} — limited to your day-to-day actions`;
   } else if (role.role === "viewonly") {
     label = "View only — read-only across the prototype";
   }
   const tone =
-    role.role === "manager" ? "bg-amber-50 text-amber-900 border-amber-200" :
+    isManagerRole(role.role) ? "bg-amber-50 text-amber-900 border-amber-200" :
     role.role === "frontline" ? "bg-emerald-50 text-emerald-900 border-emerald-200" :
     "bg-slate-100 text-slate-700 border-slate-200";
   return (

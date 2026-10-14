@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useEffect, useState } from "react";
 import { ShieldCheck, ChevronDown, Eye, Users, Briefcase, HardHat, Building2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,7 +35,7 @@ export function RoleSwitcher() {
           <Icon className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Viewing as</span>
           <span className="font-semibold">{meta.label}</span>
-          {s.role === "manager" && s.scope.length > 0 && (
+          {isManagerRole(s.role) && s.scope.length > 0 && (
             <span className="hidden md:inline text-[10px] opacity-75 border-l border-current/30 pl-2 ml-1">
               {s.scope.length === 1 ? s.scope[0] : `${s.scope.length} sites`}
             </span>

@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { Eye, Lock, Info } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 
@@ -13,7 +14,7 @@ export function RoleContextBanner({ note }: { note?: string }) {
   let Icon = Info;
   if (r.role === "viewonly") { label = "View only — actions are disabled"; Icon = Eye; }
   else if (r.role === "frontline") { label = "Frontline view — limited to your day-to-day actions"; Icon = Lock; }
-  else if (r.role === "manager") {
+  else if (isManagerRole(r.role)) {
     label = `Manager scope · ${r.scope.length === 1 ? r.scope[0] : r.scope.join(" + ")}`;
     Icon = Info;
   }

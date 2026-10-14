@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 import { Link, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
@@ -171,7 +172,7 @@ export default function PersonDetail() {
     if (t && ["glance", "plan", "incidents", "drafts", "tasks", "contributors"].includes(t)) return t;
     // Role-based default when no explicit tab is provided.
     // Key worker → Full Plan; Manager/Admin → Full Plan; Frontline (non-key-worker) & View only → Care at a Glance.
-    if (role.role === "manager" || role.role === "admin") return "plan";
+    if (isManagerRole(role.role) || role.role === "admin") return "plan";
     if (role.role === "frontline" && role.presetId === "frontline-keyworker") return "plan";
     return "glance";
   });
@@ -559,7 +560,7 @@ export default function PersonDetail() {
 
             {/* Care at a glance */}
             <TabsContent value="glance" className="space-y-3">
-              <PriorityRightNow personId={person.id} current={current} openSuggestions={openSuggestions} canRegenerate={role.role === "manager" || role.role === "admin"} actor={role.displayName} />
+              <PriorityRightNow personId={person.id} current={current} openSuggestions={openSuggestions} canRegenerate={isManagerRole(role.role) || role.role === "admin"} actor={role.displayName} />
               {customOrder && <div><Badge variant="outline" className="text-[11px]">Custom order</Badge> <span className="text-xs text-muted-foreground">This plan uses its own section order.</span></div>}
               <KeyWorkerCoverageNote keyWorkerName={person.keyWorker} />
               <div className="text-xs text-muted-foreground">Practical guidance for staff at the point of care. Drawn from the current approved plan (v{current.versionNumber}).</div>

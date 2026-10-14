@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -57,7 +58,7 @@ export default function ServiceUserProfile() {
   if (!u || !scopedSiteIds(role).includes(u.siteId)) {
     return <div className="p-6 md:p-8"><NoAccessPanel moduleLabel={`this ${terms.singular}`} /></div>;
   }
-  const canManage = role.role === "admin" || role.role === "manager";
+  const canManage = role.role === "admin" || isManagerRole(role.role);
   const closed = u.status === "discharged" || u.status === "deceased";
   const plan = carePlansStore.getPlan(u.id);
   const openFlags = carePlansStore.getSuggestionsFor(u.id, "open").length;

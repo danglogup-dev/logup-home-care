@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
@@ -68,7 +69,7 @@ export default function ReviewsAndApprovals() {
   const [toDate, setToDate] = useState("");
   // "Mine" filter — for managers, default on: only show approvals where the current
   // user is listed as an approver in the chain snapshot.
-  const [mineOnly, setMineOnly] = useState<boolean>(role.role === "manager");
+  const [mineOnly, setMineOnly] = useState<boolean>(isManagerRole(role.role));
   const isMineApproval = (instance: { chainSnapshot?: { levels?: { approvers?: { name: string }[] }[] } }): boolean => {
     const me = role.displayName.trim().toLowerCase();
     if (!me) return false;
@@ -302,7 +303,7 @@ export default function ReviewsAndApprovals() {
             </FilterBlock>
             <FilterBlock label="From"><Input type="date" className="w-40" value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></FilterBlock>
             <FilterBlock label="To"><Input type="date" className="w-40" value={toDate} onChange={(e) => setToDate(e.target.value)} /></FilterBlock>
-            {role.role === "manager" && (
+            {isManagerRole(role.role) && (
               <FilterBlock label="Scope">
                 <Button
                   size="sm"

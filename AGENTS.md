@@ -23,3 +23,4 @@ Subdirectories have their own AGENTS.md; read it before changing files there.
 - visitRules derives timing; outcomes append with staff ID/time, checkout freezes logs. SOS independently submits visit/location-linked Events, preserves drafts and never implies emergency services were contacted — no fabricated care or harm.
 - Family role sees only /family for linkedPersonSupportedIds; family summaries live in src/lib/familySummariesStore.ts as immutable AI drafts and reach family only after an in-scope coordinator approves by staffId — no unreviewed AI text to relatives.
 - Delivered vs approved hours are derived live in src/lib/hoursReport.ts from visitsStore (scheduled length of completed visits) — never stored.
+- Home Care Clients/Workforce views (HomeCareClients, HomeCareWorkforce, clientRecord.ts) are read-only lenses chosen by HomeSupportSwitch; residential pages stay intact — no second client or staff store.

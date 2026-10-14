@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { canAccess, scopedSiteIds, type ModuleKey } from "@/lib/roleStore";
-import { useSites } from "@/lib/sitesStore";
+import { useSites, isHomeSupportOrg } from "@/lib/sitesStore";
 import { useServiceUsers } from "@/lib/serviceUsersStore";
 import { isModuleKeyReleased } from "@/lib/featureFlags";
 import { useRole } from "@/hooks/useRole";
@@ -39,7 +39,7 @@ const modules: ModuleItem[] = [
     icon: HeartPulse,
     basePath: "/app/visits",
     defaultPath: "/app/visits/live",
-    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }],
+    subItems: [{ title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
   },
   {
     title: "Insights",
@@ -165,6 +165,7 @@ export function AppSidebar() {
   const location = useLocation();
   const role = useRole();
   const orgSites = useSites();
+  const homeSupport = isHomeSupportOrg(orgSites);
   const { users: orgUsers } = useServiceUsers();
   const orgScope = new Set<string>(scopedSiteIds(role));
   const orgSiteCount = orgSites.filter((x) => x.status === "active" && orgScope.has(x.id)).length;
@@ -178,11 +179,13 @@ export function AppSidebar() {
         if (!m.subItems) return m;
         const subs = m.subItems
           .filter((s) => isModuleKeyReleased(s.key) && canAccess(s.key, role.role))
+          // Shift coverage is a residential rota concept; hidden (not deleted) for home support.
+          .filter((s) => !(s.key === "workforce.coverage" && homeSupport))
           .map((s) => (s.key === "org.serviceUsers" ? { ...s, title: terms.Plural } : s));
         return { ...m, subItems: subs, defaultPath: subs[0]?.url || m.defaultPath };
       })
       .filter((m) => !m.subItems || m.subItems.length > 0);
-  }, [role.role, terms]);
+  }, [role.role, terms, homeSupport]);
 
   const [openModules, setOpenModules] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};

@@ -8,6 +8,9 @@ import VisitsLayout from "./components/VisitsLayout";
 import { VisitsToday, VisitClients, VisitsMe } from "./pages/visits/VisitPages";
 import VisitDetail from "./pages/visits/VisitDetail";
 import LiveVisits from "./pages/visits/LiveVisits";
+import HoursReport from "./pages/visits/HoursReport";
+import FamilyPortal from "./pages/family/FamilyPortal";
+import { NotForHomeSupport } from "./components/NotForHomeSupport";
 import Incidents from "./pages/Incidents";
 import IncidentDraft from "./pages/IncidentDraft";
 import MyReports from "./pages/MyReports";
@@ -81,6 +84,7 @@ const App = () => (
           <Route path="/external/care-plan-contribution/:inviteId" element={<CarePlanContribution />} />
           <Route path="/print/directory" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Directory of Residents"><OrgResidentDirectory /></Guarded>} />
           <Route path="/print/service-users/:id/chronology" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Chronology"><OrgChronology /></Guarded>} />
+          <Route path="/family" element={<Guarded moduleKey="family.portal" moduleLabel="Family updates"><FamilyPortal /></Guarded>} />
           <Route path="/app/visits" element={<VisitsLayout />}>
             <Route index element={<Navigate to="today" replace />} />
             <Route path="today" element={<VisitsToday />} />
@@ -92,6 +96,7 @@ const App = () => (
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<RoleHomeRedirect />} />
             <Route path="visits/live" element={<Guarded moduleKey="visits.live" moduleLabel="Live visits"><LiveVisits /></Guarded>} />
+            <Route path="visits/hours" element={<Guarded moduleKey="visits.hours" moduleLabel="Hours vs approved"><HoursReport /></Guarded>} />
 
             {/* Incidents module */}
             <Route path="incidents" element={<RoleHomeRedirect fallback="/app/incidents/board" />} />
@@ -131,7 +136,7 @@ const App = () => (
             <Route path="workforce/overview" element={<Guarded moduleKey="workforce.overview" moduleLabel="Workforce overview"><WorkforceOverview /></Guarded>} />
             <Route path="workforce/qualifications" element={<Guarded moduleKey="workforce.qualifications" moduleLabel="Staff qualifications"><StaffQualifications /></Guarded>} />
             <Route path="workforce/requirements" element={<Guarded moduleKey="workforce.requirements" moduleLabel="Site requirements"><SiteRequirements /></Guarded>} />
-            <Route path="workforce/coverage" element={<Guarded moduleKey="workforce.coverage" moduleLabel="Shift coverage"><ShiftCoverage /></Guarded>} />
+            <Route path="workforce/coverage" element={<Guarded moduleKey="workforce.coverage" moduleLabel="Shift coverage"><NotForHomeSupport moduleLabel="Shift coverage"><ShiftCoverage /></NotForHomeSupport></Guarded>} />
             <Route path="workforce/reporting" element={<Guarded moduleKey="workforce.reporting" moduleLabel="Workforce reporting"><WorkforceReporting /></Guarded>} />
 
             {/* Tasks & Follow-up module */}

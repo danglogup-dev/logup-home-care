@@ -10,6 +10,7 @@ import { incidentsStore } from "@/lib/incidentsStore";
 import { STAFF_BY_ID, SITE_BY_ID } from "@/lib/demoDataRegistry";
 import { liveVisits, liveVisitAlerts, LIVE_STATUS_ORDER, telephoneHref } from "@/lib/liveVisitRules";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
+import FamilySummaryReview from "@/components/visits/FamilySummaryReview";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 
@@ -73,5 +74,6 @@ export default function LiveVisits() {
         })}
       </div>
     </div>
+    <FamilySummaryReview />
   </section>;
 }

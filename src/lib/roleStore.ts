@@ -23,7 +23,7 @@ import {
 
 // ---------- Types ----------
 
-export type Role = "admin" | "manager" | "coordinator" | "frontline" | "viewonly" | "external";
+export type Role = "admin" | "manager" | "coordinator" | "frontline" | "viewonly" | "external" | "family";
 
 /** Demo access only; Cloud authorization remains authenticated and server-enforced. */
 export function isManagerRole(role: Role): boolean {
@@ -107,6 +107,7 @@ export const ROLE_PRESETS: RolePreset[] = [
   presetFromStaff("keyworker-orla",    "Frontline · Key worker",     "Orla McCarthy · Elm Grove key worker",         "STAFF-ORLA",   "frontline", ["SITE-WWD"]),
   presetFromStaff("viewonly",          "View only",                  "Governance viewer · read-only, all sites",     "STAFF-CIARAN", "viewonly",  ["SITE-ECK", "SITE-WWD", "SITE-WWD"]),
   presetFromStaff("specialist-sarah",  "External specialist",        "Sarah Keane · Dietitian (linked to Mary)",     "STAFF-SARAH",  "external",  []),
+  presetFromStaff("family-patrick",    "Family member",              "Mary Murphy · Daughter of Patrick (read-only)", "STAFF-FAMILY-MARY", "family", []),
   presetFromStaff("specialist-brian",  "External specialist",        "Brian O'Donnell · Physio (linked to Patrick)", "STAFF-BRIAN",  "external",  []),
 ];
 
@@ -161,6 +162,8 @@ export const roleStore = {
 export type ModuleKey =
   | "visits.live"
   | "visits.today"
+  | "visits.hours"
+  | "family.portal"
   | "incidents.overview"
   | "incidents.board"
   | "incidents.capture"
@@ -203,7 +206,7 @@ export type ModuleKey =
 
 const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
   admin: new Set<ModuleKey>([
-    "visits.live",
+    "visits.live","visits.hours",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library","policies.approvals","policies.chainTemplates",
@@ -217,7 +220,7 @@ const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
     "debug.permissions",
   ]),
   manager: new Set<ModuleKey>([
-    "visits.live",
+    "visits.live","visits.hours",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library",
@@ -240,6 +243,7 @@ const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
     "team",
   ]),
   viewonly: new Set<ModuleKey>([
+    "visits.hours",
     "incidents.overview",
     "audits.overview",
     "policies.library",
@@ -253,6 +257,8 @@ const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
   // External specialists have NO main-app module access. They can only reach
   // `/external/*` invited contribution routes (handled at the router level).
   external: new Set<ModuleKey>([]),
+  // Family contacts only see the read-only family page for their linked client.
+  family: new Set<ModuleKey>(["family.portal"]),
 };
 
 export function canAccess(key: ModuleKey, role: Role = state.role): boolean {
@@ -268,7 +274,7 @@ export type Capability =
   | "team.edit" | "team.invite";
 
 export function can(cap: Capability, role: Role = state.role): boolean {
-  if (role === "viewonly" || role === "external") return false;
+  if (role === "viewonly" || role === "external" || role === "family") return false;
   if (role === "admin") return true;
   if (isManagerRole(role)) {
     if (cap === "policy.publish") return false;
@@ -313,7 +319,7 @@ export function personInScope(
   const p = PERSON_BY_ID[personId as PersonSupportedId];
   if (!p) return false;
   // Specialists: only their linked people, ignore site scope.
-  if (s.role === "external") {
+  if (s.role === "external" || s.role === "family") {
     return (s.linkedPersonSupportedIds ?? []).includes(p.id);
   }
   return inScopeSite(p.siteId, s);

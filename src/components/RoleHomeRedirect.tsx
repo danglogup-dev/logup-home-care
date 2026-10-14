@@ -10,6 +10,7 @@ const ROLE_HOME: Record<string, string> = {
   coordinator: "/app/visits/live",
   viewonly: "/app/insights/overview",
   frontline: "/app/visits/today",
+  family: "/family",
 };
 
 /**

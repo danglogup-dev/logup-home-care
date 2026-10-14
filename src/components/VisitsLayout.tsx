@@ -23,6 +23,7 @@ export default function VisitsLayout() {
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
   }, []);
   if (role.role === "external") return <Navigate to="/signin" replace />;
+  if (role.role === "family") return <Navigate to="/family" replace />;
   const tabs = [
     { path: "today", label: "Today", icon: CalendarDays },
     { path: "clients", label: terms.Plural, icon: Users },

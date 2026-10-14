@@ -1,3 +1,4 @@
+import { useIsHomeSupportOrg } from "@/lib/sitesStore";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -32,6 +33,7 @@ const WorkforceOverview = () => {
   const expiring = expiringSoonCount();
   const expired = expiredCount();
   const missing = missingCriticalCount();
+  const homeSupport = useIsHomeSupportOrg();
   const cov = todaysCoverageBreakdown();
   const allStaff = workforceStore.getStaff();
   const staff = allStaff.filter((s) => s.assignedSiteIds.some((id) => scopedSiteIds.has(id)) && s.operationalProfile !== "governance_view_only");
@@ -148,8 +150,8 @@ const WorkforceOverview = () => {
         <Kpi value={highRiskGaps} label="High-risk gaps" tone={highRiskGaps > 0 ? "destructive" : "success"} href="/app/workforce/qualifications?status=missing" />
         <Kpi value={expiring} label="Expiring ≤ 30 days" tone="warning" href="/app/workforce/qualifications?status=expiring" />
         <Kpi value={expired} label="Expired" tone="destructive" href="/app/workforce/qualifications?status=expired" />
-        <Kpi value={cov.at_risk} label="Shifts at risk (today)" tone="warning" href="/app/workforce/coverage" />
-        <Kpi value={cov.uncovered} label="Shifts uncovered (today)" tone="destructive" href="/app/workforce/coverage" />
+        {!homeSupport && <Kpi value={cov.at_risk} label="Shifts at risk (today)" tone="warning" href="/app/workforce/coverage" />}
+        {!homeSupport && <Kpi value={cov.uncovered} label="Shifts uncovered (today)" tone="destructive" href="/app/workforce/coverage" />}
       </motion.div>
 
       {siteGaps.length > 0 && (

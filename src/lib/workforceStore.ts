@@ -157,6 +157,12 @@ const qualificationTypes: QualificationType[] = [
   { id: "q-epilepsy-meds",   name: "Epilepsy Medication Administration", critical: true,  defaultValidityMonths: 12 },
   { id: "q-pbs",             name: "Positive Behaviour Support",         critical: false, defaultValidityMonths: 24 },
   { id: "q-dysphagia",       name: "Nutrition / Dysphagia Awareness",    critical: false, defaultValidityMonths: 24 },
+  // Home support rails
+  { id: "q-qqi5-care",       name: "QQI Level 5 Care Skills",            critical: true,  defaultValidityMonths: 600 },
+  { id: "q-garda-vetting",   name: "Garda vetting",                      critical: true,  defaultValidityMonths: 36 },
+  { id: "q-lone-working",    name: "Lone working",                       critical: true,  defaultValidityMonths: 24 },
+  { id: "q-driving-licence", name: "Full driving licence",               critical: true,  defaultValidityMonths: 120 },
+  { id: "q-business-insurance", name: "Business insurance",              critical: true,  defaultValidityMonths: 12 },
 ];
 
 // ---------- Sites ----------
@@ -212,10 +218,13 @@ interface StaffSeed {
 // unless explicitly assigned).
 const LEADERSHIP_EXPECTED = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire"];
 
-const OAK_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-meds"];
+const HOME_RAILS = ["q-qqi5-care", "q-garda-vetting", "q-lone-working", "q-driving-licence", "q-business-insurance"];
+/** Seeded home-support rails; overrides give demo expiry offsets (days). */
+const homeQuals = (o: Partial<Record<string, number>> = {}) => HOME_RAILS.map((q, i) => qual(q, o[q] ?? 200 + i * 45, q === "q-qqi5-care" ? 600 : 12));
+const OAK_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-meds", ...HOME_RAILS];
 const OAK_FRONTLINE_DYS = [...OAK_FRONTLINE, "q-dysphagia"];
-const RIV_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-pbs"];
-const ELM_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-epilepsy-aware", "q-epilepsy-meds"];
+const RIV_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-pbs", ...HOME_RAILS];
+const ELM_FRONTLINE = ["q-firstaid", "q-handling", "q-safeguarding", "q-fire", "q-epilepsy-aware", "q-epilepsy-meds", ...HOME_RAILS];
 
 const staffSeeds: StaffSeed[] = [
   // Aoife — Regional Operations Lead (admin). Treated as leadership.
@@ -241,27 +250,27 @@ const staffSeeds: StaffSeed[] = [
   // Emma — Frontline Oakfield. First Aid DUE SOON (+20d).
   {
     id: "STAFF-EMMA", profile: "frontline", expected: OAK_FRONTLINE, rota: "A",
-    quals: [qual("q-firstaid", 20, 36), qual("q-handling", 200, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 250, 12), qual("q-meds", 320, 24)],
+    quals: [qual("q-firstaid", 20, 36), qual("q-handling", 200, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 250, 12), qual("q-meds", 320, 24), ...homeQuals()],
   },
   // Aisling — Frontline Oakfield. Dysphagia DUE SOON.
   {
     id: "STAFF-AISLING", profile: "frontline", expected: OAK_FRONTLINE_DYS, rota: "B",
-    quals: [qual("q-firstaid", 400, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 310, 24), qual("q-fire", 260, 12), qual("q-meds", 300, 24), qual("q-dysphagia", 20, 24)],
+    quals: [qual("q-firstaid", 400, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 310, 24), qual("q-fire", 260, 12), qual("q-meds", 300, 24), qual("q-dysphagia", 20, 24), ...homeQuals()],
   },
   // Liam — Frontline Oakfield (support worker).
   {
     id: "STAFF-LIAM", profile: "frontline", expected: OAK_FRONTLINE, rota: "B", shiftPreference: "night",
-    quals: [qual("q-firstaid", 380, 36), qual("q-handling", 240, 12), qual("q-safeguarding", 290, 24), qual("q-fire", 240, 12), qual("q-meds", 280, 24)],
+    quals: [qual("q-firstaid", 380, 36), qual("q-handling", 240, 12), qual("q-safeguarding", 290, 24), qual("q-fire", 240, 12), qual("q-meds", 280, 24), ...homeQuals({ "q-business-insurance": 12 })],
   },
   // Niamh — Frontline Riverside key worker.
   {
     id: "STAFF-NIAMH", profile: "frontline", expected: RIV_FRONTLINE, rota: "A",
-    quals: [qual("q-firstaid", 360, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-pbs", 320, 24)],
+    quals: [qual("q-firstaid", 360, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-pbs", 320, 24), ...homeQuals({ "q-garda-vetting": 10 })],
   },
   // Orla — Frontline Elm Grove. Epilepsy Meds DUE SOON.
   {
     id: "STAFF-ORLA", profile: "frontline", expected: ELM_FRONTLINE, rota: "B",
-    quals: [qual("q-firstaid", 380, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-epilepsy-aware", 400, 24), qual("q-epilepsy-meds", 20, 12)],
+    quals: [qual("q-firstaid", 380, 36), qual("q-handling", 220, 12), qual("q-safeguarding", 300, 24), qual("q-fire", 260, 12), qual("q-epilepsy-aware", 400, 24), qual("q-epilepsy-meds", 20, 12), ...homeQuals()],
   },
   // Additional frontline staff (connected demo dataset).
   { id: "STAFF-GRAINNE", profile: "frontline", expected: OAK_FRONTLINE, rota: "A", quals: OAK_FRONTLINE.map((q, i) => qual(q, 120 + i * 40, 24)) },

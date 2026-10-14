@@ -151,6 +151,7 @@ const App = () => (
             <Route path="tasks/:id" element={<Guarded moduleKey="tasks.today" moduleLabel="Task"><TaskDetail /></Guarded>} />
 
             {/* Insights & Themes module */}
+            <Route path="home" element={<Guarded moduleKey="insights.overview" moduleLabel="Home"><Insights asHome /></Guarded>} />
             <Route path="insights" element={<Navigate to="/app/insights/overview" replace />} />
             <Route path="insights/overview" element={<Guarded moduleKey="insights.overview" moduleLabel="Insights & Themes"><Insights /></Guarded>} />
 

@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Coordinator: manager-equivalent demo permissions scoped by service-area IDs; live home, status-prioritised today's visits, contact actions, combined SOS/timing/new visit Event alerts, eight home-support event types and inference; tests and desktop/phone verification.
+- [x] Coordinator: manager-equivalent demo permissions scoped by service-area IDs; live home, status-prioritised today's visits, direct contact actions, combined SOS/timing/new visit Event alerts, seven home-support event types and inference. All 28 visit tests pass; preview typecheck/build OK; browser verified home redirect, area exclusion/switching, live Event appearance/deep link, temporary telephone targets, frontline denial and 390px no overflow. Direct carer/client numbers are absent in demo records; call actions remain disabled until provided. Existing manager-only gates use roleStore's shared helper without restyling; no Cloud authorization changes.
 
 - [x] Visit brief implementation: accessible published care plan + access notes + latest three confirmed notes + visible open Events; source-change refresh, 3–5 factual lines and streamed read aloud. Fifteen client tests pass; real model summary and speech calls succeed; signed-out phone/desktop display verified.
 - [ ] Visit brief authenticated end-to-end verification: blocked by no Cloud auth users; first sign-in required. Existing prototype Events and care plans remain client-side; notes remain account-owned, so cross-carer note access is not enabled.

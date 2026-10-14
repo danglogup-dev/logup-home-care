@@ -20,12 +20,12 @@ import { useSites, siteLabel } from "@/lib/sitesStore";
 import { buildTimeline, type TimelineKind } from "@/lib/serviceUserTimeline";
 import { STAFF, getStaffName, type SiteId, type StaffId } from "@/lib/demoDataRegistry";
 import { NoAccessPanel } from "@/components/RoleContextBanner";
-const FUNDING_LABELS = { hse: "HSE", private: "Private", mixed: "Mixed (HSE and private)" } as const;
 import { DirectoryIncompleteBadge } from "@/components/DirectoryIncompleteBadge";
 import {
   missingDirectoryFields, ageFrom, SEX_LABELS, MARITAL_LABELS, ADMISSION_TYPE_LABELS, ADMITTED_FROM_LABELS, REPRESENTATIVE_TYPE_LABELS,
 } from "@/lib/residentDirectory";
 import { STATUS_LABELS, carePlanStatusText } from "./ServiceUsers";
+const FUNDING_LABELS = { hse: "HSE", private: "Private", mixed: "Mixed (HSE and private)" } as const;
 
 const KIND_META: Record<TimelineKind, { label: string; icon: typeof User }> = {
   lifecycle: { label: "Movements", icon: Move },

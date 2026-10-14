@@ -190,10 +190,10 @@ function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutco
       if (!pool.length) return;
       const rotated = [...pool.slice((d + ti) % pool.length), ...pool.slice(0, (d + ti) % pool.length)];
       const preferred = pool.includes(client.keyWorkerStaffId) && (d + ti) % 3 !== 0 ? [client.keyWorkerStaffId, ...rotated.filter((x) => x !== client.keyWorkerStaffId)] : rotated;
-      // Try the preferred start, then up to 60 minutes later, for free carers (demo seeding only).
+      // Try the preferred start, then up to 105 minutes later, for free carers (demo seeding only).
       let start = at(day, t.windowStart), end = at(day, t.windowStart, t.durationMinutes);
       let staffIds: StaffId[] = [];
-      for (let shift = 0; shift <= (demoOutcomes ? 60 : 0); shift += 15) {
+      for (let shift = 0; shift <= (demoOutcomes ? 105 : 0); shift += 15) {
         const s0 = at(day, t.windowStart, shift), e0 = at(day, t.windowStart, shift + t.durationMinutes);
         const free = preferred.filter((id) => !busy(id, s0.getTime(), e0.getTime())).slice(0, t.carersRequired);
         if (shift === 0 || free.length > staffIds.length) { start = s0; end = e0; staffIds = free; }

@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -38,9 +39,9 @@ export default function WorkflowsPage() {
   const perms = useWorkflowPermissions();
 
   const isAdmin = role.role === "admin";
-  const isManagerWithPerm = role.role === "manager" && !!perms[role.displayName];
+  const isManagerWithPerm = isManagerRole(role.role) && !!perms[role.displayName];
   const canCreate = isAdmin || isManagerWithPerm;
-  const canAccessPage = isAdmin || role.role === "manager";
+  const canAccessPage = isAdmin || isManagerRole(role.role);
 
   const [openBuilder, setOpenBuilder] = useState<{ mode: "create" | "edit"; wf?: Workflow } | null>(null);
   const [openAudit, setOpenAudit] = useState<string | null>(null);

@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
@@ -79,7 +80,7 @@ export default function AdmitResident() {
   const [extracting, setExtracting] = useState(false);
   const docRef = useRef<HTMLInputElement>(null);
 
-  const canManage = role.role === "admin" || role.role === "manager";
+  const canManage = role.role === "admin" || isManagerRole(role.role);
   const scope = useMemo(() => new Set<string>(scopedSiteIds(role)), [role]);
   const scopeSites = sites.filter((s) => scope.has(s.id) && s.status === "active");
   const keyWorkers = STAFF.filter((s) => !s.external && !s.readOnly && s.scopeSiteIds.includes(f.siteId as SiteId));

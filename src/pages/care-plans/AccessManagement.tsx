@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -67,7 +68,7 @@ export default function AccessManagement() {
   const visibleIds = useMemo(() => new Set(visiblePeople.map((p) => p.id)), [visiblePeople]);
   const state = useSpecialistContributions();
   const canInvite = canInviteSpecialists(role.role);
-  const canReview = role.role === "admin" || role.role === "manager";
+  const canReview = role.role === "admin" || isManagerRole(role.role);
 
   const invitesInScope = useMemo(
     () => state.invites.filter((i) =>
@@ -915,7 +916,7 @@ function InternalAccessTable({ currentRole, currentScope }: { currentRole: Role;
                 <TableCell className="text-sm">{u.scope?.join(", ") ?? "—"}{u.unit ? ` · ${u.unit}` : ""}</TableCell>
                 <TableCell className="text-xs">
                   {u.role === "admin" && "Full access across all sites"}
-                  {u.role === "manager" && "Review, approve, publish within scope"}
+                  {isManagerRole(u.role) && "Review, approve, publish within scope"}
                   {u.role === "frontline" && "View approved plan, complete tasks"}
                   {u.role === "viewonly" && "Read-only within scope"}
                 </TableCell>

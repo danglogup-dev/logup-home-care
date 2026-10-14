@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useTerms } from "@/hooks/useTerms";
 // Shared full incident detail — used by Events Board, Events Reporting and any
 // deep link from Care Planning ("Open in Events"). Data source: the canonical
@@ -224,9 +225,9 @@ export function IncidentDetailDrawer({
   const inSiteScope = inScope(v.site, role.role, role.scope);
   const isExternal = role.role === "external";
   const isViewOnly = role.role === "viewonly";
-  const isManagerish = role.role === "admin" || role.role === "manager";
+  const isManagerish = role.role === "admin" || isManagerRole(role.role);
   const roleLabel = role.role === "admin" ? "Admin"
-    : role.role === "manager" ? "Manager / PIC"
+    : isManagerRole(role.role) ? "Manager / PIC"
       : role.role === "frontline" ? "Frontline"
         : role.role === "viewonly" ? "View Only" : "External Specialist";
 

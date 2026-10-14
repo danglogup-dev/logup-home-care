@@ -7,6 +7,7 @@ import { featureFlags } from "@/lib/featureFlags";
 const ROLE_HOME: Record<string, string> = {
   admin: "/app/incidents/board",
   manager: "/app/incidents/board",
+  coordinator: "/app/visits/live",
   viewonly: "/app/insights/overview",
   frontline: "/app/visits/today",
 };
@@ -31,7 +32,7 @@ export function RoleHomeRedirect({
   const r = useRole();
   const explicit =
     (r.role === "frontline" && frontlinePath) ||
-    (r.role === "manager" && managerPath) ||
+    ((r.role === "manager" || r.role === "coordinator") && managerPath) ||
     (r.role === "admin" && adminPath) ||
     (r.role === "viewonly" && viewonlyPath) ||
     undefined;
@@ -42,7 +43,8 @@ export function RoleHomeRedirect({
     }
     return <Navigate to={fallback} replace />;
   }
-  const home = r.role === "frontline" && !featureFlags.visits ? "/app/care-plans/plans" : ROLE_HOME[r.role];
+  const home = !featureFlags.visits && r.role === "frontline" ? "/app/care-plans/plans"
+    : !featureFlags.visits && r.role === "coordinator" ? "/app/incidents/board" : ROLE_HOME[r.role];
   return <Navigate to={home ?? "/app/incidents/board"} replace />;
 }
 

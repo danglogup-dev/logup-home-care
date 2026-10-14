@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 // Notification Form preparation workflow (5 steps).
 //
 // LogUp prepares a DRAFT. A human reviews, edits, approves, exports.
@@ -54,7 +55,7 @@ export function NotificationFormPrepDialog({
     ? drafts.find(d => d.draftId === draftId)
     : undefined;
 
-  const canMutate = role.role === "admin" || role.role === "manager";
+  const canMutate = role.role === "admin" || isManagerRole(role.role);
 
   const suggested = useMemo(() => suggestedTemplatesFor(incident), [incident]);
   const suggestedIds = new Set(suggested.map(t => t.templateId));

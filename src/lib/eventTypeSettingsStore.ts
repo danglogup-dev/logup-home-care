@@ -67,6 +67,13 @@ function defaultDescription(t: EventType): string {
     case "Infection / Outbreak": return "Suspected or confirmed infection clusters or outbreaks.";
     case "Regulatory Notification": return "Notifiable events for HIQA, MHC, HSA and similar.";
     case "Inspection / Regulatory Visit": return "Announced or unannounced inspections and regulator visits.";
+    case "Missed visit": return "A scheduled home visit did not take place.";
+    case "Late visit": return "A carer arrived late for a scheduled home visit.";
+    case "No answer at door": return "Nobody answered the door during a home visit.";
+    case "Unable to access home": return "A carer could not gain access to the home.";
+    case "Found on floor": return "A person was found on the floor or ground.";
+    case "Environmental hazard": return "A hazard in or around the home.";
+    case "Lone worker concern": return "A concern about the safety of a carer working alone.";
     case "Other": return "Anything that does not fit another type.";
   }
 }

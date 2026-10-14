@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { getTerms } from "@/lib/orgSettingsStore";
 import { useTerms } from "@/hooks/useTerms";
 import { useMemo, useState } from "react";
@@ -989,7 +990,7 @@ function MissingLinkResolver({ signal, onDone }: { signal: SignalInsight; onDone
   const [reason, setReason] = useState("");
   const siteId = signal.relatedSiteIds?.[0];
   const options = serviceUsersStore.all().filter((u) => u.siteId === siteId && u.status === "active");
-  const canResolve = r.role === "admin" || r.role === "manager";
+  const canResolve = r.role === "admin" || isManagerRole(r.role);
   if (!canResolve) return null;
   return (
     <Section title="Resolve">

@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Eye, PlusCircle, FileText, ChevronDown, ChevronUp } from "lucide-react";
@@ -23,7 +24,7 @@ type Access = "full" | "status" | "hidden";
 
 /** Reporter access is decided by staff ID plus the record's visibility mode. */
 function accessFor(c: IncidentCard, role: ReturnType<typeof useRole>): Access {
-  if (role.role === "admin" || role.role === "manager") {
+  if (role.role === "admin" || isManagerRole(role.role)) {
     return canViewFullRecord({ role: role.role, scope: role.scope, viewerStaffId: role.staffId, recordSite: c.site, submitterStaffId: c.createdByStaffId, visibility: c.visibility })
       ? "full" : "status";
   }

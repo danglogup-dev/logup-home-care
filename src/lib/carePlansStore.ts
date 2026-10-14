@@ -1752,7 +1752,7 @@ export function availableTemplateSectionsForPerson(personId: string): { key: Sec
 // stays consistent across Overview, People, Reviews Due, Reporting, and the
 // Person detail page.
 
-import { can, type Role } from "./roleStore";
+import { can, isManagerRole, type Role } from "./roleStore";
 
 export interface ScopeInput {
   role: Role;
@@ -1794,7 +1794,7 @@ export function scopeLabel(s: ScopeInput): string {
  * Note: actual approve action still requires being listed in the approval chain
  * for the current level — this only gates visibility of the approve/publish UI. */
 export function canApproveCarePlan(role: Role): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin" || isManagerRole(role);
 }
 
 /** True when the role can edit templates. */
@@ -1811,7 +1811,7 @@ export function isKeyWorkerFor(person: Pick<PersonSupported, "keyWorkerStaffId">
 export function canEditCarePlanFor(person: Pick<PersonSupported, "site" | "unit" | "keyWorkerStaffId">, s: ScopeInput & { staffId?: string }): boolean {
   if (s.role === "viewonly" || s.role === "external") return false;
   if (!isPersonInScope(person, s)) return false;
-  if (s.role === "admin" || s.role === "manager") return true;
+  if (s.role === "admin" || isManagerRole(s.role)) return true;
   if (s.role === "frontline") return isKeyWorkerFor(person, s.staffId);
   return false;
 }

@@ -6,7 +6,7 @@
 
 import type { EventType } from "./eventTypes";
 import type { Role, SiteName } from "./roleStore";
-import { ALL_SITES } from "./roleStore";
+import { ALL_SITES, isManagerRole } from "./roleStore";
 
 export type WorkflowTrigger =
   | "event_submitted"
@@ -423,7 +423,7 @@ export const workflowPermissionsStore = {
   get(): ManagerPerms { return perms; },
   canManageSiteWorkflows(displayName: string, role: Role): boolean {
     if (role === "admin") return true;
-    if (role !== "manager") return false;
+    if (!isManagerRole(role)) return false;
     return !!perms[displayName];
   },
   grant(displayName: string, value: boolean) {

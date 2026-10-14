@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
@@ -14,7 +15,7 @@ export default function Chronology() {
   const role = useRole();
   useServiceUsers();
   const u = serviceUsersStore.getById(id);
-  const allowed = (role.role === "admin" || role.role === "manager") && u && scopedSiteIds(role).includes(u.siteId);
+  const allowed = (role.role === "admin" || isManagerRole(role.role)) && u && scopedSiteIds(role).includes(u.siteId);
   if (!u || !allowed) return <div className="p-8"><NoAccessPanel moduleLabel="Chronology export" /></div>;
   const items = buildTimeline(u.id);
   return (

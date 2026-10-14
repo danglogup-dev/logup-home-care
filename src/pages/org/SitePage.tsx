@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink, MapPin, Phone } from "lucide-react";
@@ -165,7 +166,7 @@ export default function SitePage() {
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
-        {(role.role === "admin" || role.role === "manager") && !homeSupportOrg && (
+        {(role.role === "admin" || isManagerRole(role.role)) && !homeSupportOrg && (
           <Button variant="outline" size="sm" className="ml-2" onClick={() => window.open(`/print/directory?site=${site.id}`, "_blank")}>Directory of Residents</Button>
         )}
 

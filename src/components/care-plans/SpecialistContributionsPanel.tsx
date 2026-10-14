@@ -1,3 +1,4 @@
+import { isManagerRole } from "@/lib/roleStore";
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,7 +118,7 @@ function ContributionCard({ c, reviewer, readOnly }: { c: SpecialistContribution
   const [action, setAction] = useState<null | "reject" | "clarify">(null);
   const Icon = typeIcon(c.contributionType);
   const isPending = PENDING.includes(c.status);
-  const canReview = !readOnly && (reviewer.role === "admin" || reviewer.role === "manager");
+  const canReview = !readOnly && (reviewer.role === "admin" || isManagerRole(reviewer.role));
 
   const affectedLabels = c.affectedSections.map((k) => SECTION_LABELS[k as keyof typeof SECTION_LABELS] ?? CARE_PLAN_SECTIONS.find((s) => s.key === k)?.label ?? k);
 

@@ -7,6 +7,7 @@ import AppLayout from "./components/AppLayout";
 import VisitsLayout from "./components/VisitsLayout";
 import { VisitsToday, VisitClients, VisitsMe } from "./pages/visits/VisitPages";
 import VisitDetail from "./pages/visits/VisitDetail";
+import LiveVisits from "./pages/visits/LiveVisits";
 import Incidents from "./pages/Incidents";
 import IncidentDraft from "./pages/IncidentDraft";
 import MyReports from "./pages/MyReports";
@@ -90,6 +91,7 @@ const App = () => (
           </Route>
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<RoleHomeRedirect />} />
+            <Route path="visits/live" element={<Guarded moduleKey="visits.live" moduleLabel="Live visits"><LiveVisits /></Guarded>} />
 
             {/* Incidents module */}
             <Route path="incidents" element={<RoleHomeRedirect fallback="/app/incidents/board" />} />

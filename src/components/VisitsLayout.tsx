@@ -1,7 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Users, SquarePen, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LogUpLogo from "@/components/LogUpLogo";
 import { Guarded } from "@/components/Guarded";
 import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";
@@ -22,7 +21,7 @@ export default function VisitsLayout() {
       <div className="min-h-dvh bg-background text-foreground">
         <header className="border-b bg-card px-4 pt-[env(safe-area-inset-top)]">
           <div className="mx-auto flex min-h-16 max-w-xl items-center justify-between gap-4">
-            <LogUpLogo className="h-7 w-auto" />
+            <span className="font-heading text-2xl font-bold text-primary">LogUp</span>
             <span className="text-sm font-semibold">Home Care</span>
           </div>
         </header>

@@ -2,7 +2,7 @@ import type { Visit } from "./visitsStore";
 import type { ServiceUser } from "./serviceUsersStore";
 import { canAccess, inScopeSite, type RoleState } from "./roleStore";
 
-export function myVisits(visits: Visit[], users: ServiceUser[], role: RoleState): Visit[] {
+export function myVisits(visits: readonly Visit[], users: readonly ServiceUser[], role: RoleState): Visit[] {
   if (!canAccess("visits.today", role.role)) return [];
   const allowed = new Set(users.filter((u) => inScopeSite(u.siteId, role)).map((u) => u.id));
   return visits.filter((v) => v.staffIds.includes(role.staffId) && allowed.has(v.clientId))

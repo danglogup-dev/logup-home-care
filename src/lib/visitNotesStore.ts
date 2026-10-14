@@ -12,6 +12,13 @@ const emit = () => listeners.forEach((listener) => listener());
 export const visitNotesStore = {
   subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
   getState: () => notes,
+  async loadClient(visitId: string, role: RoleState) {
+    const visit = accessibleVisit(visitId, role);
+    if (!visit) throw new Error("Visit unavailable.");
+    const { data, error } = await supabase.from("visit_notes").select("*").eq("client_id", visit.clientId).order("confirmed_at", { ascending: false }).limit(3);
+    if (error) throw new Error(error.message);
+    notes = [...notes.filter((note) => note.client_id !== visit.clientId), ...(data as unknown as VisitNote[])]; emit();
+  },
   async load(visitId: string, role: RoleState) {
     if (!accessibleVisit(visitId, role)) throw new Error("Visit unavailable.");
     const { data, error } = await supabase.from("visit_notes").select("*").eq("visit_id", visitId).order("confirmed_at");

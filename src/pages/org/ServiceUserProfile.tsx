@@ -25,6 +25,7 @@ import {
   missingDirectoryFields, ageFrom, SEX_LABELS, MARITAL_LABELS, ADMISSION_TYPE_LABELS, ADMITTED_FROM_LABELS, REPRESENTATIVE_TYPE_LABELS,
 } from "@/lib/residentDirectory";
 import { STATUS_LABELS, carePlanStatusText } from "./ServiceUsers";
+const FUNDING_LABELS = { hse: "HSE", private: "Private", mixed: "Mixed (HSE and private)" } as const;
 
 const KIND_META: Record<TimelineKind, { label: string; icon: typeof User }> = {
   lifecycle: { label: "Movements", icon: Move },
@@ -158,6 +159,19 @@ export default function ServiceUserProfile() {
                 <div className="col-span-2">{field("Address before admission", u.previousAddress)}</div>
               </CardContent>
             </Card>
+            {(u.homeAddress || u.funding || u.accessNotes) && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Home and funding</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">{field("Home address", u.homeAddress)}</div>
+                  {field("Eircode", u.eircode)}
+                  {field("Lives alone", u.livesAlone === undefined ? undefined : u.livesAlone ? "Yes" : "No")}
+                  <div className="col-span-2">{field("Access notes", u.accessNotes)}</div>
+                  {field("Funding", u.funding && FUNDING_LABELS[u.funding])}
+                  {field("HSE approved hours per week", u.hseApprovedHoursPerWeek !== undefined ? String(u.hseApprovedHoursPerWeek) : undefined)}
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base">Contacts and support</CardTitle>
@@ -184,7 +198,7 @@ export default function ServiceUserProfile() {
                 {field("Admission date", formatDate(u.admissionDate))}
                 {field("Admission type", u.admissionType && ADMISSION_TYPE_LABELS[u.admissionType])}
                 {field("Admitted from", u.admittedFrom && `${ADMITTED_FROM_LABELS[u.admittedFrom]}${u.admittedFromName ? ` · ${u.admittedFromName}` : ""}`)}
-                {field("Room or unit", u.roomOrUnit)}
+                {sites.find((s) => s.id === u.siteId)?.centreType !== "home_support" && field("Room or unit", u.roomOrUnit)}
                 <div className="col-span-2">{field("Arranged by", u.admissionArrangedBy)}</div>
                 {field("Key worker", getStaffName(u.keyWorkerStaffId))}
                 <div className="col-span-2">{field("Site history", history.map((h) => `${h.siteName} (${formatDate(h.from)} – ${h.to ? formatDate(h.to) : "now"})`).join(" → "))}</div>

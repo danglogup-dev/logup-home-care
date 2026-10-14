@@ -16,7 +16,7 @@ import {
 
 const REVIEWS_URL = "/app/care-plans/reviews-approvals";
 const ACCESS_URL = "/app/care-plans/access-contributors";
-const SITES = ["Oakfield Manor", "Riverside Lodge", "Elm Grove House"] as const;
+const SITES = ["East Cork", "West Waterford", "West Waterford"] as const;
 
 /**
  * Overview answers "What needs attention today?"

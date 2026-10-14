@@ -362,7 +362,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   {
     id: "PS-001", name: "Patrick Murphy", first: "Patrick", initials: "PM",
     // keyWorker attached via seed() so demo persona "Emma Ryan" can edit.
-    site: "Oakfield Manor", unit: "", age: 78, riskLevel: "high",
+    site: "East Cork", unit: "", age: 78, riskLevel: "high",
     tags: ["Falls risk", "Mobility"],
     about: "Patrick is a 78-year-old man who enjoys reading the paper each morning and listening to traditional music. He values his independence and prefers to be addressed as 'Paddy' by staff he knows well.",
     communication: "Patrick communicates verbally in English. Wears glasses for reading and a hearing aid in the right ear. Prefers face-to-face conversation, particularly in the morning when most alert.",
@@ -380,7 +380,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-002", name: "Mary O'Sullivan", first: "Mary", initials: "MO",
-    site: "Oakfield Manor", unit: "", age: 82, riskLevel: "medium",
+    site: "East Cork", unit: "", age: 82, riskLevel: "medium",
     tags: ["Nutrition"],
     about: "Mary is an 82-year-old woman who enjoys knitting, watching Fair City in the evenings, and having a cup of tea with visitors. She likes to be addressed as 'Mary'.",
     communication: "Mary communicates verbally in English and Irish. No sensory impairment recorded. Prefers a quiet environment for meaningful conversations.",
@@ -398,7 +398,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-003", name: "John Byrne", first: "John", initials: "JB",
-    site: "Oakfield Manor", unit: "", age: 74, riskLevel: "low",
+    site: "East Cork", unit: "", age: 74, riskLevel: "low",
     tags: [],
     about: "John is a 74-year-old man, retired schoolteacher, who enjoys crosswords, gardening, and a walk each morning. He likes to be addressed as 'John'.",
     communication: "John communicates verbally in English. No sensory impairment. Confident and clear communicator.",
@@ -416,7 +416,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-004", name: "Eileen Fitzgerald", first: "Eileen", initials: "EF",
-    site: "Riverside Lodge", unit: "", age: 86, riskLevel: "high",
+    site: "West Waterford", unit: "", age: 86, riskLevel: "high",
     tags: ["Safeguarding review"],
     about: "Eileen is an 86-year-old woman who enjoys the piano, family photographs, and quiet time in the day room. She prefers to be addressed as 'Mrs. Fitzgerald'.",
     communication: "Eileen communicates verbally in English. Wears bilateral hearing aids. Benefits from short, clear sentences and eye contact.",
@@ -434,7 +434,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-005", name: "Tomás Ryan", first: "Tomás", initials: "TR",
-    site: "Riverside Lodge", unit: "", age: 76, riskLevel: "medium",
+    site: "West Waterford", unit: "", age: 76, riskLevel: "medium",
     tags: ["Skin integrity", "Medication"],
     about: "Tomás is a 76-year-old man, a former GAA coach, who enjoys watching hurling matches and telling stories about his club. He likes to be addressed as 'Tomás'.",
     communication: "Tomás communicates verbally in English and Irish. No sensory impairment.",
@@ -452,7 +452,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-006", name: "Bridget Walsh", first: "Bridget", initials: "BW",
-    site: "Elm Grove House", age: 54, riskLevel: "low",
+    site: "West Waterford", age: 54, riskLevel: "low",
     tags: ["Medication"],
     about: "Bridget is a 54-year-old woman who loves baking, country music and her weekly trip to the shops in Portlaoise. She likes to be called 'Bridget'.",
     communication: "Bridget uses short spoken phrases and pictures. Give one choice at a time and allow time to answer.",
@@ -470,7 +470,7 @@ const PERSON_SEEDS: PersonSeed[] = [
   },
   {
     id: "PS-007", name: "Michael Doyle", first: "Michael", initials: "MD",
-    site: "Elm Grove House", age: 41, riskLevel: "medium",
+    site: "West Waterford", age: 41, riskLevel: "medium",
     tags: ["Epilepsy", "Falls risk"],
     about: "Michael is a 41-year-old man who enjoys gardening, football on TV and walks in the local park. He likes to be called 'Michael'.",
     communication: "Michael communicates verbally. Prefers clear, short explanations and time to decide.",
@@ -507,7 +507,7 @@ function personFromServiceUser(su: ServiceUser, base?: Partial<PersonSupported> 
 function seedFromServiceUser(su: ServiceUser): PersonSeed {
   const first = su.preferredName || su.legalFirstName || su.name.split(" ")[0];
   const age = new Date().getFullYear() - Number(su.dateOfBirth.slice(0, 4));
-  const disability = su.siteId === "SITE-ELM";
+  const disability = su.siteId === "SITE-WWD";
   const rep = su.representatives[0];
   const focus = su.primaryFocus;
   return {
@@ -538,15 +538,15 @@ function seed(): State {
   ];
   const people: PersonSupported[] = allSeeds.map((s) => {
     const su = serviceUsersStore.getById(s.id);
-    return su ? personFromServiceUser(su, { ...s, setting: su.siteId === "SITE-ELM" ? "disability" as PersonSupported["setting"] : "nursing_home" }) : {
+    return su ? personFromServiceUser(su, { ...s, setting: su.siteId === "SITE-WWD" ? "disability" as PersonSupported["setting"] : "nursing_home" }) : {
       id: s.id, name: s.name, initials: s.initials, site: s.site, unit: s.unit,
       riskLevel: s.riskLevel, tags: s.tags, setting: "nursing_home",
     };
   });
-  const templateFor = (id: string) => (serviceUsersStore.getById(id)?.siteId === "SITE-ELM" ? "TPL-DIS" : "TPL-NH");
+  const templateFor = (id: string) => (serviceUsersStore.getById(id)?.siteId === "SITE-WWD" ? "TPL-DIS" : "TPL-NH");
   const freqFor = (id: string) => (templateFor(id) === "TPL-DIS" ? 12 : 6);
   const reviewDue = (publishedDaysAgo: number, months: number) => { const d = new Date(daysFromNow(-publishedDaysAgo)); d.setMonth(d.getMonth() + months); return d.toISOString(); };
-  const managerFor = (id: string) => { const site = serviceUsersStore.getById(id)?.siteId; return site === "SITE-OAK" ? "Daniel Walsh" : site === "SITE-ELM" ? "Claire Nolan" : "Siobhán Kelly"; };
+  const managerFor = (id: string) => { const site = serviceUsersStore.getById(id)?.siteId; return site === "SITE-ECK" ? "Daniel Walsh" : site === "SITE-WWD" ? "Claire Nolan" : "Siobhán Kelly"; };
 
   // Patrick (PS-001): v1, v2 archived; v3 published after the hip fracture (connected scenario).
   const patrick = PERSON_SEEDS[0];
@@ -1696,7 +1696,7 @@ export function generateAiDraftSections(
   return { sections, missing };
 }
 
-export const DEMO_VOICE_TRANSCRIPT = `Patrick Murphy is a 78-year-old man admitted to Oakfield Manor. He prefers to be called Paddy. He enjoys reading the newspaper each morning and listening to traditional music. He uses a four-wheeled walking frame and has had two falls at home before admission. He can mobilise short distances but needs supervision when tired or at night. His daughter Margaret is his main family contact and advocate. He wears glasses and a hearing aid in his right ear. He prefers showers in the morning. He is on anti-hypertensive medication and vitamin D. He wants to keep attending music sessions and walking to the garden.`;
+export const DEMO_VOICE_TRANSCRIPT = `Patrick Murphy is a 78-year-old man admitted to East Cork. He prefers to be called Paddy. He enjoys reading the newspaper each morning and listening to traditional music. He uses a four-wheeled walking frame and has had two falls at home before admission. He can mobilise short distances but needs supervision when tired or at night. His daughter Margaret is his main family contact and advocate. He wears glasses and a hearing aid in his right ear. He prefers showers in the morning. He is on anti-hypertensive medication and vitamin D. He wants to keep attending music sessions and walking to the garden.`;
 
 // React hook
 export function useCarePlans(): State {

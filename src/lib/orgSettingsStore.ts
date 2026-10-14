@@ -58,8 +58,8 @@ export interface ReassessmentRule {
 
 interface State { serviceUserLabel: ServiceUserLabel; defaultCarePlanReviewDays: number; reassessmentRules: ReassessmentRule[] }
 
-const STORAGE_KEY = "logup.orgSettings.v1";
-const DEFAULT: State = { serviceUserLabel: { preset: "resident", singular: "Resident", plural: "Residents" }, defaultCarePlanReviewDays: 7, reassessmentRules: [] };
+const STORAGE_KEY = "logup.orgSettings.v2";
+const DEFAULT: State = { serviceUserLabel: { preset: "client", singular: "Client", plural: "Clients" }, defaultCarePlanReviewDays: 7, reassessmentRules: [] };
 
 function load(): State {
   if (typeof window === "undefined") return DEFAULT;

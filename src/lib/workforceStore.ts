@@ -1,7 +1,7 @@
 // Workforce Compliance & Coverage — local in-memory store + helpers.
 //
 // Identity source of truth = StaffId (STAFF-*) from demoDataRegistry.
-// Geography source of truth = SiteId (SITE-OAK / SITE-RIV / SITE-ELM).
+// Geography source of truth = SiteId (SITE-ECK / SITE-WWD / SITE-WWD).
 // External specialists (external === true) are NOT workforce staff.
 
 import {
@@ -166,29 +166,29 @@ const sites: Site[] = SITES.map((s) => ({ id: s.id, name: s.name }));
 // ---------- Site requirements ----------
 
 const siteRequirements: SiteRequirement[] = [
-  // Oakfield Manor
-  { id: "r-oak-fa",   siteId: "SITE-OAK", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-oak-mh",   siteId: "SITE-OAK", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-oak-sg",   siteId: "SITE-OAK", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-oak-fire", siteId: "SITE-OAK", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-oak-med",  siteId: "SITE-OAK", qualificationId: "q-meds",         minimumPerShift: 1, appliesTo: "day",  notes: "Medication round requires registered competency." },
-  { id: "r-oak-dys",  siteId: "SITE-OAK", qualificationId: "q-dysphagia",    minimumPerShift: 1, appliesTo: "both", notes: "Conditional — resident with dysphagia risk." },
+  // East Cork
+  { id: "r-oak-fa",   siteId: "SITE-ECK", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-oak-mh",   siteId: "SITE-ECK", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-oak-sg",   siteId: "SITE-ECK", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-oak-fire", siteId: "SITE-ECK", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-oak-med",  siteId: "SITE-ECK", qualificationId: "q-meds",         minimumPerShift: 1, appliesTo: "day",  notes: "Medication round requires registered competency." },
+  { id: "r-oak-dys",  siteId: "SITE-ECK", qualificationId: "q-dysphagia",    minimumPerShift: 1, appliesTo: "both", notes: "Conditional — resident with dysphagia risk." },
 
-  // Riverside Lodge
-  { id: "r-riv-fa",   siteId: "SITE-RIV", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-riv-mh",   siteId: "SITE-RIV", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-riv-sg",   siteId: "SITE-RIV", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-riv-fire", siteId: "SITE-RIV", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-riv-pbs",  siteId: "SITE-RIV", qualificationId: "q-pbs",          minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-riv-med",  siteId: "SITE-RIV", qualificationId: "q-meds",         minimumPerShift: 1, appliesTo: "day",  notes: "Conditional — resident on medication support." },
+  // West Waterford
+  { id: "r-riv-fa",   siteId: "SITE-WWD", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-riv-mh",   siteId: "SITE-WWD", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-riv-sg",   siteId: "SITE-WWD", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-riv-fire", siteId: "SITE-WWD", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-riv-pbs",  siteId: "SITE-WWD", qualificationId: "q-pbs",          minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-riv-med",  siteId: "SITE-WWD", qualificationId: "q-meds",         minimumPerShift: 1, appliesTo: "day",  notes: "Conditional — resident on medication support." },
 
-  // Elm Grove House
-  { id: "r-elm-fa",   siteId: "SITE-ELM", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-elm-mh",   siteId: "SITE-ELM", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-elm-sg",   siteId: "SITE-ELM", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-elm-fire", siteId: "SITE-ELM", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-elm-ea",   siteId: "SITE-ELM", qualificationId: "q-epilepsy-aware", minimumPerShift: 1, appliesTo: "both" },
-  { id: "r-elm-em",   siteId: "SITE-ELM", qualificationId: "q-epilepsy-meds", minimumPerShift: 1, appliesTo: "day",  notes: "Conditional — resident on anti-epileptic medication." },
+  // West Waterford
+  { id: "r-elm-fa",   siteId: "SITE-WWD", qualificationId: "q-firstaid",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-elm-mh",   siteId: "SITE-WWD", qualificationId: "q-handling",     minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-elm-sg",   siteId: "SITE-WWD", qualificationId: "q-safeguarding", minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-elm-fire", siteId: "SITE-WWD", qualificationId: "q-fire",         minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-elm-ea",   siteId: "SITE-WWD", qualificationId: "q-epilepsy-aware", minimumPerShift: 1, appliesTo: "both" },
+  { id: "r-elm-em",   siteId: "SITE-WWD", qualificationId: "q-epilepsy-meds", minimumPerShift: 1, appliesTo: "day",  notes: "Conditional — resident on anti-epileptic medication." },
 ];
 
 // ---------- Staff seed (from registry, excluding externals) ----------
@@ -288,7 +288,7 @@ const staff: StaffMember[] = staffSeeds
   })
   .map((seed) => {
     const s = STAFF_BY_ID[seed.id];
-    const scope = s.scopeSiteIds.length ? s.scopeSiteIds : (["SITE-OAK"] as SiteId[]);
+    const scope = s.scopeSiteIds.length ? s.scopeSiteIds : (["SITE-ECK"] as SiteId[]);
     return {
       id: seed.id,
       name: s.name,
@@ -362,8 +362,8 @@ function seedShifts(): ShiftAssignment[] {
   for (let w = 0; w < 4; w++) {
     for (let dow = 0; dow < 7; dow++) {
       const date = iso(addDays(monday, w * 7 + dow));
-      list.push({ id: `sh-SITE-OAK-${date}-day`,   siteId: "SITE-OAK", date, shift: "day",   staffIds: [...dayBase[dow]] });
-      list.push({ id: `sh-SITE-OAK-${date}-night`, siteId: "SITE-OAK", date, shift: "night", staffIds: [...nightBase[dow]] });
+      list.push({ id: `sh-SITE-ECK-${date}-day`,   siteId: "SITE-ECK", date, shift: "day",   staffIds: [...dayBase[dow]] });
+      list.push({ id: `sh-SITE-ECK-${date}-night`, siteId: "SITE-ECK", date, shift: "night", staffIds: [...nightBase[dow]] });
     }
   }
   return list;

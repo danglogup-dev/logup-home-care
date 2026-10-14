@@ -116,7 +116,7 @@ export function runDemoDataIntegrityCheck(): IntegrityReport {
       }
       seenSiteNames.set(s.name, s.id);
     }
-    if (SITES.length === 3) pass("3 canonical sites present (Oakfield Manor, Riverside Lodge, Elm Grove House).");
+    if (SITES.length === 3) pass("3 canonical sites present (East Cork, West Waterford, West Waterford).");
 
     const seenPersonNames = new Map<string, string>();
     for (const p of PEOPLE_SUPPORTED) {
@@ -172,7 +172,7 @@ export function runDemoDataIntegrityCheck(): IntegrityReport {
 
       if (!VALID_SITE_NAMES.has(r.site)) {
         siteNameErrors++;
-        push({ module: "Events", recordId: r.id, problem: `Non-canonical site name "${r.site}".`, suggestedFix: "Use Oakfield Manor / Riverside Lodge / Elm Grove House.", severity: "warning" });
+        push({ module: "Events", recordId: r.id, problem: `Non-canonical site name "${r.site}".`, suggestedFix: "Use East Cork / West Waterford / West Waterford.", severity: "warning" });
       }
       const forbid = containsForbiddenGeography(r.location) || containsForbiddenGeography(r.site);
       if (forbid) {
@@ -354,10 +354,10 @@ export function runDemoDataIntegrityCheck(): IntegrityReport {
 
   // ── Demo-specific paths ───────────────────────────────────────────────────
   const demoPaths: DemoPathResult[] = [
-    buildDemoPath("Patrick Murphy", "PS-001", "SITE-OAK", { minFalls: 4, specialistStaffId: "STAFF-BRIAN" }),
-    buildDemoPath("Mary O'Sullivan", "PS-002", "SITE-OAK", { minNutrition: 2, specialistStaffId: "STAFF-SARAH" }),
-    buildDemoPath("Eileen Fitzgerald", "PS-004", "SITE-RIV", { minBehaviour: 1 }),
-    buildDemoPath("Michael Doyle", "PS-007", "SITE-ELM", { minEpilepsy: 1 }),
+    buildDemoPath("Patrick Murphy", "PS-001", "SITE-ECK", { minFalls: 4, specialistStaffId: "STAFF-BRIAN" }),
+    buildDemoPath("Mary O'Sullivan", "PS-002", "SITE-ECK", { minNutrition: 2, specialistStaffId: "STAFF-SARAH" }),
+    buildDemoPath("Eileen Fitzgerald", "PS-004", "SITE-WWD", { minBehaviour: 1 }),
+    buildDemoPath("Michael Doyle", "PS-007", "SITE-WWD", { minEpilepsy: 1 }),
   ];
 
   const errors = issues.filter((i) => i.severity === "error").length;

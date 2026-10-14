@@ -13,10 +13,9 @@
  * Future support for units is preserved in individual store types, but no
  * demo record should reference a unit, wing or floor label.
  *
- * Canonical site names (use these exact strings everywhere):
- *   - Oakfield Manor
- *   - Riverside Lodge
- *   - Elm Grove House
+ * Canonical service area names (use these exact strings everywhere):
+ *   - East Cork (home support, office in Midleton)
+ *   - West Waterford (home support, office in Dungarvan)
  */
 
 // ─── Organisation ────────────────────────────────────────────────────────────
@@ -28,7 +27,7 @@ export const ORGANISATION = {
 
 // ─── Sites ───────────────────────────────────────────────────────────────────
 
-export type SiteId = "SITE-OAK" | "SITE-RIV" | "SITE-ELM";
+export type SiteId = "SITE-ECK" | "SITE-WWD";
 
 export type CentreType =
   | "older_persons" | "disability" | "childrens_residential" | "home_support" | "supported_living";
@@ -53,13 +52,17 @@ export interface DemoSite {
   registrationRenewalDate?: string;
   lastInspectionDate?: string;
   lastInspectionReportUrl?: string;
+  /** Home support: towns the service area covers. */
+  coverageTowns?: string[];
 }
+
+/** Home support service areas have no HIQA OSV ID, registered capacity or rooms. */
+export const isHomeSupport = (s: { centreType: CentreType } | undefined): boolean => s?.centreType === "home_support";
 
 // Demo values — addresses and OSV numbers are placeholders.
 export const SITES: readonly DemoSite[] = [
-  { id: "SITE-OAK", name: "Oakfield Manor",  centreType: "older_persons", hiqaCentreId: "OSV-0000101", address: "Oakfield Road, Naas, Co. Kildare",      personInChargeStaffId: "STAFF-DANIEL",  carePlanReviewLeadStaffId: "STAFF-DANIEL",  status: "active", registeredProvider: "Oakfield Care Group CLG", registeredCapacity: 42, ppimStaffId: "STAFF-SIOBHAN", phone: "045 870 210", registrationRenewalDate: "2027-03-14", lastInspectionDate: "2025-11-19", lastInspectionReportUrl: "https://www.hiqa.ie/areas-we-work/find-a-centre" },
-  { id: "SITE-RIV", name: "Riverside Lodge", centreType: "older_persons", hiqaCentreId: "OSV-0000102", address: "River Walk, Carlow, Co. Carlow",        personInChargeStaffId: "STAFF-SIOBHAN", carePlanReviewLeadStaffId: "STAFF-SIOBHAN", status: "active", registeredProvider: "Oakfield Care Group CLG", registeredCapacity: 22, ppimStaffId: "STAFF-AOIFE", phone: "059 913 4470", registrationRenewalDate: "2026-12-02", lastInspectionDate: "2026-02-10" },
-  { id: "SITE-ELM", name: "Elm Grove House", centreType: "disability",    hiqaCentreId: "OSV-0000103", address: "Elm Grove, Portlaoise, Co. Laois",      personInChargeStaffId: "STAFF-CLAIRE",  carePlanReviewLeadStaffId: "STAFF-CLAIRE",  status: "active", registeredProvider: "Oakfield Care Group CLG", registeredCapacity: 4, ppimStaffId: "STAFF-AOIFE", phone: "057 862 0915", registrationRenewalDate: "2028-06-30", lastInspectionDate: "2025-07-08", lastInspectionReportUrl: "https://www.hiqa.ie/areas-we-work/find-a-centre" },
+  { id: "SITE-ECK", name: "East Cork",      centreType: "home_support", address: "Office: Main Street, Midleton, Co. Cork",      coverageTowns: ["Youghal", "Midleton", "Cobh", "Carrigtwohill"], personInChargeStaffId: "STAFF-DANIEL",  carePlanReviewLeadStaffId: "STAFF-DANIEL",  status: "active", registeredProvider: "Oakfield Care Group CLG", ppimStaffId: "STAFF-SIOBHAN", phone: "021 463 1100" },
+  { id: "SITE-WWD", name: "West Waterford", centreType: "home_support", address: "Office: Grattan Square, Dungarvan, Co. Waterford", coverageTowns: ["Dungarvan", "Lismore", "Cappoquin"], personInChargeStaffId: "STAFF-SIOBHAN", carePlanReviewLeadStaffId: "STAFF-SIOBHAN", status: "active", registeredProvider: "Oakfield Care Group CLG", ppimStaffId: "STAFF-AOIFE", phone: "058 412 00" },
 ] as const;
 
 export const SITE_BY_ID: Record<SiteId, DemoSite> = SITES.reduce(
@@ -144,6 +147,14 @@ export interface DemoPersonSupported {
   /** Name and address of the authority or organisation that arranged the admission. */
   admissionArrangedBy?: string;
   roomOrUnit?: string;
+  // Home support details
+  homeAddress?: string;
+  eircode?: string;
+  /** Key safe, pets, parking. */
+  accessNotes?: string;
+  livesAlone?: boolean;
+  funding?: "hse" | "private" | "mixed";
+  hseApprovedHoursPerWeek?: number;
   gp?: { name?: string; practice?: string; phone?: string };
   /** Field provenance from admission (Source / AI draft / Human confirmed). */
   fieldProvenance?: Record<string, FieldProvenance>;
@@ -160,38 +171,37 @@ const dateDaysAgo = (n: number) => isoDaysAgo(n).slice(0, 10);
 const dob = (age: number, mmdd: string) => `${DEMO_YEAR - age}-${mmdd}`;
 
 const ARRANGED_BY: Record<SiteId, string> = {
-  "SITE-OAK": "HSE Dublin and Midlands, Nursing Home Support Scheme Office, Naas, Co. Kildare",
-  "SITE-RIV": "HSE Dublin and South East, Nursing Home Support Scheme Office, Carlow",
-  "SITE-ELM": "HSE Disability Services, Midlands, Portlaoise, Co. Laois",
+  "SITE-ECK": "HSE Cork Kerry Community Healthcare, Home Support Office, Midleton, Co. Cork",
+  "SITE-WWD": "HSE South East Community Healthcare, Home Support Office, Dungarvan, Co. Waterford",
 };
 const GP: Record<SiteId, { name: string; practice: string; phone: string }> = {
-  "SITE-OAK": { name: "Dr Fergal Nolan", practice: "Naas Family Practice, Main Street, Naas", phone: "045 897 100" },
-  "SITE-RIV": { name: "Dr Úna Kehoe", practice: "Barrow Medical Centre, Tullow Street, Carlow", phone: "059 913 2200" },
-  "SITE-ELM": { name: "Dr Cathal Bergin", practice: "Portlaoise Health Centre, Dublin Road, Portlaoise", phone: "057 862 1300" },
+  "SITE-ECK": { name: "Dr Fergal Nolan", practice: "Midleton Medical Centre, Main Street, Midleton", phone: "021 463 1200" },
+  "SITE-WWD": { name: "Dr Úna Kehoe", practice: "Dungarvan Family Practice, Mitchel Street, Dungarvan", phone: "058 412 34" },
 };
-const SITE_NAME_BY_ID: Record<SiteId, string> = { "SITE-OAK": "Oakfield Manor", "SITE-RIV": "Riverside Lodge", "SITE-ELM": "Elm Grove House" };
+const SITE_NAME_BY_ID: Record<SiteId, string> = { "SITE-ECK": "East Cork", "SITE-WWD": "West Waterford" };
 
 /** Directory details for the featured residents (complete). */
 function featuredDirectory(siteId: SiteId, room: string, sex: Sex, marital: MaritalStatus, previousAddress: string, admittedFrom: AdmittedFrom, admittedFromName: string, nokAddress: string) {
   return {
     sex, maritalStatus: marital, previousAddress, preferredLanguage: "English", interpreterNeeded: false,
     admissionType: "long_term" as AdmissionType, admittedFrom, admittedFromName, admissionArrangedBy: ARRANGED_BY[siteId],
-    roomOrUnit: room, gp: GP[siteId], nokAddress,
+    ...(room ? { roomOrUnit: room } : {}), gp: GP[siteId], nokAddress,
   };
 }
 
 type FeaturedSeed = Omit<DemoPersonSupported, "siteName" | "keyWorkerId" | "createdAt" | "createdByStaffId" | "updatedAt" | "updatedByStaffId" | "representatives"> & {
   rep: Omit<ServiceUserRepresentative, "id" | "isPrimary" | "address">; dir: ReturnType<typeof featuredDirectory>;
+  home: Required<Pick<DemoPersonSupported, "homeAddress" | "eircode" | "accessNotes" | "livesAlone" | "funding" | "hseApprovedHoursPerWeek">>;
 };
 
 const FEATURED: FeaturedSeed[] = [
-  { id: "PS-001", name: "Patrick Murphy", legalFirstName: "Patrick", legalLastName: "Murphy", preferredName: "Paddy", siteId: "SITE-OAK", keyWorkerStaffId: "STAFF-EMMA", risk: "High", primaryFocus: "Falls / Mobility", dateOfBirth: dob(78, "03-12"), serviceUserCode: "OAK-0001", admissionDate: dateDaysAgo(1240), status: "active", decisionSupportSummary: "Makes everyday decisions independently; daughter supports with financial decisions.", rep: { name: "Mary Murphy", relationship: "Daughter", phone: "087 111 2233" }, dir: featuredDirectory("SITE-OAK", "Room 4", "male", "widowed", "12 Castle View, Naas, Co. Kildare", "home", "", "3 Willow Court, Naas, Co. Kildare") },
-  { id: "PS-002", name: "Mary O’Sullivan", legalFirstName: "Mary", legalLastName: "O’Sullivan", siteId: "SITE-OAK", keyWorkerStaffId: "STAFF-AISLING", risk: "Medium", primaryFocus: "Nutrition / Hydration", dateOfBirth: dob(85, "09-02"), serviceUserCode: "OAK-0002", admissionDate: dateDaysAgo(990), status: "active", decisionSupportSummary: "Benefits from extra time and written prompts for health decisions.", rep: { name: "Seán O’Sullivan", relationship: "Son", phone: "086 222 3344" }, dir: featuredDirectory("SITE-OAK", "Room 9", "female", "widowed", "Ballymore Road, Kilcullen, Co. Kildare", "hospital", "Naas General Hospital", "Ballymore Road, Kilcullen, Co. Kildare") },
-  { id: "PS-003", name: "John Byrne", legalFirstName: "John", legalLastName: "Byrne", siteId: "SITE-OAK", keyWorkerStaffId: "STAFF-LIAM", risk: "Low", primaryFocus: "Stable support plan", dateOfBirth: dob(81, "06-20"), serviceUserCode: "OAK-0003", admissionDate: dateDaysAgo(1430), status: "active", decisionSupportSummary: "Makes own decisions.", rep: { name: "Anne Byrne", relationship: "Wife", phone: "085 333 4455" }, dir: featuredDirectory("SITE-OAK", "Room 15", "male", "married", "8 Abbey Lane, Newbridge, Co. Kildare", "home", "", "8 Abbey Lane, Newbridge, Co. Kildare") },
-  { id: "PS-004", name: "Eileen Fitzgerald", legalFirstName: "Eileen", legalLastName: "Fitzgerald", siteId: "SITE-RIV", keyWorkerStaffId: "STAFF-NIAMH", risk: "High", primaryFocus: "Safeguarding / Behaviour support", dateOfBirth: dob(86, "12-08"), serviceUserCode: "RIV-0001", admissionDate: dateDaysAgo(1140), status: "active", decisionSupportSummary: "Decision-making assistant appointed; see care plan.", rep: { name: "Declan Fitzgerald", relationship: "Nephew", phone: "087 444 5566" }, dir: featuredDirectory("SITE-RIV", "Room 3", "female", "single", "Green Lane, Bagenalstown, Co. Carlow", "another_centre", "St Brigid’s Community Nursing Unit", "14 Pollerton Road, Carlow") },
-  { id: "PS-005", name: "Tomás Ryan", legalFirstName: "Tomás", legalLastName: "Ryan", siteId: "SITE-RIV", keyWorkerStaffId: "STAFF-NIAMH", risk: "Medium", primaryFocus: "Skin integrity / Medication support", dateOfBirth: dob(76, "04-15"), serviceUserCode: "RIV-0002", admissionDate: dateDaysAgo(860), status: "active", decisionSupportSummary: "Makes own decisions with support for medication choices.", rep: { name: "Niall Ryan", relationship: "Brother", phone: "083 555 6677" }, dir: featuredDirectory("SITE-RIV", "Room 7", "male", "single", "Station Road, Tullow, Co. Carlow", "hospital", "St Luke’s General Hospital, Kilkenny", "Station Road, Tullow, Co. Carlow") },
-  { id: "PS-006", name: "Bridget Walsh", legalFirstName: "Bridget", legalLastName: "Walsh", siteId: "SITE-ELM", keyWorkerStaffId: "STAFF-ORLA", risk: "Low", primaryFocus: "Personal care / Medication", dateOfBirth: dob(54, "02-27"), serviceUserCode: "ELM-0001", admissionDate: dateDaysAgo(2210), status: "active", decisionSupportSummary: "Supported decision-making using pictures and familiar staff.", rep: { name: "Kathleen Walsh", relationship: "Mother", phone: "089 666 7788" }, dir: featuredDirectory("SITE-ELM", "Bedroom 1", "female", "single", "Mountrath Road, Portlaoise, Co. Laois", "home", "", "Mountrath Road, Portlaoise, Co. Laois") },
-  { id: "PS-007", name: "Michael Doyle", legalFirstName: "Michael", legalLastName: "Doyle", siteId: "SITE-ELM", keyWorkerStaffId: "STAFF-ORLA", risk: "Medium", primaryFocus: "Epilepsy support", dateOfBirth: dob(41, "07-30"), serviceUserCode: "ELM-0002", admissionDate: dateDaysAgo(2050), status: "active", decisionSupportSummary: "Supported decision-making; sister involved in significant decisions.", rep: { name: "Joan Doyle", relationship: "Sister", phone: "087 777 8899" }, dir: featuredDirectory("SITE-ELM", "Bedroom 2", "male", "single", "Abbeyleix Road, Portlaoise, Co. Laois", "another_centre", "Cheshire Home, Tullamore", "Abbeyleix Road, Portlaoise, Co. Laois") },
+  { id: "PS-001", name: "Patrick Murphy", legalFirstName: "Patrick", legalLastName: "Murphy", preferredName: "Paddy", siteId: "SITE-ECK", keyWorkerStaffId: "STAFF-EMMA", risk: "High", primaryFocus: "Falls / Mobility", dateOfBirth: dob(78, "03-12"), serviceUserCode: "ECK-0001", admissionDate: dateDaysAgo(1240), status: "active", decisionSupportSummary: "Makes everyday decisions independently; daughter supports with financial decisions.", rep: { name: "Mary Murphy", relationship: "Daughter", phone: "087 111 2233" }, dir: featuredDirectory("SITE-ECK", "", "male", "widowed", "14 Strand Street, Youghal, Co. Cork", "home", "", "2 Friar Street, Youghal, Co. Cork"), home: { homeAddress: "14 Strand Street, Youghal, Co. Cork", eircode: "P36 X2K7", accessNotes: "Key safe by back door (code from office). Small terrier, friendly. Park on street.", livesAlone: true, funding: "hse", hseApprovedHoursPerWeek: 14 } },
+  { id: "PS-002", name: "Mary O’Sullivan", legalFirstName: "Mary", legalLastName: "O’Sullivan", siteId: "SITE-ECK", keyWorkerStaffId: "STAFF-AISLING", risk: "Medium", primaryFocus: "Nutrition / Hydration", dateOfBirth: dob(85, "09-02"), serviceUserCode: "ECK-0002", admissionDate: dateDaysAgo(990), status: "active", decisionSupportSummary: "Benefits from extra time and written prompts for health decisions.", rep: { name: "Seán O’Sullivan", relationship: "Son", phone: "086 222 3344" }, dir: featuredDirectory("SITE-ECK", "", "female", "widowed", "3 Rosebank, Midleton, Co. Cork", "hospital", "Mercy University Hospital, Cork", "Ballinacurra, Midleton, Co. Cork"), home: { homeAddress: "3 Rosebank, Midleton, Co. Cork", eircode: "P25 Y6C4", accessNotes: "Son lets carers in mornings; key safe for evening calls. No pets. Driveway parking.", livesAlone: true, funding: "mixed", hseApprovedHoursPerWeek: 10 } },
+  { id: "PS-003", name: "John Byrne", legalFirstName: "John", legalLastName: "Byrne", siteId: "SITE-ECK", keyWorkerStaffId: "STAFF-LIAM", risk: "Low", primaryFocus: "Stable support plan", dateOfBirth: dob(81, "06-20"), serviceUserCode: "ECK-0003", admissionDate: dateDaysAgo(1430), status: "active", decisionSupportSummary: "Makes own decisions.", rep: { name: "Anne Byrne", relationship: "Wife", phone: "085 333 4455" }, dir: featuredDirectory("SITE-ECK", "", "male", "married", "22 Harbour Row, Cobh, Co. Cork", "home", "", "22 Harbour Row, Cobh, Co. Cork"), home: { homeAddress: "22 Harbour Row, Cobh, Co. Cork", eircode: "P24 T3H9", accessNotes: "Wife answers door. Steep hill; park at the church car park.", livesAlone: false, funding: "private", hseApprovedHoursPerWeek: 5 } },
+  { id: "PS-004", name: "Eileen Fitzgerald", legalFirstName: "Eileen", legalLastName: "Fitzgerald", siteId: "SITE-WWD", keyWorkerStaffId: "STAFF-NIAMH", risk: "High", primaryFocus: "Safeguarding / Behaviour support", dateOfBirth: dob(86, "12-08"), serviceUserCode: "WWD-0004", admissionDate: dateDaysAgo(1140), status: "active", decisionSupportSummary: "Decision-making assistant appointed; see care plan.", rep: { name: "Declan Fitzgerald", relationship: "Nephew", phone: "087 444 5566" }, dir: featuredDirectory("SITE-WWD", "", "female", "single", "Abbeyside, Dungarvan, Co. Waterford", "another_centre", "St Joseph’s Community Hospital", "Ballinroad, Dungarvan, Co. Waterford"), home: { homeAddress: "Abbeyside, Dungarvan, Co. Waterford", eircode: "X35 P4D8", accessNotes: "Key safe at front porch. Cat indoors — keep doors closed. Parking in estate.", livesAlone: true, funding: "hse", hseApprovedHoursPerWeek: 21 } },
+  { id: "PS-005", name: "Tomás Ryan", legalFirstName: "Tomás", legalLastName: "Ryan", siteId: "SITE-WWD", keyWorkerStaffId: "STAFF-NIAMH", risk: "Medium", primaryFocus: "Skin integrity / Medication support", dateOfBirth: dob(76, "04-15"), serviceUserCode: "WWD-0001", admissionDate: dateDaysAgo(860), status: "active", decisionSupportSummary: "Makes own decisions with support for medication choices.", rep: { name: "Niall Ryan", relationship: "Brother", phone: "083 555 6677" }, dir: featuredDirectory("SITE-WWD", "", "male", "single", "5 Davitt's Quay, Dungarvan, Co. Waterford", "hospital", "University Hospital Waterford", "Abbeyside, Dungarvan, Co. Waterford"), home: { homeAddress: "5 Davitt's Quay, Dungarvan, Co. Waterford", eircode: "X35 E1F6", accessNotes: "Ring bell; brother may be visiting. Pay-and-display on the quay.", livesAlone: true, funding: "hse", hseApprovedHoursPerWeek: 12 } },
+  { id: "PS-006", name: "Bridget Walsh", legalFirstName: "Bridget", legalLastName: "Walsh", siteId: "SITE-WWD", keyWorkerStaffId: "STAFF-ORLA", risk: "Low", primaryFocus: "Personal care / Medication", dateOfBirth: dob(54, "02-27"), serviceUserCode: "WWD-0002", admissionDate: dateDaysAgo(2210), status: "active", decisionSupportSummary: "Supported decision-making using pictures and familiar staff.", rep: { name: "Kathleen Walsh", relationship: "Mother", phone: "089 666 7788" }, dir: featuredDirectory("SITE-WWD", "", "female", "single", "Main Street, Lismore, Co. Waterford", "home", "", "Main Street, Lismore, Co. Waterford"), home: { homeAddress: "Main Street, Lismore, Co. Waterford", eircode: "P51 W8N3", accessNotes: "Mother at home. Two dogs — ask for them to be put out back. Park in square.", livesAlone: false, funding: "mixed", hseApprovedHoursPerWeek: 8 } },
+  { id: "PS-007", name: "Michael Doyle", legalFirstName: "Michael", legalLastName: "Doyle", siteId: "SITE-WWD", keyWorkerStaffId: "STAFF-ORLA", risk: "Medium", primaryFocus: "Epilepsy support", dateOfBirth: dob(41, "07-30"), serviceUserCode: "WWD-0003", admissionDate: dateDaysAgo(2050), status: "active", decisionSupportSummary: "Supported decision-making; sister involved in significant decisions.", rep: { name: "Joan Doyle", relationship: "Sister", phone: "087 777 8899" }, dir: featuredDirectory("SITE-WWD", "", "male", "single", "2 Mill Lane, Cappoquin, Co. Waterford", "another_centre", "Cheshire Home, Waterford", "Ballyduff, Co. Waterford"), home: { homeAddress: "2 Mill Lane, Cappoquin, Co. Waterford", eircode: "P51 C9R2", accessNotes: "Key safe beside garage. No pets. Driveway parking.", livesAlone: true, funding: "hse", hseApprovedHoursPerWeek: 18 } },
 ];
 
 /**
@@ -233,9 +243,8 @@ const RIV_KEY_WORKERS: StaffId[] = ["STAFF-FIONA", "STAFF-MAEVE", "STAFF-DARRAGH
 const ELM_KEY_WORKERS: StaffId[] = ["STAFF-CONOR", "STAFF-AINE"];
 
 const TOWNS: Record<SiteId, string[]> = {
-  "SITE-OAK": ["Naas", "Newbridge", "Kilcullen", "Clane", "Sallins", "Prosperous", "Kill"],
-  "SITE-RIV": ["Carlow", "Tullow", "Bagenalstown", "Leighlinbridge", "Hacketstown"],
-  "SITE-ELM": ["Portlaoise", "Mountmellick"],
+  "SITE-ECK": ["Youghal", "Midleton", "Cobh", "Carrigtwohill"],
+  "SITE-WWD": ["Dungarvan", "Lismore", "Cappoquin"],
 };
 const STREETS = ["Main Street", "Church Road", "Chapel Lane", "Bridge Street", "Green Road", "Mill Lane", "Abbey Road"];
 const FOCUS_OLDER = ["Mobility support", "Dementia support", "Nutrition / Hydration", "Skin integrity", "Continence support", "Social engagement", "Diabetes support", "Stable support plan"];
@@ -253,8 +262,8 @@ function buildBackground(siteId: SiteId, prefix: string, startCode: number, star
     const created = isoDaysAgo(days);
     const relName = ["Siobhán", "Brian", "Deirdre", "Colm", "Gráinne", "Pádraig", "Aoife", "Eoin"][i % 8];
     const relLast = i % 3 === 0 ? last : ["Doran", "Keogh", "Brady"][i % 3];
-    const marital: MaritalStatus = siteId === "SITE-ELM" ? "single" : (["widowed", "married", "widowed", "single", "widowed"] as MaritalStatus[])[i % 5];
-    const focus = siteId === "SITE-ELM" ? FOCUS_DIS[i % FOCUS_DIS.length] : FOCUS_OLDER[i % FOCUS_OLDER.length];
+    const marital: MaritalStatus = siteId === "SITE-WWD" ? "single" : (["widowed", "married", "widowed", "single", "widowed"] as MaritalStatus[])[i % 5];
+    const focus = siteId === "SITE-WWD" ? FOCUS_DIS[i % FOCUS_DIS.length] : FOCUS_OLDER[i % FOCUS_OLDER.length];
     return {
       id, name: `${first} ${last}`, legalFirstName: first, legalLastName: last,
       ...(preferred ? { preferredName: preferred } : {}),
@@ -272,27 +281,27 @@ function buildBackground(siteId: SiteId, prefix: string, startCode: number, star
         isPrimary: true, type: "next_of_kin",
         ...(flags.includes("nok") ? {} : { address: `${(i % 30) + 2} ${STREETS[(i + 3) % STREETS.length]}, ${TOWNS[siteId][(i + 1) % TOWNS[siteId].length]}` }),
       }],
-      decisionSupportSummary: siteId === "SITE-ELM" ? "Supported decision-making with familiar staff and easy-read information." : (i % 4 === 0 ? "Family supports with significant decisions." : "Makes own decisions."),
+      decisionSupportSummary: siteId === "SITE-WWD" ? "Supported decision-making with familiar staff and easy-read information." : (i % 4 === 0 ? "Family supports with significant decisions." : "Makes own decisions."),
       sex: s === "f" ? "female" : "male",
       ...(flags.includes("nok") ? {} : { maritalStatus: marital }),
       ...(flags.includes("addr") ? {} : { previousAddress: `${(i % 40) + 1} ${street}, ${town}` }),
       preferredLanguage: "English", interpreterNeeded: false,
       admissionType: respite ? "respite" : "long_term",
       admittedFrom: (["home", "hospital", "home", "another_centre"] as AdmittedFrom[])[i % 4],
-      admittedFromName: (["", "Naas General Hospital", "", "Community nursing unit"])[i % 4],
+      admittedFromName: (["", "Cork University Hospital", "", "Community nursing unit"])[i % 4],
       ...(flags.includes("arr") ? {} : { admissionArrangedBy: ARRANGED_BY[siteId] }),
-      roomOrUnit: siteId === "SITE-ELM" ? `Bedroom ${i + 3}` : `Room ${startCode + i + 1}`,
+      homeAddress: `${10 + i} ${street}, ${town}`,
       gp: flags.includes("gp") ? { name: GP[siteId].name, practice: GP[siteId].practice } : GP[siteId],
       createdAt: created, createdByStaffId: "STAFF-AOIFE", updatedAt: created, updatedByStaffId: "STAFF-AOIFE",
     };
   });
 }
 
-const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, ...p }) => {
+const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, home, ...p }) => {
   const { nokAddress, ...directory } = dir;
   const created = `${p.admissionDate}T09:00:00Z`;
   return {
-    ...p, ...directory, siteName: SITE_NAME_BY_ID[p.siteId], unitId: null, keyWorkerId: p.keyWorkerStaffId,
+    ...p, ...directory, ...home, previousAddress: home.homeAddress, siteName: SITE_NAME_BY_ID[p.siteId], unitId: null, keyWorkerId: p.keyWorkerStaffId,
     representatives: [{ id: `REP-${p.id}-1`, ...rep, isPrimary: true, type: "next_of_kin", address: nokAddress }],
     createdAt: created, createdByStaffId: "STAFF-AOIFE", updatedAt: created, updatedByStaffId: "STAFF-AOIFE",
   };
@@ -300,9 +309,9 @@ const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, ...p })
 
 export const PEOPLE_SUPPORTED: readonly DemoPersonSupported[] = [
   ...FEATURED_PEOPLE,
-  ...buildBackground("SITE-OAK", "OAK", 4, 8, OAK_BG, OAK_KEY_WORKERS, 3),
-  ...buildBackground("SITE-RIV", "RIV", 3, 45, RIV_BG, RIV_KEY_WORKERS, 0),
-  ...buildBackground("SITE-ELM", "ELM", 3, 63, ELM_BG, ELM_KEY_WORKERS, 0),
+  ...buildBackground("SITE-ECK", "OAK", 4, 8, OAK_BG, OAK_KEY_WORKERS, 3),
+  ...buildBackground("SITE-WWD", "RIV", 3, 45, RIV_BG, RIV_KEY_WORKERS, 0),
+  ...buildBackground("SITE-WWD", "ELM", 3, 63, ELM_BG, ELM_KEY_WORKERS, 0),
 ];
 
 export const PERSON_BY_ID: Record<PersonSupportedId, DemoPersonSupported> =
@@ -344,30 +353,30 @@ const frontline = (id: StaffId, name: string, site: SiteId, roleLabel = "Key Wor
 
 export const STAFF: readonly DemoStaff[] = [
   // Admin / Leadership
-  { id: "STAFF-AOIFE",   name: "Aoife Brennan",   roleLabel: "Regional Operations Lead",    accessRole: "Admin",     scopeSiteIds: ["SITE-OAK", "SITE-RIV", "SITE-ELM"] },
+  { id: "STAFF-AOIFE",   name: "Aoife Brennan",   roleLabel: "Regional Operations Lead",    accessRole: "Admin",     scopeSiteIds: ["SITE-ECK", "SITE-WWD"] },
   // Multi-site Manager
-  { id: "STAFF-SIOBHAN", name: "Siobhán Kelly",   roleLabel: "Multi-site Manager / PIC",    accessRole: "Manager",   scopeSiteIds: ["SITE-OAK", "SITE-RIV"] },
+  { id: "STAFF-SIOBHAN", name: "Siobhán Kelly",   roleLabel: "Multi-site Manager / PIC",    accessRole: "Manager",   scopeSiteIds: ["SITE-ECK", "SITE-WWD"] },
   // Single-site Managers
-  { id: "STAFF-DANIEL",  name: "Daniel Walsh",    roleLabel: "Site Manager / Deputy PIC",   accessRole: "Manager",   scopeSiteIds: ["SITE-OAK"] },
-  { id: "STAFF-CLAIRE",  name: "Claire Nolan",    roleLabel: "Site Manager / PIC",          accessRole: "Manager",   scopeSiteIds: ["SITE-ELM"] },
+  { id: "STAFF-DANIEL",  name: "Daniel Walsh",    roleLabel: "Site Manager / Deputy PIC",   accessRole: "Manager",   scopeSiteIds: ["SITE-ECK"] },
+  { id: "STAFF-CLAIRE",  name: "Claire Nolan",    roleLabel: "Site Manager / PIC",          accessRole: "Manager",   scopeSiteIds: ["SITE-WWD"] },
   // Frontline / Key Workers (each covers at most six residents)
-  frontline("STAFF-EMMA", "Emma Ryan", "SITE-OAK"),
-  frontline("STAFF-AISLING", "Aisling Doherty", "SITE-OAK"),
-  frontline("STAFF-LIAM", "Liam Murphy", "SITE-OAK", "Frontline Support Worker"),
-  frontline("STAFF-GRAINNE", "Gráinne Lynch", "SITE-OAK", "Staff Nurse"),
-  frontline("STAFF-PEADAR", "Peadar Hogan", "SITE-OAK", "Healthcare Assistant"),
-  frontline("STAFF-SINEAD", "Sinéad Kirwan", "SITE-OAK", "Staff Nurse"),
-  frontline("STAFF-ROISIN", "Róisín Daly", "SITE-OAK", "Healthcare Assistant"),
-  frontline("STAFF-KEVIN", "Kevin Mahon", "SITE-OAK", "Healthcare Assistant"),
-  frontline("STAFF-NIAMH", "Niamh Connolly", "SITE-RIV"),
-  frontline("STAFF-FIONA", "Fiona Healy", "SITE-RIV", "Staff Nurse"),
-  frontline("STAFF-MAEVE", "Maeve Corcoran", "SITE-RIV", "Healthcare Assistant"),
-  frontline("STAFF-DARRAGH", "Darragh Quinlan", "SITE-RIV", "Healthcare Assistant"),
-  frontline("STAFF-ORLA", "Orla McCarthy", "SITE-ELM"),
-  frontline("STAFF-CONOR", "Conor Fahy", "SITE-ELM", "Social Care Worker"),
-  frontline("STAFF-AINE", "Áine Murphy", "SITE-ELM", "Social Care Worker"),
+  frontline("STAFF-EMMA", "Emma Ryan", "SITE-ECK"),
+  frontline("STAFF-AISLING", "Aisling Doherty", "SITE-ECK"),
+  frontline("STAFF-LIAM", "Liam Murphy", "SITE-ECK", "Frontline Support Worker"),
+  frontline("STAFF-GRAINNE", "Gráinne Lynch", "SITE-ECK", "Staff Nurse"),
+  frontline("STAFF-PEADAR", "Peadar Hogan", "SITE-ECK", "Healthcare Assistant"),
+  frontline("STAFF-SINEAD", "Sinéad Kirwan", "SITE-ECK", "Staff Nurse"),
+  frontline("STAFF-ROISIN", "Róisín Daly", "SITE-ECK", "Healthcare Assistant"),
+  frontline("STAFF-KEVIN", "Kevin Mahon", "SITE-ECK", "Healthcare Assistant"),
+  frontline("STAFF-NIAMH", "Niamh Connolly", "SITE-WWD"),
+  frontline("STAFF-FIONA", "Fiona Healy", "SITE-WWD", "Staff Nurse"),
+  frontline("STAFF-MAEVE", "Maeve Corcoran", "SITE-WWD", "Healthcare Assistant"),
+  frontline("STAFF-DARRAGH", "Darragh Quinlan", "SITE-WWD", "Healthcare Assistant"),
+  frontline("STAFF-ORLA", "Orla McCarthy", "SITE-WWD"),
+  frontline("STAFF-CONOR", "Conor Fahy", "SITE-WWD", "Social Care Worker"),
+  frontline("STAFF-AINE", "Áine Murphy", "SITE-WWD", "Social Care Worker"),
   // View Only
-  { id: "STAFF-CIARAN",  name: "Ciarán Walsh",    roleLabel: "Governance Viewer",           accessRole: "View Only", scopeSiteIds: ["SITE-OAK", "SITE-RIV", "SITE-ELM"], readOnly: true },
+  { id: "STAFF-CIARAN",  name: "Ciarán Walsh",    roleLabel: "Governance Viewer",           accessRole: "View Only", scopeSiteIds: ["SITE-ECK", "SITE-WWD"], readOnly: true },
   // External specialists
   { id: "STAFF-SARAH",   name: "Sarah Keane",       roleLabel: "Dietitian",       accessRole: "External", scopeSiteIds: [], external: true, registrationBody: "CORU", registrationNumber: "DT12345", linkedPersonSupportedIds: ["PS-002"] },
   { id: "STAFF-BRIAN",   name: "Brian O’Donnell",   roleLabel: "Physiotherapist", accessRole: "External", scopeSiteIds: [], external: true, registrationBody: "CORU", registrationNumber: "PT67890", linkedPersonSupportedIds: ["PS-001"] },
@@ -409,9 +418,8 @@ export const FORBIDDEN_LOCATION_LABELS = [
 // been assigned yet.
 
 export const SITE_PIC: Record<SiteId, StaffId> = {
-  "SITE-OAK": "STAFF-DANIEL",   // Site Manager / Deputy PIC
-  "SITE-RIV": "STAFF-SIOBHAN",  // Multi-site Manager / PIC
-  "SITE-ELM": "STAFF-CLAIRE",   // Site Manager / PIC
+  "SITE-ECK": "STAFF-DANIEL",   // Service Area Manager / PIC
+  "SITE-WWD": "STAFF-SIOBHAN",  // Multi-area Manager / PIC
 };
 
 export const siteIdByName = (name: string): SiteId | undefined =>

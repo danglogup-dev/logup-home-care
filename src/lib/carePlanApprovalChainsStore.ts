@@ -36,7 +36,7 @@ export interface CarePlanApprovalChain {
   description?: string;
   status: ApprovalChainStatus;
   scopeType: ApprovalScopeType;
-  scopeId: string;      // free-form identifier ("Oakfield Manor", "Rose Wing", etc.)
+  scopeId: string;      // free-form identifier ("East Cork", "Rose Wing", etc.)
   scopeLabel: string;   // display label
   levels: ApprovalLevel[];
   createdAt: string;
@@ -90,12 +90,12 @@ function seed(): State {
   const chains: CarePlanApprovalChain[] = [
     {
       id: "CHAIN-OAKFIELD",
-      name: "Oakfield Manor Care Plan Approval Chain",
-      description: "Default approval chain for care plan changes at Oakfield Manor.",
+      name: "East Cork Care Plan Approval Chain",
+      description: "Default approval chain for care plan changes at East Cork.",
       status: "active",
       scopeType: "site",
-      scopeId: "Oakfield Manor",
-      scopeLabel: "Oakfield Manor",
+      scopeId: "East Cork",
+      scopeLabel: "East Cork",
       createdAt: t,
       updatedAt: t,
       levels: [
@@ -122,12 +122,12 @@ function seed(): State {
     },
     {
       id: "CHAIN-RIVERSIDE",
-      name: "Riverside Lodge Care Plan Approval Chain",
-      description: "Default approval chain for care plan changes at Riverside Lodge.",
+      name: "West Waterford Care Plan Approval Chain",
+      description: "Default approval chain for care plan changes at West Waterford.",
       status: "active",
       scopeType: "site",
-      scopeId: "Riverside Lodge",
-      scopeLabel: "Riverside Lodge",
+      scopeId: "West Waterford",
+      scopeLabel: "West Waterford",
       createdAt: t,
       updatedAt: t,
       levels: [

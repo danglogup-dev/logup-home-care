@@ -322,7 +322,7 @@ export function IncidentDetailDrawer({
       owner: actOwner.trim() || role.displayName,
       dueIso: new Date(due).toISOString(),
       priority: actPriority as "low" | "normal" | "high",
-      siteId: v.site === "Oakfield Manor" ? "site-oak" : v.site === "Riverside Lodge" ? "site-rose" : "site-elm",
+      siteId: v.site === "East Cork" ? "site-oak" : v.site === "West Waterford" ? "site-rose" : "site-elm",
       createdById: role.displayName,
     });
     setActionOpen(false); setActTitle(""); setActOwner(""); setActDue(""); setActPriority("normal");

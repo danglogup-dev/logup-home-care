@@ -51,6 +51,16 @@ export function siteLabel(id: string | undefined): string {
   return sitesStore.getById(id)?.name ?? "";
 }
 
+/** True when every active site is a home support service area (no directory, rooms or HIQA registration). */
+export function isHomeSupportOrg(list: readonly DemoSite[] = sites): boolean {
+  const active = list.filter((s) => s.status === "active");
+  return active.length > 0 && active.every((s) => s.centreType === "home_support");
+}
+
+export function useIsHomeSupportOrg(): boolean {
+  return isHomeSupportOrg(useSites());
+}
+
 export function useSites(): DemoSite[] {
   return useSyncExternalStore(sitesStore.subscribe, sitesStore.all, sitesStore.all);
 }

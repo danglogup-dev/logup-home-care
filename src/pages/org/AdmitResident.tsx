@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTerms } from "@/hooks/useTerms";
 import { useRole } from "@/hooks/useRole";
 import { scopedSiteIds } from "@/lib/roleStore";
-import { useSites } from "@/lib/sitesStore";
+import { useSites, useIsHomeSupportOrg } from "@/lib/sitesStore";
 import { serviceUsersStore, admissionDraftsStore, nextServiceUserCode } from "@/lib/serviceUsersStore";
 import { carePlansStore } from "@/lib/carePlansStore";
 import {
@@ -66,6 +66,7 @@ export default function AdmitResident() {
   const role = useRole();
   const navigate = useNavigate();
   const sites = useSites();
+  const homeSupportOrg = useIsHomeSupportOrg();
   const [params] = useSearchParams();
   const editId = params.get("edit");
   const draftId = params.get("draft");
@@ -259,7 +260,7 @@ export default function AdmitResident() {
                 <SelectContent>{scopeSites.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">{text("roomOrUnit", "Room or unit")}{text("admissionDate", "Admission date *", { type: "date", disabled: !!editing })}</div>
+            <div className="grid gap-3 sm:grid-cols-2">{sites.find((s) => s.id === f.siteId)?.centreType !== "home_support" && text("roomOrUnit", "Room or unit")}{text("admissionDate", "Admission date *", { type: "date", disabled: !!editing })}</div>
             <div className="grid gap-3 sm:grid-cols-2">{select("admissionType", "Admission type", ADMISSION_TYPE_LABELS)}{select("admittedFrom", "Admitted from", ADMITTED_FROM_LABELS)}</div>
             {f.admittedFrom && f.admittedFrom !== "home" && text("admittedFromName", "Name of hospital, centre or place")}
             {text("admissionArrangedBy", "Arranged by (name and address of authority or organisation)", { placeholder: "e.g. HSE Community Healthcare, Carlow" })}
@@ -280,7 +281,7 @@ export default function AdmitResident() {
                 </dl>
               </div>
             ))}
-            {missing.length > 0 && (
+            {missing.length > 0 && !homeSupportOrg && (
               <Card className="border-warning/50 bg-warning/5"><CardHeader className="pb-1"><CardTitle className="text-sm">Still needed for the Directory of Residents ({missing.length})</CardTitle></CardHeader>
                 <CardContent className="text-sm text-muted-foreground">{missing.map((m) => m.label).join(" · ")}<div className="text-xs mt-1">You can admit now and complete these later.</div></CardContent></Card>
             )}

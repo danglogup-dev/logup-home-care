@@ -29,9 +29,9 @@ import { getDefaultVisibility, VISIBILITY_LABEL, isRestricted } from "@/lib/even
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
 
 const SITE_LABEL: Record<string, string> = {
-  oakfield: "Oakfield Manor",
-  riverside: "Riverside Lodge",
-  elmgrove: "Elm Grove House",
+  oakfield: "East Cork",
+  riverside: "West Waterford",
+  elmgrove: "West Waterford",
 };
 const LOCATION_LABEL: Record<string, string> = {
   kitchen: "Kitchen", corridor: "Corridor", bedroom: "Bedroom", garden: "Garden", bathroom: "Bathroom",

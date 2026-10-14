@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { useRole } from "@/hooks/useRole";
 import { scopedSiteIds } from "@/lib/roleStore";
-import { sitesStore, useSites, CENTRE_TYPE_LABELS } from "@/lib/sitesStore";
+import { sitesStore, useSites, isHomeSupportOrg, CENTRE_TYPE_LABELS } from "@/lib/sitesStore";
 import { useServiceUsers } from "@/lib/serviceUsersStore";
 import { STAFF, getStaffName, type DemoSite, type StaffId, type CentreType } from "@/lib/demoDataRegistry";
 
@@ -68,7 +68,7 @@ export default function Sites() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead><TableHead>Centre type</TableHead><TableHead>HIQA centre ID</TableHead>
+                <TableHead>Name</TableHead><TableHead>Centre type</TableHead>{!isHomeSupportOrg(sites) && <TableHead>HIQA centre ID</TableHead>}
                 <TableHead>Person in charge</TableHead><TableHead>Care plan review lead</TableHead>
                 <TableHead className="text-right">Active {terms.plural}</TableHead><TableHead>Status</TableHead>
                 {isAdmin && <TableHead />}
@@ -81,7 +81,7 @@ export default function Sites() {
                   onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); navigate(`/app/org/sites/${s.id}`); } }}>
                   <TableCell className="font-medium">{s.name}<div className="text-xs text-muted-foreground">{s.address}</div></TableCell>
                   <TableCell>{CENTRE_TYPE_LABELS[s.centreType]}</TableCell>
-                  <TableCell>{s.hiqaCentreId || "—"}</TableCell>
+                  {!isHomeSupportOrg(sites) && <TableCell>{s.hiqaCentreId || "—"}</TableCell>}
                   <TableCell>{getStaffName(s.personInChargeStaffId)}</TableCell>
                   <TableCell>{s.carePlanReviewLeadStaffId ? getStaffName(s.carePlanReviewLeadStaffId) : "—"}</TableCell>
                   <TableCell className="text-right">{users.filter((u) => u.siteId === s.id && u.status === "active").length}</TableCell>
@@ -130,7 +130,7 @@ export default function Sites() {
                 <SelectContent>{Object.entries(CENTRE_TYPE_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>HIQA centre ID</Label><Input value={form.hiqaCentreId ?? ""} onChange={(e) => setForm({ ...form, hiqaCentreId: e.target.value })} /></div>
+            {form.centreType !== "home_support" && <div><Label>HIQA centre ID</Label><Input value={form.hiqaCentreId ?? ""} onChange={(e) => setForm({ ...form, hiqaCentreId: e.target.value })} /></div>}
             <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
             <div><Label>Person in charge</Label>
               <Select value={form.personInChargeStaffId} onValueChange={(v) => setForm({ ...form, personInChargeStaffId: v as StaffId })}>

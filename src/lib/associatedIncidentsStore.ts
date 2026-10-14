@@ -114,10 +114,10 @@ export interface AssociatedIncident {
 
 // -------- Demo data ---------------------------------------------------------
 // Care Planning references Events records by ID only — no duplication.
-// Patrick Murphy  (PS-001, Oakfield Manor)  — 4 falls-related events.
-// Mary O'Sullivan (PS-002, Oakfield Manor)  — 2 nutrition/hydration events.
-// Eileen Fitzgerald (PS-004, Riverside Lodge) — 1 behaviour/safeguarding event.
-// Michael Doyle   (PS-007, Elm Grove House) — 1 epilepsy support event.
+// Patrick Murphy  (PS-001, East Cork)  — 4 falls-related events.
+// Mary O'Sullivan (PS-002, East Cork)  — 2 nutrition/hydration events.
+// Eileen Fitzgerald (PS-004, West Waterford) — 1 behaviour/safeguarding event.
+// Michael Doyle   (PS-007, West Waterford) — 1 epilepsy support event.
 // The fire alarm activation (INC-5012) is site-only and NOT associated to a Person Supported.
 
 const now = new Date();

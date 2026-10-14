@@ -25,7 +25,7 @@ const SiteRequirements = () => {
   const types = workforceStore.getQualificationTypes();
   const reqs = workforceStore.getRequirements();
 
-  const [selected, setSelected] = useState<SiteId>((sites[0]?.id as SiteId) ?? "SITE-OAK");
+  const [selected, setSelected] = useState<SiteId>((sites[0]?.id as SiteId) ?? "SITE-ECK");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ qualificationId: types[0]?.id ?? "", minimumPerShift: 1, appliesTo: "both" as AppliesTo, notes: "" });
 

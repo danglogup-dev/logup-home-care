@@ -103,7 +103,7 @@ export interface StaffRef {
 export const SITES: Site[] = [
   {
     id: "site-oak",
-    name: "Oakfield Manor",
+    name: "East Cork",
     units: [
       { id: "unit-oak-gf", name: "Ground Floor" },
       { id: "unit-oak-1f", name: "First Floor" },
@@ -111,7 +111,7 @@ export const SITES: Site[] = [
   },
   {
     id: "site-rose",
-    name: "Riverside Lodge",
+    name: "West Waterford",
     units: [
       { id: "unit-rose-a", name: "Wing A" },
       { id: "unit-rose-b", name: "Wing B" },
@@ -119,7 +119,7 @@ export const SITES: Site[] = [
   },
   {
     id: "site-elm",
-    name: "Elm Grove House",
+    name: "West Waterford",
     units: [{ id: "unit-elm-main", name: "Main Unit" }],
   },
 ];

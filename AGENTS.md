@@ -1,3 +1,11 @@
+## Product context
+
+This project is LogUp Home Care: software for Irish home support providers whose carers visit clients in their own homes.
+
+All existing rules below still apply — one source of truth, IDs not names, AI drafts must be human-confirmed, feature flags hide modules without deleting code.
+
+## Rules
+
 - Release modules are switched on/off in src/lib/featureFlags.ts; Guarded and AppSidebar read it — keeps unreleased module code intact while hiding it.
 - Service users come from src/lib/serviceUsersStore.ts (seeded from demoDataRegistry); Events and Care Planning reference them by serviceUserId and derive names from it — one record, no drift.
 - Site history is derived from lifecycle events via getSiteHistory, never stored separately — avoids two sources disagreeing.

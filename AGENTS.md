@@ -25,3 +25,6 @@ All existing rules below still apply — one source of truth, IDs not names, AI 
 - CareVoiceRecorder shares Events WAV; visitNoteRules offers capture, not submission. Briefs fingerprint accessible published plans/notes/Events and stream speech; never alter records.
 - Frontline visits use a separate `/app/visits` layout with bottom navigation; visit visibility uses the roleStore permission and staff/site IDs, and client labels/addresses join serviceUsersStore — keeps carer navigation independent of the desktop sidebar without duplicating records.
 - visitRules derives timing; outcomes append with staff ID/time, checkout freezes logs. SOS independently submits visit/location-linked Events, preserves drafts and never implies emergency services were contacted — no fabricated care or harm.
+- Family role sees only /family for linkedPersonSupportedIds; family summaries live in src/lib/familySummariesStore.ts as immutable AI drafts and reach family only after an in-scope coordinator approves by staffId — no unreviewed AI text to relatives.
+- Delivered vs approved hours are derived live in src/lib/hoursReport.ts from visitsStore (scheduled length of completed visits) — never stored.
+- Shift coverage is hidden for home support via NotForHomeSupport and sidebar filter, code kept.

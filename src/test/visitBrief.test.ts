@@ -19,7 +19,7 @@ describe("visit brief sources", () => {
     if (!current) throw new Error("No plan");
     const spy = vi.spyOn(carePlansStore, "getCurrentVersion").mockReturnValue({ ...current, sections: [{ key: "a", body: "visible" }, { key: "b", body: "secret", visibility: "restricted" }, { key: "c", body: "unaccepted", contentState: "ai_draft" }] });
     expect(visitBriefSources(visit.id, role).carePlan?.sections.map(s => s.text)).toEqual(["visible"]);
-    spy.mockReturnValue({ ...current, status: "draft" });
+    spy.mockReturnValue({ ...current, status: "draft_in_progress" });
     expect(visitBriefSources(visit.id, role).carePlan).toBeNull(); spy.mockRestore();
   });
   it("excludes hidden, other-client and closed Events; fingerprints new accessible Events", () => {

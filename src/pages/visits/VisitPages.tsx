@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Navigation, MapPin, Clock3, ChevronRight, LogOut, AlertTriangle } from "lucide-react";
 import { visitBriefSources } from "@/lib/visitBriefSources";
-import { useIncidents } from "@/lib/incidentsStore";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";
@@ -44,7 +43,6 @@ export function VisitsToday() {
     return () => window.clearInterval(timer);
   }, []);
   const today = visitsOnDate(myVisits(visits, users, role), now);
-  useIncidents();
   const alertFor = (visitId: string) => {
     try {
       const open = visitBriefSources(visitId, role).events.sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
@@ -109,7 +107,7 @@ export function VisitClients() {
             {client.accessNotes && <p className="mt-3 text-base leading-relaxed">{client.accessNotes}</p>}
             <div className="mt-4 space-y-2">
               <Directions client={client} />
-              <Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Care plan <ChevronRight aria-hidden="true" /></Link></Button>
+              <Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Approved care plan <ChevronRight aria-hidden="true" /></Link></Button>
             </div>
           </li>
         ))}

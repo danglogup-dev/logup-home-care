@@ -1,13 +1,14 @@
 import { Navigate } from "react-router-dom";
 import { useRole } from "@/hooks/useRole";
 import { canAccess, type ModuleKey } from "@/lib/roleStore";
+import { featureFlags } from "@/lib/featureFlags";
 
 /** App-level landing page per role (used when no module fallback is given). */
 const ROLE_HOME: Record<string, string> = {
   admin: "/app/incidents/board",
   manager: "/app/incidents/board",
   viewonly: "/app/insights/overview",
-  frontline: "/app/care-plans/plans", // key-worker service users listed first
+  frontline: "/app/visits/today",
 };
 
 /**
@@ -41,7 +42,8 @@ export function RoleHomeRedirect({
     }
     return <Navigate to={fallback} replace />;
   }
-  return <Navigate to={ROLE_HOME[r.role] ?? "/app/incidents/board"} replace />;
+  const home = r.role === "frontline" && !featureFlags.visits ? "/app/care-plans/plans" : ROLE_HOME[r.role];
+  return <Navigate to={home ?? "/app/incidents/board"} replace />;
 }
 
 /** Pick the first sub-route the current role can access from a list. */

@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SignIn from "./pages/SignIn";
 import AppLayout from "./components/AppLayout";
+import VisitsLayout from "./components/VisitsLayout";
+import { VisitsToday, VisitClients, VisitsMe } from "./pages/visits/VisitPages";
 import Incidents from "./pages/Incidents";
 import IncidentDraft from "./pages/IncidentDraft";
 import MyReports from "./pages/MyReports";
@@ -77,6 +79,13 @@ const App = () => (
           <Route path="/external/care-plan-contribution/:inviteId" element={<CarePlanContribution />} />
           <Route path="/print/directory" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Directory of Residents"><OrgResidentDirectory /></Guarded>} />
           <Route path="/print/service-users/:id/chronology" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Chronology"><OrgChronology /></Guarded>} />
+          <Route path="/app/visits" element={<VisitsLayout />}>
+            <Route index element={<Navigate to="today" replace />} />
+            <Route path="today" element={<VisitsToday />} />
+            <Route path="clients" element={<VisitClients />} />
+            <Route path="log-event" element={<Guarded moduleKey="incidents.capture" moduleLabel="Log an Event"><Incidents /></Guarded>} />
+            <Route path="me" element={<VisitsMe />} />
+          </Route>
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<RoleHomeRedirect />} />
 

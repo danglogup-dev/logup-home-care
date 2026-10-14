@@ -1,7 +1,7 @@
 import { Navigate, NavLink, Outlet } from "react-router-dom";
 import { CalendarDays, Users, SquarePen, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LogUpLogo } from "@/components/LogUpLogo";
+import LogUpLogo from "@/components/LogUpLogo";
 import { Guarded } from "@/components/Guarded";
 import { useRole } from "@/hooks/useRole";
 import { useTerms } from "@/hooks/useTerms";

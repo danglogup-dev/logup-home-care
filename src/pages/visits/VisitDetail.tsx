@@ -13,6 +13,7 @@ import { VisitNoteEditor } from "@/components/visits/VisitNoteEditor";
 import { visitNotesStore, useVisitNotes, type VisitNote } from "@/lib/visitNotesStore";
 import { NOTE_SECTIONS, noteRiskMentions, noteText } from "@/lib/visitNoteRules";
 import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
+import { VisitBrief } from "@/components/visits/VisitBrief";
 
 const taskOptions: { value: TaskOutcome; label: string }[] = [{ value: "done", label: "Done" }, { value: "refused", label: "Refused" }, { value: "not_needed", label: "Not needed" }];
 const medicationOptions: { value: MedicationOutcome; label: string }[] = [{ value: "given", label: "Given" }, { value: "prompted", label: "Prompted" }, { value: "refused", label: "Refused" }, { value: "not_available", label: "Not available" }];
@@ -65,8 +66,7 @@ export default function VisitDetail() {
         <p className="mt-3 flex items-start gap-2 text-base leading-relaxed"><MapPin className="mt-1 h-5 w-5 shrink-0" aria-hidden="true" />{[client.homeAddress, client.eircode].filter(Boolean).join(" · ") || "Address not recorded"}</p>
         <h2 className="mt-4 text-lg font-bold">Access notes</h2>
         <p className="mt-1 text-base leading-relaxed">{client.accessNotes || "No access notes recorded."}</p>
-        <h2 className="mt-4 text-lg font-bold">Visit brief</h2>
-        <p className="mt-1 text-base">No visit brief added yet.</p>
+        <VisitBrief visitId={visit.id} />
       </div>
       <div className="space-y-3">
         {error && <p role="alert" className="text-base font-medium text-emergency">{error}</p>}

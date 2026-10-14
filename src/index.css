@@ -54,6 +54,8 @@
     --success: 170 45% 53%;             /* mint-aligned */
     --warning: 21 78% 46%;              /* evidence orange */
     --info: 220 92% 50%;
+    --emergency: 0 75% 42%;
+    --emergency-foreground: 0 0% 100%;
   }
 }
 

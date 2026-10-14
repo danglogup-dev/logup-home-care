@@ -3,6 +3,7 @@
 // Clients and staff are referenced by ID only; names come from serviceUsersStore / STAFF.
 import { useSyncExternalStore } from "react";
 import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
+import { timedVisitStatus } from "./visitRules";
 
 // 0 = Sunday … 6 = Saturday (matches Date.getDay)
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -31,6 +32,11 @@ export interface VisitTemplate {
 }
 
 export interface CheckLocation { lat: number; lng: number; accuracyM?: number }
+export type TaskOutcome = "done" | "refused" | "not_needed";
+export type MedicationOutcome = "given" | "prompted" | "refused" | "not_available";
+export interface VisitTaskRecord { index: number; task: string; outcome: TaskOutcome; recordedByStaffId: StaffId; recordedAt: string }
+export interface VisitMedicationRecord { index: number; medication: VisitMedication; outcome: MedicationOutcome; reason: string; recordedByStaffId: StaffId; recordedAt: string }
+export interface VisitLog { id: string; recordedByStaffId: StaffId; recordedAt: string; tasks: VisitTaskRecord[]; medications: VisitMedicationRecord[] }
 
 export interface Visit {
   id: string;
@@ -43,6 +49,11 @@ export interface Visit {
   checkOutAt?: string;
   checkInLocation?: CheckLocation;
   status: VisitStatus;
+  checkInByStaffId?: StaffId;
+  taskRecords?: VisitTaskRecord[];
+  medicationRecords?: VisitMedicationRecord[];
+  log?: VisitLog;
+  sosEventIds?: string[];
 }
 
 export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
@@ -138,8 +149,7 @@ function generateVisits(templates: VisitTemplate[], from = new Date()): Visit[] 
       // Today's calls that have already started get a realistic, deterministic outcome.
       if (d === 0 && start.getTime() <= now) {
         n++;
-        const late = at(day, t.windowEnd).getTime();
-        if (n % 17 === 0) v.status = now > late ? "missed" : "late";
+        if (n % 17 === 0) v.status = timedVisitStatus(v, t, from);
         else {
           const inAt = new Date(start.getTime() + ((n % 4) * 5) * 60000);
           v.checkInAt = inAt.toISOString();
@@ -181,8 +191,46 @@ export const visitsStore = {
   visitsForClient: (clientId: ServiceUserId) => state.visits.filter((v) => v.clientId === clientId),
   visitsForStaff: (staffId: StaffId) => state.visits.filter((v) => v.staffIds.includes(staffId)),
   getVisit: (id: string) => state.visits.find((v) => v.id === id),
-  checkIn(id: string, location?: CheckLocation) { patchVisit(id, { checkInAt: nowIso(), checkInLocation: location, status: "in_progress" }); },
-  checkOut(id: string) { patchVisit(id, { checkOutAt: nowIso(), status: "completed" }); },
+  refreshStatuses(now = new Date()) {
+    let changed = false;
+    const visits = state.visits.map((visit) => {
+      const status = timedVisitStatus(visit, state.templates.find((t) => t.id === visit.templateId), now);
+      if (status === visit.status) return visit;
+      changed = true;
+      return { ...visit, status };
+    });
+    if (changed) { state = { ...state, visits }; emit(); }
+  },
+  checkIn(id: string, location: CheckLocation, staffId: StaffId) {
+    const visit = this.getVisit(id);
+    if (!visit || !visit.staffIds.includes(staffId) || visit.checkInAt || visit.status === "completed" || visit.status === "cancelled") throw new Error("This visit cannot be checked in.");
+    patchVisit(id, { checkInAt: nowIso(), checkInLocation: location, checkInByStaffId: staffId, status: "in_progress" });
+  },
+  recordTask(id: string, index: number, outcome: TaskOutcome, staffId: StaffId) {
+    const visit = this.getVisit(id);
+    const template = state.templates.find((t) => t.id === visit?.templateId);
+    if (!visit || !visit.staffIds.includes(staffId) || visit.status !== "in_progress" || !template?.tasks[index]) throw new Error("Check in before recording tasks.");
+    const record: VisitTaskRecord = { index, task: template.tasks[index], outcome, recordedByStaffId: staffId, recordedAt: nowIso() };
+    patchVisit(id, { taskRecords: [...(visit.taskRecords ?? []), record] });
+  },
+  recordMedication(id: string, index: number, outcome: MedicationOutcome, reason: string, staffId: StaffId) {
+    const visit = this.getVisit(id);
+    const medication = state.templates.find((t) => t.id === visit?.templateId)?.medications[index];
+    if (!visit || !visit.staffIds.includes(staffId) || visit.status !== "in_progress" || !medication || !reason.trim()) throw new Error("Record an outcome and reason after check-in.");
+    patchVisit(id, { medicationRecords: [...(visit.medicationRecords ?? []), { index, medication: { ...medication }, outcome, reason: reason.trim(), recordedByStaffId: staffId, recordedAt: nowIso() }] });
+  },
+  checkOut(id: string, staffId: StaffId) {
+    const visit = this.getVisit(id);
+    const template = state.templates.find((t) => t.id === visit?.templateId);
+    if (!visit || !visit.staffIds.includes(staffId) || !visit.checkInAt || visit.status !== "in_progress") throw new Error("This visit cannot be checked out.");
+    if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i)) || template?.medications.some((_, i) => !visit.medicationRecords?.some((r) => r.index === i))) throw new Error("Record every task and medication before checking out.");
+    const recordedAt = nowIso();
+    patchVisit(id, { checkOutAt: recordedAt, status: "completed", log: { id: crypto.randomUUID(), recordedByStaffId: staffId, recordedAt, tasks: [...(visit.taskRecords ?? [])], medications: [...(visit.medicationRecords ?? [])] } });
+  },
+  linkSos(id: string, eventId: string) {
+    const visit = this.getVisit(id);
+    if (visit && !visit.sosEventIds?.includes(eventId)) patchVisit(id, { sosEventIds: [...(visit.sosEventIds ?? []), eventId] });
+  },
   setStatus(id: string, status: VisitStatus) { patchVisit(id, { status }); },
   reassign(id: string, staffIds: StaffId[]) { patchVisit(id, { staffIds }); },
 };

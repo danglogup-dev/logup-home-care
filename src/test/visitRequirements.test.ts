@@ -26,8 +26,9 @@ describe("visit competencies and carer preferences", () => {
     const req: CarerPreference = { type: "female_required", appliesTo: "intimate_care_visits", reasonContext: "x", recordedByStaffId: "STAFF-DANIEL", recordedAt: "2026-10-01" };
     const intimate = carerEligibility([], FRONTLINE_IDS, [], at(9), at(9, 30), undefined, { siteId: "SITE-ECK", availability: s, preference: req, requirement: { requiredQualificationIds: [], supportCategories: ["intimate_care"] } });
     expect(intimate.unavailable.find((u) => u.staffId === "STAFF-PEADAR")?.preference).toBeTruthy();
+    expect(intimate.unavailable.find((u) => u.staffId === "STAFF-EMMA")?.preference).toBeUndefined();
     const meal = carerEligibility([], FRONTLINE_IDS, [], at(9), at(9, 30), undefined, { siteId: "SITE-ECK", availability: s, preference: req, requirement: { requiredQualificationIds: [], supportCategories: ["meal_support"] } });
-    expect(meal.eligible).toContain("STAFF-PEADAR");
+    expect(meal.unavailable.every((u) => !u.preference)).toBe(true);
     const soft = carerEligibility([], FRONTLINE_IDS, [], at(9), at(9, 30), undefined, { siteId: "SITE-ECK", availability: s, preference: { type: "male_preferred", appliesTo: "all_visits" }, requirement: { requiredQualificationIds: [], supportCategories: [] } });
     expect(soft.eligible).toContain("STAFF-EMMA");
     expect(soft.eligible[0]).toBe(soft.preferred![0]);

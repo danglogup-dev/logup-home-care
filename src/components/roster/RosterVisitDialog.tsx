@@ -13,13 +13,14 @@ import { CarerChoices } from "./CarerChoices";
 import { useRole } from "@/hooks/useRole";
 import { useVisits, visitsStore, VISIT_STATUS_LABELS, type RosterChange } from "@/lib/visitsStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
-import { STAFF, STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
+import { STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName } from "@/lib/visitPresentation";
-import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, carersRequiredFor, durationMinutes, isRosterEditable, ROSTER_REASONS, RosterConflictError, scheduleConflicts, carerEligibility, formWindow, type ScheduleConflict } from "@/lib/rosterRules";
+import { FRONTLINE_IDS, useStaffAvailability } from "@/lib/staffAvailabilityStore";
+import { canOverrideServiceArea, assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, carersRequiredFor, durationMinutes, isRosterEditable, ROSTER_REASONS, RosterConflictError, scheduleConflicts, carerEligibility, formWindow, type ScheduleConflict } from "@/lib/rosterRules";
 
 const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 const name = (id: string) => STAFF_BY_ID[id as StaffId]?.name ?? id;
-const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
+const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", area_overridden: "Service area overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const prettyValue = (v?: string) => v?.replace(/STAFF-[A-Z]+/g, (id) => name(id));
@@ -43,19 +44,22 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const [error, setError] = useState("");
   const [ackKey, setAckKey] = useState("");
   const [override, setOverride] = useState<StaffId[] | null>(null);
+  const [areaPick, setAreaPick] = useState<StaffId[] | null>(null);
+  const [areaReason, setAreaReason] = useState("");
+  const availability = useStaffAvailability();
   const [edit, setEdit] = useState(() => visit ? { date: localDate(visit.scheduledStart), time: hm(visit.scheduledStart), minutes: String(durationMinutes(visit)), carers: String(carersRequiredFor(visit)), note: visit.notesForScheduler ?? "" } : null);
   const [cancelReason, setCancelReason] = useState("");
   if (!visit || !client || !edit) return null;
   const siteId = visit.serviceAreaId ?? client.siteId;
   const canEdit = canEditRoster(siteId, role) && isRosterEditable(visit);
   const needsReason = visit.rosterStatus !== "draft";
-  const pool = STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(siteId)).map((s) => s.id);
+  const pool = FRONTLINE_IDS;
   const full = visit.staffIds.length >= carersRequiredFor(visit);
   // All checks derive from the current form values — never from a cached warning.
    const formWin = formWindow(edit.date, edit.time, Number(edit.minutes));
    const win = formWin ?? { start: visit.scheduledStart, end: visit.scheduledEnd };
    const dirty = !formWin || win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
-  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id);
+  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability });
   const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
   const overrideConflicts = override ? scheduleConflicts(visits, override.filter((s) => !visit.staffIds.includes(s)), visit.scheduledStart, visit.scheduledEnd, visit.id) : [];
   const sig = (c: ScheduleConflict[]) => c.map((x) => x.staffId + x.visit.id).join("|");
@@ -66,7 +70,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
 
   const run = (fn: () => void) => {
     setError("");
-    try { fn(); setAckKey(""); setOverride(null); setReason(""); }
+    try { fn(); setAckKey(""); setOverride(null); setAreaPick(null); setAreaReason(""); setReason(""); }
     catch (e) { setError(e instanceof RosterConflictError ? "Schedule conflict — tick the confirmation to continue." : e instanceof Error ? e.message : "Could not save."); }
   };
    const assign = (staffIds: StaffId[], acknowledgeConflict = false) => {
@@ -120,7 +124,20 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
              {dirty && <p role="status" className="text-sm text-muted-foreground">Save the updated visit time before assigning a carer.</p>}
             <CarerChoices idPrefix="rv" eligibility={eligibility}
               renderAvailable={(s) => dirty ? null : assignButtons(s)}
-              renderOverride={(s) => dirty ? null : assignButtons(s, "outline", (ids) => { setOverride(ids); setAckKey(""); })} />
+              renderOverride={(u) => {
+                if (dirty) return null;
+                if (u.reasons?.length) return <span className="text-xs text-muted-foreground">Not assignable</span>;
+                if (u.outsideArea) return canOverrideServiceArea(role) && !u.conflicts.length ? assignButtons(u.staffId, "outline", (ids) => { setAreaPick(ids); setAreaReason(""); }) : <span className="text-xs text-muted-foreground">Manager/admin override only</span>;
+                return assignButtons(u.staffId, "outline", (ids) => { setOverride(ids); setAckKey(""); });
+              }} />
+            {!dirty && areaPick && (
+              <div role="alert" className="space-y-2 rounded-md border border-destructive bg-destructive/10 p-3">
+                <p className="font-semibold text-destructive">Outside permitted service area</p>
+                <Label htmlFor="area-reason">Override reason (recorded with your name and time)</Label>
+                <Input id="area-reason" value={areaReason} onChange={(e) => setAreaReason(e.target.value)} />
+                <div className="flex gap-2"><Button disabled={!areaReason.trim()} onClick={() => run(() => visitsStore.assignCarers(visit.id, areaPick, role, { reason: needsReason ? reason : undefined, areaOverrideReason: areaReason }))}>Confirm override</Button><Button variant="ghost" onClick={() => setAreaPick(null)}>Back</Button></div>
+              </div>
+            )}
           </section>
         )}
 

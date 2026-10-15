@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
 import { timedVisitStatus } from "./visitRules";
 import { serviceUsersStore } from "./serviceUsersStore";
+import { FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
 import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
@@ -368,7 +369,8 @@ export const visitsStore = {
     guardEdit(visit, actor);
     const next = [...new Set(staffIds)];
     if (next.length > carersRequiredFor(visit)) throw new Error(`This visit needs ${carersRequiredFor(visit)} carer(s).`);
-    const pool = FRONTLINE_BY_SITE(visit.serviceAreaId ?? siteOf(visit.clientId)!);
+    const area = visit.serviceAreaId ?? siteOf(visit.clientId)!;
+    const pool = FRONTLINE_IDS.filter((s) => isPermittedArea(staffAvailabilityStore.getState(), s, area));
     const added = next.filter((s) => !visit.staffIds.includes(s));
     const outside = added.filter((s) => !pool.includes(s));
     if (outside.length && !(canOverrideServiceArea(actor) && opts.areaOverrideReason?.trim())) throw new Error("Outside permitted service area — a manager or admin must give an override reason.");

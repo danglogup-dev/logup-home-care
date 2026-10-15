@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { visitsStore } from "@/lib/visitsStore";
 import { ROLE_PRESETS } from "@/lib/roleStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
+import { availabilityReasons, staffAvailabilityStore } from "@/lib/staffAvailabilityStore";
 import { myVisits } from "@/lib/visitPresentation";
 import { assignmentStatus, isRosterEditable, RosterConflictError, scheduleConflicts } from "@/lib/rosterRules";
 
@@ -24,7 +25,7 @@ describe("roster", () => {
 
   it("assigns by staff ID, needs a reason on published visits, and the carer then sees it", () => {
     const users = serviceUsersStore.getState().users;
-    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length);
+    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length);
     if (!target) throw new Error("no target");
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], coordinator)).toThrow(/reason/);
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], liam, { reason: "Sickness" })).toThrow();
@@ -33,6 +34,7 @@ describe("roster", () => {
     expect(after.staffIds).toEqual(["STAFF-LIAM"]);
     expect(after.rosterHistory?.at(-1)?.reason).toBe("Sickness");
     expect(myVisits(visitsStore.getState().visits, users, liam).some((v) => v.id === target.id)).toBe(true);
+    expect(after.rosterHistory?.some((h) => h.kind.endsWith("_overridden"))).toBe(false);
   });
 
   it("blocks overlaps until acknowledged and records the override", () => {

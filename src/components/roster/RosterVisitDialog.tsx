@@ -119,7 +119,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
         {summary && visit.staffIds.includes(summary.staffId) && (
           <div role="status" className="rounded-md border p-3 text-sm">
             <p className="font-semibold">Assigned: {name(summary.staffId)}</p>
-            {summary.overridden ? <p className="text-xs text-destructive">Assigned by override — reason recorded in roster history.</p> : <SuitabilityTicks eligibility={{ ...eligibility, preferred: preference && (eligibility.preferred?.length ?? 0) >= 0 ? carerEligibility(visits, [summary.staffId], [], visit.scheduledStart, visit.scheduledEnd, visit.id, { siteId, availability, requirement, preference }).preferred : [] }} staffId={summary.staffId} />}
+            {summary.overridden ? <p className="text-xs text-destructive">Assigned by override — reason recorded in roster history.</p> : <SuitabilityTicks eligibility={carerEligibility(visits, [summary.staffId], [], visit.scheduledStart, visit.scheduledEnd, visit.id, { siteId, availability, requirement, preference })} staffId={summary.staffId} />}
           </div>
         )}
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}

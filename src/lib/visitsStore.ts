@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
 import { timedVisitStatus } from "./visitRules";
 import { serviceUsersStore } from "./serviceUsersStore";
-import { FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
+import { availabilityReasons, FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
 import { competencyCheck, preferenceExclusion, requirementFor, type SupportCategory } from "./visitRequirements";

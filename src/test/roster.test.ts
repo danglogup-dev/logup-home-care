@@ -54,3 +54,24 @@ describe("roster", () => {
     expect(() => visitsStore.editVisit(done.id, { durationMinutes: 10 }, coordinator, { reason: "Other" })).toThrow(/locked/);
   });
 });
+
+import { carerEligibility, parseTypedTime, quarterHourOptions, formWindow } from "@/lib/rosterRules";
+describe("phase 4A eligibility and time", () => {
+  const v = (id: string, staff: string, s: string, e: string) => ({ id, clientId: "PS-001", staffIds: [staff], scheduledStart: s, scheduledEnd: e, status: "scheduled" }) as never;
+  const busy = [v("x", "A", "2026-10-15T09:00:00.000Z", "2026-10-15T09:45:00.000Z")];
+  it("excludes overlapping carers and re-includes them when the time moves", () => {
+    const at9 = carerEligibility(busy, ["A", "B"] as never, [], "2026-10-15T09:15:00.000Z", "2026-10-15T10:00:00.000Z");
+    expect(at9.eligible).toEqual(["B"]);
+    expect(at9.unavailable[0].staffId).toBe("A");
+    const at10 = carerEligibility(busy, ["A", "B"] as never, [], "2026-10-15T10:00:00.000Z", "2026-10-15T10:45:00.000Z");
+    expect(at10.eligible).toEqual(["A", "B"]);
+  });
+  it("keeps typed times and suggests quarter hours after them", () => {
+    expect(parseTypedTime("9:22")).toBe("09:22");
+    expect(parseTypedTime("25:00")).toBeUndefined();
+    expect(quarterHourOptions().length).toBe(96);
+    expect(quarterHourOptions("09:22").slice(0, 2)).toEqual(["09:30", "09:45"]);
+    const w = formWindow("2026-10-15", "09:15", 45)!;
+    expect((Date.parse(w.end) - Date.parse(w.start)) / 60000).toBe(45);
+  });
+});

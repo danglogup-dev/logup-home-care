@@ -11,7 +11,10 @@ import { useServiceUsers } from "@/lib/serviceUsersStore";
 import { visitsStore } from "@/lib/visitsStore";
 import { STAFF, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName } from "@/lib/visitPresentation";
-import { canEditRoster, RosterConflictError, type ScheduleConflict } from "@/lib/rosterRules";
+import { canEditRoster, carerEligibility, formWindow, scheduleConflicts, RosterConflictError } from "@/lib/rosterRules";
+import { useVisits } from "@/lib/visitsStore";
+import { TimePicker } from "./TimePicker";
+import { CarerChoices } from "./CarerChoices";
 import { ConflictWarning } from "./RosterVisitDialog";
 
 const NONE = "__none";
@@ -23,17 +26,24 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const clients = users.filter((u) => u.status === "active" && canEditRoster(u.siteId, role)).sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)));
   const [f, setF] = useState({ clientId: "", date: new Date().toISOString().slice(0, 10), time: "10:00", minutes: "30", carers: "1", purpose: "", staffId: NONE, note: "" });
   const [error, setError] = useState("");
-  const [conflicts, setConflicts] = useState<ScheduleConflict[]>([]);
-  const [ack, setAck] = useState(false);
+  const [ackKey, setAckKey] = useState("");
+  const { visits } = useVisits();
   const client = users.find((u) => u.id === f.clientId);
-  const pool = client ? STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(client.siteId)) : [];
+  const pool = client ? STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(client.siteId)).map((s) => s.id) : [];
+  const chosen = f.staffId === NONE ? [] : [f.staffId as StaffId];
+  const win = formWindow(f.date, f.time, Number(f.minutes));
+  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
+  const conflicts = win ? scheduleConflicts(visits, chosen, win.start, win.end) : [];
+  const sig = conflicts.map((c) => c.staffId + c.visit.id).join("|");
+  const ack = conflicts.length > 0 && ackKey === sig;
+  const slotState = chosen.length ? (t: string) => { const w = formWindow(f.date, t, Number(f.minutes)); return w ? (scheduleConflicts(visits, chosen, w.start, w.end).length ? "conflict" as const : "available" as const) : undefined; } : undefined;
   const save = () => {
     setError("");
     try {
-      visitsStore.createOneOff({ clientId: f.clientId as never, start: new Date(`${f.date}T${f.time}`).toISOString(), durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: f.staffId === NONE ? [] : [f.staffId as StaffId], notesForScheduler: f.note }, role, { acknowledgeConflict: ack });
+      visitsStore.createOneOff({ clientId: f.clientId as never, start: win!.start, durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: chosen, notesForScheduler: f.note }, role, { acknowledgeConflict: ack });
       onClose();
     } catch (e) {
-      if (e instanceof RosterConflictError) setConflicts(e.conflicts);
+      if (e instanceof RosterConflictError) setError("Schedule conflict — tick the confirmation to continue.");
       else setError(e instanceof Error ? e.message : "Could not add visit.");
     }
   };
@@ -51,18 +61,24 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div><Label htmlFor="a-date">Date</Label><Input id="a-date" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></div>
-            <div><Label htmlFor="a-time">Start time</Label><Input id="a-time" type="time" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></div>
+            <div><Label htmlFor="a-time">Start time</Label><TimePicker id="a-time" value={f.time} onChange={(t) => setF({ ...f, time: t })} slotState={slotState} /></div>
             <div><Label htmlFor="a-min">Expected minutes</Label><Input id="a-min" type="number" min={5} max={240} value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} /></div>
             <div><Label>Carers required</Label><Select value={f.carers} onValueChange={(v) => setF({ ...f, carers: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem></SelectContent></Select></div>
           </div>
           <div><Label htmlFor="a-purpose">Expected support / visit purpose</Label><Input id="a-purpose" value={f.purpose} onChange={(e) => setF({ ...f, purpose: e.target.value })} placeholder="e.g. Welfare check" /></div>
-          <div><Label>Assign carer (optional)</Label>
-            <Select value={f.staffId} onValueChange={(v) => setF({ ...f, staffId: v })} disabled={!client}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value={NONE}>Leave unassigned</SelectItem>{pool.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} · {s.roleLabel}</SelectItem>)}</SelectContent></Select>
+          {win && <p className="text-sm">Visit time: <strong className="tabular-nums">{f.time}–{new Date(win.end).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false })}</strong></p>}
+          <div className="space-y-2"><Label>Assign carer (optional)</Label>
+            {!client ? <p className="text-sm text-muted-foreground">Choose a {terms.singular} first.</p> : <>
+              {chosen.length > 0 && <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{STAFF.find((s) => s.id === chosen[0])?.name}</span><Button size="sm" variant="ghost" onClick={() => setF({ ...f, staffId: NONE })}>Leave unassigned</Button></div>}
+              <CarerChoices idPrefix="av" eligibility={eligibility}
+                renderAvailable={(id) => <Button size="sm" onClick={() => setF({ ...f, staffId: id })}>{chosen.length ? "Choose instead" : "Choose"}</Button>}
+                renderOverride={(id) => <Button size="sm" variant="outline" onClick={() => { setF({ ...f, staffId: id }); setAckKey(""); }}>Choose anyway…</Button>} />
+            </>}
           </div>
           <div><Label htmlFor="a-note">Note for scheduler (optional)</Label><Textarea id="a-note" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></div>
-          {conflicts.length > 0 && <ConflictWarning conflicts={conflicts} acknowledged={ack} onAcknowledge={setAck} />}
+          {conflicts.length > 0 && <ConflictWarning conflicts={conflicts} acknowledged={ack} onAcknowledge={(v) => setAckKey(v ? sig : "")} />}
           {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
-          <Button className="w-full" disabled={!f.clientId || (conflicts.length > 0 && !ack)} onClick={save}>Add visit</Button>
+          <Button className="w-full" disabled={!f.clientId || !win || (conflicts.length > 0 && !ack)} onClick={save}>Add visit</Button>
         </div>
       </DialogContent>
     </Dialog>

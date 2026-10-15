@@ -1,3 +1,4 @@
+import type { CarerPreference } from "./visitRequirements";
 /**
  * Shared master demo data registry for the LogUp prototype.
  *
@@ -157,6 +158,8 @@ export interface DemoPersonSupported {
   livesAlone?: boolean;
   funding?: "hse" | "private" | "mixed";
   hseApprovedHoursPerWeek?: number;
+  /** Documented carer preference (see visitRequirements). */
+  carerPreference?: CarerPreference;
   gp?: { name?: string; practice?: string; phone?: string };
   /** Field provenance from admission (Source / AI draft / Human confirmed). */
   fieldProvenance?: Record<string, FieldProvenance>;
@@ -299,6 +302,11 @@ function buildBackground(siteId: SiteId, prefix: string, startCode: number, star
   });
 }
 
+/** Demo documented carer preferences (fictional). */
+export const SEED_CARER_PREFERENCES: Partial<Record<string, CarerPreference>> = {
+  "PS-002": { type: "female_required", appliesTo: "intimate_care_visits", reasonContext: "Mary has asked for female carers for washing and dressing; agreed at care plan review with her son.", recordedByStaffId: "STAFF-DANIEL", recordedAt: dateDaysAgo(40), reviewDate: dateDaysAgo(-140) },
+  "PS-006": { type: "female_preferred", appliesTo: "all_visits", reasonContext: "Bridget is more relaxed with familiar female carers.", recordedByStaffId: "STAFF-CLAIRE", recordedAt: dateDaysAgo(60) },
+};
 const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, home, ...p }) => {
   const { nokAddress, ...directory } = dir;
   const created = `${p.admissionDate}T09:00:00Z`;
@@ -306,6 +314,7 @@ const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, home, .
     ...p, ...directory, ...home, previousAddress: home.homeAddress, siteName: SITE_NAME_BY_ID[p.siteId], unitId: null, keyWorkerId: p.keyWorkerStaffId,
     representatives: [{ id: `REP-${p.id}-1`, ...rep, isPrimary: true, type: "next_of_kin", address: nokAddress }],
     createdAt: created, createdByStaffId: "STAFF-AOIFE", updatedAt: created, updatedByStaffId: "STAFF-AOIFE",
+    ...(SEED_CARER_PREFERENCES[p.id] ? { carerPreference: { ...SEED_CARER_PREFERENCES[p.id]! } } : {}),
   };
 });
 
@@ -350,11 +359,13 @@ export interface DemoStaff {
   registrationBody?: string;
   registrationNumber?: string;
   linkedPersonSupportedIds?: PersonSupportedId[];
+  /** Used only to honour documented client carer preferences. */
+  gender?: "female" | "male";
 }
 
 const kwFor = (id: StaffId): PersonSupportedId[] => PEOPLE_SUPPORTED.filter((p) => p.keyWorkerStaffId === id).map((p) => p.id);
-const frontline = (id: StaffId, name: string, site: SiteId, roleLabel = "Key Worker"): DemoStaff =>
-  ({ id, name, roleLabel, accessRole: "Frontline", scopeSiteIds: [site], keyWorkerFor: kwFor(id) });
+const frontline = (id: StaffId, name: string, site: SiteId, roleLabel = "Key Worker", gender: "female" | "male" = "female"): DemoStaff =>
+  ({ id, name, roleLabel, accessRole: "Frontline", scopeSiteIds: [site], keyWorkerFor: kwFor(id), gender });
 
 export const STAFF: readonly DemoStaff[] = [
   // Admin / Leadership
@@ -367,18 +378,18 @@ export const STAFF: readonly DemoStaff[] = [
   // Frontline / Key Workers (each covers at most six residents)
   frontline("STAFF-EMMA", "Emma Ryan", "SITE-ECK"),
   frontline("STAFF-AISLING", "Aisling Doherty", "SITE-ECK"),
-  frontline("STAFF-LIAM", "Liam Murphy", "SITE-ECK", "Frontline Support Worker"),
+  frontline("STAFF-LIAM", "Liam Murphy", "SITE-ECK", "Frontline Support Worker", "male"),
   frontline("STAFF-GRAINNE", "Gráinne Lynch", "SITE-ECK", "Staff Nurse"),
-  frontline("STAFF-PEADAR", "Peadar Hogan", "SITE-ECK", "Healthcare Assistant"),
+  frontline("STAFF-PEADAR", "Peadar Hogan", "SITE-ECK", "Healthcare Assistant", "male"),
   frontline("STAFF-SINEAD", "Sinéad Kirwan", "SITE-ECK", "Staff Nurse"),
   frontline("STAFF-ROISIN", "Róisín Daly", "SITE-ECK", "Healthcare Assistant"),
-  frontline("STAFF-KEVIN", "Kevin Mahon", "SITE-ECK", "Healthcare Assistant"),
+  frontline("STAFF-KEVIN", "Kevin Mahon", "SITE-ECK", "Healthcare Assistant", "male"),
   frontline("STAFF-NIAMH", "Niamh Connolly", "SITE-WWD"),
   frontline("STAFF-FIONA", "Fiona Healy", "SITE-WWD", "Staff Nurse"),
   frontline("STAFF-MAEVE", "Maeve Corcoran", "SITE-WWD", "Healthcare Assistant"),
-  frontline("STAFF-DARRAGH", "Darragh Quinlan", "SITE-WWD", "Healthcare Assistant"),
+  frontline("STAFF-DARRAGH", "Darragh Quinlan", "SITE-WWD", "Healthcare Assistant", "male"),
   frontline("STAFF-ORLA", "Orla McCarthy", "SITE-WWD"),
-  frontline("STAFF-CONOR", "Conor Fahy", "SITE-WWD", "Social Care Worker"),
+  frontline("STAFF-CONOR", "Conor Fahy", "SITE-WWD", "Social Care Worker", "male"),
   frontline("STAFF-AINE", "Áine Murphy", "SITE-WWD", "Social Care Worker"),
   // View Only
   { id: "STAFF-CIARAN",  name: "Ciarán Walsh",    roleLabel: "Governance Viewer",           accessRole: "View Only", scopeSiteIds: ["SITE-ECK", "SITE-WWD"], readOnly: true },

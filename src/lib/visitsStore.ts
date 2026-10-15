@@ -449,7 +449,7 @@ export const visitsStore = {
     if (Number.isNaN(Date.parse(input.start))) throw new Error("Choose a date and start time.");
     const staffIds = [...new Set(input.staffIds ?? [])];
     if (staffIds.length > input.carersRequired) throw new Error("Too many carers for this visit.");
-    const pool = FRONTLINE_BY_SITE(client.siteId);
+    const pool = FRONTLINE_IDS.filter((s) => isPermittedArea(staffAvailabilityStore.getState(), s, client.siteId));
     if (staffIds.some((s) => !pool.includes(s))) throw new Error("Carers must belong to the client's service area.");
     const end = new Date(Date.parse(input.start) + input.durationMinutes * 60000).toISOString();
     const conflicts = scheduleConflicts(state.visits, staffIds, input.start, end);

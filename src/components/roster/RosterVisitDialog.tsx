@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TimePicker } from "./TimePicker";
+import { CarerChoices } from "./CarerChoices";
 import { useRole } from "@/hooks/useRole";
 import { useVisits, visitsStore, VISIT_STATUS_LABELS, type RosterChange } from "@/lib/visitsStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
 import { STAFF, STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName } from "@/lib/visitPresentation";
-import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, carersRequiredFor, durationMinutes, isRosterEditable, ROSTER_REASONS, RosterConflictError, sameDay, type ScheduleConflict } from "@/lib/rosterRules";
+import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, carersRequiredFor, durationMinutes, isRosterEditable, ROSTER_REASONS, RosterConflictError, scheduleConflicts, carerEligibility, formWindow, type ScheduleConflict } from "@/lib/rosterRules";
 
 const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 const name = (id: string) => STAFF_BY_ID[id as StaffId]?.name ?? id;
@@ -39,29 +41,41 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const client = visit ? serviceUsersStore.getById(visit.clientId) : undefined;
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
-  const [conflicts, setConflicts] = useState<ScheduleConflict[]>([]);
-  const [ack, setAck] = useState(false);
-  const [pending, setPending] = useState<StaffId[] | null>(null);
+  const [ackKey, setAckKey] = useState("");
+  const [override, setOverride] = useState<StaffId[] | null>(null);
   const [edit, setEdit] = useState(() => visit ? { date: localDate(visit.scheduledStart), time: hm(visit.scheduledStart), minutes: String(durationMinutes(visit)), carers: String(carersRequiredFor(visit)), note: visit.notesForScheduler ?? "" } : null);
   const [cancelReason, setCancelReason] = useState("");
   if (!visit || !client || !edit) return null;
   const siteId = visit.serviceAreaId ?? client.siteId;
   const canEdit = canEditRoster(siteId, role) && isRosterEditable(visit);
   const needsReason = visit.rosterStatus !== "draft";
-  const pool = STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(siteId));
+  const pool = STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(siteId)).map((s) => s.id);
   const full = visit.staffIds.length >= carersRequiredFor(visit);
-  const dayVisits = (id: StaffId) => visits.filter((v) => v.id !== visit.id && v.status !== "cancelled" && v.staffIds.includes(id) && sameDay(v.scheduledStart, new Date(visit.scheduledStart))).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart));
+  // All checks derive from the current form values — never from a cached warning.
+  const win = formWindow(edit.date, edit.time, Number(edit.minutes)) ?? { start: visit.scheduledStart, end: visit.scheduledEnd };
+  const dirty = win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
+  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id);
+  const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
+  const overrideConflicts = override ? scheduleConflicts(visits, override.filter((s) => !visit.staffIds.includes(s)), visit.scheduledStart, visit.scheduledEnd, visit.id) : [];
+  const sig = (c: ScheduleConflict[]) => c.map((x) => x.staffId + x.visit.id).join("|");
+  const slotState = visit.staffIds.length ? (t: string) => {
+    const w = formWindow(edit.date, t, Number(edit.minutes));
+    return w ? (scheduleConflicts(visits, visit.staffIds, w.start, w.end, visit.id).length ? "conflict" as const : "available" as const) : undefined;
+  } : undefined;
 
   const run = (fn: () => void) => {
     setError("");
-    try { fn(); setConflicts([]); setAck(false); setPending(null); setReason(""); }
-    catch (e) {
-      if (e instanceof RosterConflictError) setConflicts(e.conflicts);
-      else setError(e instanceof Error ? e.message : "Could not save.");
-    }
+    try { fn(); setAckKey(""); setOverride(null); setReason(""); }
+    catch (e) { setError(e instanceof RosterConflictError ? "Schedule conflict — tick the confirmation to continue." : e instanceof Error ? e.message : "Could not save."); }
   };
-  const assign = (staffIds: StaffId[]) => { setPending(staffIds); run(() => visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: ack })); };
-  const saveEdit = () => run(() => visitsStore.editVisit(visit.id, { start: new Date(`${edit.date}T${edit.time}`).toISOString(), durationMinutes: Number(edit.minutes), carersRequired: Number(edit.carers), notesForScheduler: edit.note }, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: ack }));
+  const assign = (staffIds: StaffId[], acknowledgeConflict = false) => run(() => visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, acknowledgeConflict }));
+  const scheduleAck = scheduleConflictsNow.length > 0 && ackKey === "s:" + sig(scheduleConflictsNow);
+  const saveEdit = () => run(() => visitsStore.editVisit(visit.id, { start: win.start, durationMinutes: Number(edit.minutes), carersRequired: Number(edit.carers), notesForScheduler: edit.note }, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: scheduleAck }));
+  const assignButtons = (s: StaffId, variant: "default" | "outline" = "default", onPick: (ids: StaffId[]) => void = (ids) => assign(ids)) => <>
+    {!full && <Button size="sm" variant={variant} onClick={() => onPick([...visit.staffIds, s])}>{visit.staffIds.length ? "Add" : "Assign"}</Button>}
+    {full && visit.staffIds.length === 1 && <Button size="sm" variant="outline" onClick={() => onPick([s])}>Replace</Button>}
+    {full && visit.staffIds.length > 1 && visit.staffIds.map((old) => <Button key={old} size="sm" variant="outline" onClick={() => onPick(visit.staffIds.map((x) => x === old ? s : x))}>Replace {name(old).split(" ")[0]}</Button>)}
+  </>;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -88,28 +102,21 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
             <Select value={reason} onValueChange={setReason}><SelectTrigger><SelectValue placeholder="Choose a reason" /></SelectTrigger><SelectContent>{ROSTER_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select>
           </div>
         )}
-        {conflicts.length > 0 && <div className="space-y-2"><ConflictWarning conflicts={conflicts} acknowledged={ack} onAcknowledge={setAck} />{ack && pending && <Button onClick={() => assign(pending)}>Confirm assignment</Button>}{ack && !pending && <Button onClick={saveEdit}>Confirm change</Button>}</div>}
+        {override && overrideConflicts.length > 0 && (
+          <div className="space-y-2">
+            <ConflictWarning conflicts={overrideConflicts} acknowledged={ackKey === "o:" + sig(overrideConflicts)} onAcknowledge={(v) => setAckKey(v ? "o:" + sig(overrideConflicts) : "")} />
+            <div className="flex gap-2"><Button disabled={ackKey !== "o:" + sig(overrideConflicts)} onClick={() => assign(override, true)}>Confirm override</Button><Button variant="ghost" onClick={() => { setOverride(null); setAckKey(""); }}>Back</Button></div>
+          </div>
+        )}
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
 
         {canEdit && (
           <section className="space-y-2">
-            <h3 className="font-semibold">Carers in {SITE_BY_ID[siteId]?.name}</h3>
-            <ul className="divide-y rounded-md border">
-              {pool.filter((s) => !visit.staffIds.includes(s.id)).map((s) => {
-                const day = dayVisits(s.id);
-                return (
-                  <li key={s.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{s.name} <span className="text-sm font-normal text-muted-foreground">· {s.roleLabel} · {s.scopeSiteIds.map((x) => SITE_BY_ID[x]?.name).join(", ")}</span></p>
-                      <p className="text-xs text-muted-foreground">{day.length ? day.map((v) => `${hm(v.scheduledStart)}–${hm(v.scheduledEnd)}`).join(" · ") : "No other visits this day"}</p>
-                    </div>
-                    {!full && <Button size="sm" onClick={() => assign([...visit.staffIds, s.id])}>{visit.staffIds.length ? "Add" : "Assign"}</Button>}
-                    {full && visit.staffIds.length === 1 && <Button size="sm" variant="outline" onClick={() => assign([s.id])}>Replace</Button>}
-                    {full && visit.staffIds.length > 1 && visit.staffIds.map((old) => <Button key={old} size="sm" variant="outline" onClick={() => assign(visit.staffIds.map((x) => x === old ? s.id : x))}>Replace {name(old).split(" ")[0]}</Button>)}
-                  </li>
-                );
-              })}
-            </ul>
+            <h3 className="font-semibold">Carers in {SITE_BY_ID[siteId]?.name} · {hm(win.start)}–{hm(win.end)}</h3>
+            {dirty && <p className="rounded-md border p-2 text-sm">Showing who is free at the new time {hm(win.start)}–{hm(win.end)}. Save the schedule change below before assigning.</p>}
+            <CarerChoices idPrefix="rv" eligibility={eligibility}
+              renderAvailable={(s) => dirty ? null : assignButtons(s)}
+              renderOverride={(s) => dirty ? null : assignButtons(s, "outline", (ids) => { setOverride(ids); setAckKey(""); })} />
           </section>
         )}
 
@@ -118,13 +125,15 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
             <h3 className="font-semibold">Edit schedule</h3>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <div><Label htmlFor="e-date">Date</Label><Input id="e-date" type="date" value={edit.date} onChange={(e) => setEdit({ ...edit, date: e.target.value })} /></div>
-              <div><Label htmlFor="e-time">Start</Label><Input id="e-time" type="time" value={edit.time} onChange={(e) => setEdit({ ...edit, time: e.target.value })} /></div>
+              <div><Label htmlFor="e-time">Start</Label><TimePicker id="e-time" value={edit.time} onChange={(t) => setEdit({ ...edit, time: t })} slotState={slotState} /></div>
               <div><Label htmlFor="e-min">Minutes</Label><Input id="e-min" type="number" min={5} max={240} value={edit.minutes} onChange={(e) => setEdit({ ...edit, minutes: e.target.value })} /></div>
               <div><Label>Carers required</Label><Select value={edit.carers} onValueChange={(v) => setEdit({ ...edit, carers: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem></SelectContent></Select></div>
             </div>
+            <p className="text-sm">New time: <strong className="tabular-nums">{hm(win.start)}–{hm(win.end)}</strong></p>
+            {scheduleConflictsNow.length > 0 && <ConflictWarning conflicts={scheduleConflictsNow} acknowledged={scheduleAck} onAcknowledge={(v) => setAckKey(v ? "s:" + sig(scheduleConflictsNow) : "")} />}
             <Label htmlFor="e-note">Note for scheduler</Label>
             <Textarea id="e-note" value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} />
-            <Button variant="secondary" onClick={() => { setPending(null); saveEdit(); }}>Save changes</Button>
+            <Button variant="secondary" disabled={scheduleConflictsNow.length > 0 && !scheduleAck} onClick={saveEdit}>Save changes</Button>
           </section>
         )}
 

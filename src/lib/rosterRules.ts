@@ -52,3 +52,41 @@ export const sameDay = (iso: string, day: Date) => {
 export class RosterConflictError extends Error {
   constructor(public conflicts: ScheduleConflict[]) { super("Schedule conflict"); }
 }
+
+// ---- Phase 4A: eligibility and time selection (derived from current form values, never cached) ----
+export interface CarerUnavailable { staffId: StaffId; conflicts: Visit[] }
+export interface CarerEligibility { eligible: StaffId[]; unavailable: CarerUnavailable[] }
+/** Eligible = in the given pool, not already on this visit, no overlapping non-cancelled visit at start–end. */
+export function carerEligibility(visits: readonly Visit[], pool: readonly StaffId[], assigned: readonly StaffId[], start: string, end: string, excludeId?: string): CarerEligibility {
+  const eligible: StaffId[] = [], unavailable: CarerUnavailable[] = [];
+  for (const id of pool) {
+    if (assigned.includes(id)) continue;
+    const c = scheduleConflicts(visits, [id], start, end, excludeId).map((x) => x.visit);
+    if (c.length) unavailable.push({ staffId: id, conflicts: c }); else eligible.push(id);
+  }
+  return { eligible, unavailable };
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+export const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+/** Accepts "9:22", "0922", "09:22"; returns "HH:MM" or undefined. Never rounds. */
+export function parseTypedTime(raw: string): string | undefined {
+  const s = raw.trim().replace(/\./g, ":");
+  const m = /^(\d{1,2}):?(\d{2})$/.exec(s);
+  if (!m) return undefined;
+  const t = `${pad2(Number(m[1]))}:${m[2]}`;
+  return TIME_RE.test(t) ? t : undefined;
+}
+/** 15-minute options for the day, starting at (or after) `from` when given. */
+export function quarterHourOptions(from?: string): string[] {
+  const all = Array.from({ length: 96 }, (_, i) => `${pad2(Math.floor(i / 4))}:${pad2((i % 4) * 15)}`);
+  if (!from || !TIME_RE.test(from)) return all;
+  return all.filter((t) => t >= from);
+}
+/** Combines local date + time + minutes into ISO start/end; undefined when incomplete. */
+export function formWindow(date: string, time: string, minutes: number): { start: string; end: string } | undefined {
+  if (!date || !TIME_RE.test(time) || !(minutes > 0)) return undefined;
+  const s = new Date(`${date}T${time}`);
+  if (isNaN(s.getTime())) return undefined;
+  return { start: s.toISOString(), end: new Date(s.getTime() + minutes * 60000).toISOString() };
+}

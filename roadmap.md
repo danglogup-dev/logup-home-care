@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Save-before-assignment refinement: live availability preview, explicit save message and primary action, assignment gated until saved, same-dialog continuation; verify roster flow.
+
 - [x] Home support plan: requested mapped sections plus protected Review notes; combined Moving and falls retains existing falls text. Staff-confirmed draft schedules feed visits only on publication; templates are versioned, untouched future calls cancelled with attribution, recorded care preserved. All 31 relevant tests pass; preview build OK. Browser verified edit → consultation → named demo approvals → published plan → assigned carer's visit task readback at 390px without overflow. Existing Cloud note/brief sign-in blockers below remain unchanged.
 
 - [x] Coordinator: manager-equivalent demo permissions scoped by service-area IDs; live home, status-prioritised today's visits, direct contact actions, combined SOS/timing/new visit Event alerts, seven home-support event types and inference. All 28 visit tests pass; preview typecheck/build OK; browser verified home redirect, area exclusion/switching, live Event appearance/deep link, temporary telephone targets, frontline denial and 390px no overflow. Direct carer/client numbers are absent in demo records; call actions remain disabled until provided. Existing manager-only gates use roleStore's shared helper without restyling; no Cloud authorization changes.

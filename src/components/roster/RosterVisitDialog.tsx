@@ -52,8 +52,9 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const pool = STAFF.filter((s) => s.accessRole === "Frontline" && s.scopeSiteIds.includes(siteId)).map((s) => s.id);
   const full = visit.staffIds.length >= carersRequiredFor(visit);
   // All checks derive from the current form values — never from a cached warning.
-  const win = formWindow(edit.date, edit.time, Number(edit.minutes)) ?? { start: visit.scheduledStart, end: visit.scheduledEnd };
-  const dirty = win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
+   const formWin = formWindow(edit.date, edit.time, Number(edit.minutes));
+   const win = formWin ?? { start: visit.scheduledStart, end: visit.scheduledEnd };
+   const dirty = !formWin || win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
   const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id);
   const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
   const overrideConflicts = override ? scheduleConflicts(visits, override.filter((s) => !visit.staffIds.includes(s)), visit.scheduledStart, visit.scheduledEnd, visit.id) : [];
@@ -68,7 +69,10 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
     try { fn(); setAckKey(""); setOverride(null); setReason(""); }
     catch (e) { setError(e instanceof RosterConflictError ? "Schedule conflict — tick the confirmation to continue." : e instanceof Error ? e.message : "Could not save."); }
   };
-  const assign = (staffIds: StaffId[], acknowledgeConflict = false) => run(() => visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, acknowledgeConflict }));
+   const assign = (staffIds: StaffId[], acknowledgeConflict = false) => {
+     if (dirty) return;
+     run(() => visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, acknowledgeConflict }));
+   };
   const scheduleAck = scheduleConflictsNow.length > 0 && ackKey === "s:" + sig(scheduleConflictsNow);
   const saveEdit = () => run(() => visitsStore.editVisit(visit.id, { start: win.start, durationMinutes: Number(edit.minutes), carersRequired: Number(edit.carers), notesForScheduler: edit.note }, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: scheduleAck }));
   const assignButtons = (s: StaffId, variant: "default" | "outline" = "default", onPick: (ids: StaffId[]) => void = (ids) => assign(ids)) => <>
@@ -93,7 +97,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
         <section className="space-y-2">
           <h3 className="font-semibold">Carers · {ASSIGNMENT_LABELS[assignmentStatus(visit)]} ({visit.staffIds.length}/{carersRequiredFor(visit)})</h3>
           {visit.staffIds.length === 0 && <p className="font-bold text-destructive">UNASSIGNED</p>}
-          {visit.staffIds.map((s) => <div key={s} className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{name(s)}</span>{canEdit && <Button size="sm" variant="ghost" onClick={() => assign(visit.staffIds.filter((x) => x !== s))}><X className="mr-1 h-4 w-4" />Remove</Button>}</div>)}
+           {visit.staffIds.map((s) => <div key={s} className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{name(s)}</span>{canEdit && <Button size="sm" variant="ghost" disabled={dirty} onClick={() => assign(visit.staffIds.filter((x) => x !== s))}><X className="mr-1 h-4 w-4" />Remove</Button>}</div>)}
         </section>
 
         {canEdit && needsReason && (
@@ -102,7 +106,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
             <Select value={reason} onValueChange={setReason}><SelectTrigger><SelectValue placeholder="Choose a reason" /></SelectTrigger><SelectContent>{ROSTER_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select>
           </div>
         )}
-        {override && overrideConflicts.length > 0 && (
+         {!dirty && override && overrideConflicts.length > 0 && (
           <div className="space-y-2">
             <ConflictWarning conflicts={overrideConflicts} acknowledged={ackKey === "o:" + sig(overrideConflicts)} onAcknowledge={(v) => setAckKey(v ? "o:" + sig(overrideConflicts) : "")} />
             <div className="flex gap-2"><Button disabled={ackKey !== "o:" + sig(overrideConflicts)} onClick={() => assign(override, true)}>Confirm override</Button><Button variant="ghost" onClick={() => { setOverride(null); setAckKey(""); }}>Back</Button></div>
@@ -113,7 +117,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
         {canEdit && (
           <section className="space-y-2">
             <h3 className="font-semibold">Carers in {SITE_BY_ID[siteId]?.name} · {hm(win.start)}–{hm(win.end)}</h3>
-            {dirty && <p className="rounded-md border p-2 text-sm">Showing who is free at the new time {hm(win.start)}–{hm(win.end)}. Save the schedule change below before assigning.</p>}
+             {dirty && <p role="status" className="text-sm text-muted-foreground">Save the updated visit time before assigning a carer.</p>}
             <CarerChoices idPrefix="rv" eligibility={eligibility}
               renderAvailable={(s) => dirty ? null : assignButtons(s)}
               renderOverride={(s) => dirty ? null : assignButtons(s, "outline", (ids) => { setOverride(ids); setAckKey(""); })} />
@@ -133,7 +137,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
             {scheduleConflictsNow.length > 0 && <ConflictWarning conflicts={scheduleConflictsNow} acknowledged={scheduleAck} onAcknowledge={(v) => setAckKey(v ? "s:" + sig(scheduleConflictsNow) : "")} />}
             <Label htmlFor="e-note">Note for scheduler</Label>
             <Textarea id="e-note" value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} />
-            <Button variant="secondary" disabled={scheduleConflictsNow.length > 0 && !scheduleAck} onClick={saveEdit}>Save changes</Button>
+             <Button variant={dirty ? "default" : "secondary"} disabled={!formWin || (scheduleConflictsNow.length > 0 && !scheduleAck)} onClick={saveEdit}>{dirty ? "Save time & continue" : "Save changes"}</Button>
           </section>
         )}
 

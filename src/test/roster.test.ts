@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { visitsStore } from "@/lib/visitsStore";
 import { ROLE_PRESETS } from "@/lib/roleStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
+import { availabilityReasons, staffAvailabilityStore } from "@/lib/staffAvailabilityStore";
 import { myVisits } from "@/lib/visitPresentation";
 import { assignmentStatus, isRosterEditable, RosterConflictError, scheduleConflicts } from "@/lib/rosterRules";
 
 const preset = (id: string) => { const r = ROLE_PRESETS.find((p) => p.id === id); if (!r) throw new Error(id); return r; };
 const coordinator = preset("coordinator"); // East Cork
-const liam = preset("frontline"); // STAFF-LIAM, East Cork
+const liam = preset("frontline");
+const manager = preset("manager-single"); // East Cork // STAFF-LIAM, East Cork
 const future = () => visitsStore.getState().visits.filter((v) => isRosterEditable(v) && Date.parse(v.scheduledStart) > Date.now() + 3600000 && v.rosterStatus === "published");
 
 describe("roster", () => {
@@ -23,7 +25,7 @@ describe("roster", () => {
 
   it("assigns by staff ID, needs a reason on published visits, and the carer then sees it", () => {
     const users = serviceUsersStore.getState().users;
-    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length);
+    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length);
     if (!target) throw new Error("no target");
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], coordinator)).toThrow(/reason/);
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], liam, { reason: "Sickness" })).toThrow();
@@ -32,6 +34,7 @@ describe("roster", () => {
     expect(after.staffIds).toEqual(["STAFF-LIAM"]);
     expect(after.rosterHistory?.at(-1)?.reason).toBe("Sickness");
     expect(myVisits(visitsStore.getState().visits, users, liam).some((v) => v.id === target.id)).toBe(true);
+    expect(after.rosterHistory?.some((h) => h.kind.endsWith("_overridden"))).toBe(false);
   });
 
   it("blocks overlaps until acknowledged and records the override", () => {
@@ -39,11 +42,12 @@ describe("roster", () => {
     const liamVisit = future().find((v) => v.staffIds.includes("STAFF-LIAM"))!;
     const other = visitsStore.createOneOff({ clientId: users.find((u) => u.siteId === "SITE-ECK" && u.status === "active")!.id, start: liamVisit.scheduledStart, durationMinutes: 30, carersRequired: 1, purpose: "Welfare check" }, coordinator);
     expect(other.rosterStatus).toBe("draft");
-    expect(() => visitsStore.assignCarers(other.id, ["STAFF-LIAM"], coordinator)).toThrow(RosterConflictError);
-    visitsStore.assignCarers(other.id, ["STAFF-LIAM"], coordinator, { acknowledgeConflict: true });
-    expect(visitsStore.getVisit(other.id)?.rosterHistory?.some((h) => h.kind === "conflict_overridden")).toBe(true);
+    expect(() => visitsStore.assignCarers(other.id, ["STAFF-LIAM"], coordinator, { overrideReason: "Cover" })).toThrow(/manager or admin/);
+    expect(() => visitsStore.assignCarers(other.id, ["STAFF-LIAM"], manager)).toThrow(RosterConflictError);
+    visitsStore.assignCarers(other.id, ["STAFF-LIAM"], manager, { overrideReason: "Operational cover" });
+    expect(visitsStore.getVisit(other.id)?.rosterHistory?.find((h) => h.kind === "conflict_overridden")?.reason).toBe("Operational cover");
     expect(myVisits(visitsStore.getState().visits, users, liam).some((v) => v.id === other.id)).toBe(false);
-    visitsStore.publishVisits([other.id], coordinator);
+    visitsStore.publishVisits([other.id], manager);
     expect(myVisits(visitsStore.getState().visits, users, liam).some((v) => v.id === other.id)).toBe(true);
   });
 

@@ -8,6 +8,7 @@ import { serviceUsersStore } from "./serviceUsersStore";
 import { FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
+import { competencyCheck, preferenceExclusion, requirementFor, type SupportCategory } from "./visitRequirements";
 import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
 
 // 0 = Sunday … 6 = Saturday (matches Date.getDay)
@@ -41,6 +42,9 @@ export interface VisitTemplate {
   activeFrom?: string;
   activeUntil?: string;
   active?: boolean;
+  /** Workforce qualification IDs a carer must hold (current or due soon). */
+  requiredQualificationIds?: string[];
+  supportCategories?: SupportCategory[];
 }
 
 export type RosterStatus = "draft" | "published";
@@ -87,6 +91,9 @@ export interface Visit {
   lastUpdatedBy?: StaffId | "system";
   lastUpdatedAt?: string;
   rosterHistory?: RosterChange[];
+  /** One-off requirement; recurring visits read their template's requirement live. */
+  requiredQualificationIds?: string[];
+  supportCategories?: SupportCategory[];
 }
 
 export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
@@ -147,6 +154,17 @@ function seedTemplates(): VisitTemplate[] {
         windowStart: hhmm(def.start, offset), windowEnd: hhmm(def.end, offset), durationMinutes: minutes,
         carersRequired: p.risk === "High" && (c === "morning" || c === "bed") ? 2 : 1,
         tasks, medications: meds,
+        supportCategories: [
+          ...(c === "morning" || c === "bed" ? ["personal_care" as const] : ["meal_support" as const]),
+          ...(c === "morning" ? ["intimate_care" as const] : []),
+          ...(meds.length ? ["medication_support" as const] : []),
+          ...(p.primaryFocus.includes("Falls") ? ["mobility_support" as const] : []),
+        ],
+        requiredQualificationIds: [
+          ...(meds.some((m) => m.supportLevel === "administer") ? ["q-meds"] : []),
+          ...(p.risk === "High" && (c === "morning" || c === "bed") ? ["q-handling"] : []),
+          ...(p.primaryFocus.includes("Epilepsy") && c === "morning" ? ["q-epilepsy-meds"] : []),
+        ],
       });
     });
   });
@@ -376,6 +394,12 @@ export const visitsStore = {
     if (outside.length && !(canOverrideServiceArea(actor) && opts.areaOverrideReason?.trim())) throw new Error("Outside permitted service area — a manager or admin must give an override reason.");
     const removed = visit.staffIds.filter((s) => !next.includes(s));
     if (!added.length && !removed.length) return;
+    const req = requirementFor(visit, state.templates);
+    const pref = serviceUsersStore.getById(visit.clientId)?.carerPreference;
+    for (const s of added) {
+      const blocked = [...competencyCheck(s, req.requiredQualificationIds, new Date(visit.scheduledStart)).excluded, ...[preferenceExclusion(pref, req.supportCategories, s)].filter(Boolean)];
+      if (blocked.length) throw new Error(`Unavailable — ${blocked.join("; ")}`);
+    }
     if (visit.rosterStatus !== "draft" && !opts.reason?.trim()) throw new Error("Give a reason for changing a published visit.");
     const conflicts = scheduleConflicts(state.visits, added, visit.scheduledStart, visit.scheduledEnd, visit.id);
     if (conflicts.length && !opts.acknowledgeConflict) throw new RosterConflictError(conflicts);
@@ -439,7 +463,7 @@ export const visitsStore = {
     });
     if (changed) { state = { ...state, visits }; emit(); }
   },
-  createOneOff(input: { clientId: ServiceUserId; start: string; durationMinutes: number; carersRequired: number; purpose: string; staffIds?: StaffId[]; notesForScheduler?: string }, actor: RoleState, opts: { acknowledgeConflict?: boolean } = {}): Visit {
+  createOneOff(input: { clientId: ServiceUserId; start: string; durationMinutes: number; carersRequired: number; purpose: string; staffIds?: StaffId[]; notesForScheduler?: string; requiredQualificationIds?: string[]; supportCategories?: SupportCategory[] }, actor: RoleState, opts: { acknowledgeConflict?: boolean } = {}): Visit {
     const client = serviceUsersStore.getById(input.clientId);
     if (!client) throw new Error("Client not found.");
     if (!canEditRoster(client.siteId, actor)) throw new Error("You cannot schedule visits for this service area.");
@@ -452,6 +476,11 @@ export const visitsStore = {
     const pool = FRONTLINE_IDS.filter((s) => isPermittedArea(staffAvailabilityStore.getState(), s, client.siteId));
     if (staffIds.some((s) => !pool.includes(s))) throw new Error("Carers must belong to the client's service area.");
     const end = new Date(Date.parse(input.start) + input.durationMinutes * 60000).toISOString();
+    const reqQ = [...new Set(input.requiredQualificationIds ?? [])], cats = [...new Set(input.supportCategories ?? [])];
+    for (const s of staffIds) {
+      const blocked = [...competencyCheck(s, reqQ, new Date(input.start)).excluded, ...[preferenceExclusion(client.carerPreference, cats, s)].filter(Boolean)];
+      if (blocked.length) throw new Error(`Unavailable — ${blocked.join("; ")}`);
+    }
     const conflicts = scheduleConflicts(state.visits, staffIds, input.start, end);
     if (conflicts.length && !opts.acknowledgeConflict) throw new RosterConflictError(conflicts);
     const at = nowIso();
@@ -459,6 +488,7 @@ export const visitsStore = {
     const visit: Visit = {
       id: `VIS-ONEOFF-${crypto.randomUUID().slice(0, 8)}`, clientId: client.id, staffIds, scheduledStart: new Date(input.start).toISOString(), scheduledEnd: end, status: "scheduled",
       organisationId: ORGANISATION_ID, serviceAreaId: client.siteId, expectedDurationMinutes: input.durationMinutes, carersRequired: input.carersRequired,
+      requiredQualificationIds: reqQ, supportCategories: cats,
       rosterStatus: "draft", purpose: input.purpose.trim(), notesForScheduler: input.notesForScheduler?.trim() || undefined,
       createdBy: actor.staffId, createdAt: at, lastUpdatedBy: actor.staffId, lastUpdatedAt: at,
       rosterHistory: [e("created", input.purpose.trim()), ...staffIds.map((s) => e("assigned", s)), ...conflicts.map((c) => e("conflict_overridden", `${c.staffId} overlaps ${c.visit.id}`))],

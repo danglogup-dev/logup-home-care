@@ -3,6 +3,8 @@
 import type { Visit, VisitStatus } from "./visitsStore";
 import type { SiteId, StaffId } from "./demoDataRegistry";
 import { inScopeSite, type RoleState } from "./roleStore";
+import { availabilityReasons, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
+type AvailabilityState = ReturnType<typeof staffAvailabilityStore.getState>;
 
 export type AssignmentStatus = "unassigned" | "partial" | "assigned";
 export const ASSIGNMENT_LABELS: Record<AssignmentStatus, string> = { unassigned: "Unassigned", partial: "Partially assigned", assigned: "Assigned" };
@@ -18,6 +20,9 @@ export function assignmentStatus(v: Visit): AssignmentStatus {
 export const durationMinutes = (v: Visit) => v.expectedDurationMinutes ?? Math.round((Date.parse(v.scheduledEnd) - Date.parse(v.scheduledStart)) / 60000);
 
 /** Admin, manager and coordinator may change the roster inside their service-area IDs. */
+/** Outside-area assignment override: admins and managers only (coordinators excluded). */
+export const canOverrideServiceArea = (role: RoleState) => role.role === "admin" || role.role === "manager";
+
 export function canEditRoster(siteId: SiteId | undefined, role: RoleState): boolean {
   if (!siteId) return false;
   if (!(role.role === "admin" || role.role === "manager" || role.role === "coordinator")) return false;
@@ -54,15 +59,19 @@ export class RosterConflictError extends Error {
 }
 
 // ---- Phase 4A: eligibility and time selection (derived from current form values, never cached) ----
-export interface CarerUnavailable { staffId: StaffId; conflicts: Visit[] }
+export interface CarerUnavailable { staffId: StaffId; conflicts: Visit[]; /** Working-hours / leave reasons. */ reasons?: string[]; outsideArea?: boolean }
 export interface CarerEligibility { eligible: StaffId[]; unavailable: CarerUnavailable[] }
-/** Eligible = in the given pool, not already on this visit, no overlapping non-cancelled visit at start–end. */
-export function carerEligibility(visits: readonly Visit[], pool: readonly StaffId[], assigned: readonly StaffId[], start: string, end: string, excludeId?: string): CarerEligibility {
+export interface EligibilityContext { siteId: SiteId; availability: AvailabilityState }
+/** Eligible = not already on this visit, no overlapping non-cancelled visit, inside working hours, not on leave,
+ *  and permitted in the visit's service area (when a context is given). No competency, preference or travel logic. */
+export function carerEligibility(visits: readonly Visit[], pool: readonly StaffId[], assigned: readonly StaffId[], start: string, end: string, excludeId?: string, ctx?: EligibilityContext): CarerEligibility {
   const eligible: StaffId[] = [], unavailable: CarerUnavailable[] = [];
   for (const id of pool) {
     if (assigned.includes(id)) continue;
     const c = scheduleConflicts(visits, [id], start, end, excludeId).map((x) => x.visit);
-    if (c.length) unavailable.push({ staffId: id, conflicts: c }); else eligible.push(id);
+    const reasons = ctx ? availabilityReasons(ctx.availability, id, start, end) : [];
+    const outsideArea = ctx ? !isPermittedArea(ctx.availability, id, ctx.siteId) : false;
+    if (c.length || reasons.length || outsideArea) unavailable.push({ staffId: id, conflicts: c, reasons, outsideArea }); else eligible.push(id);
   }
   return { eligible, unavailable };
 }

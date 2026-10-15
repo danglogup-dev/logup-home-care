@@ -19,6 +19,8 @@ export function unavailableReason(conflicts: CarerEligibility["unavailable"][num
 export function exclusionLines(u: CarerEligibility["unavailable"][number]): string[] {
   return [
     ...(u.outsideArea ? ["Outside permitted service area"] : []),
+    ...(u.competency ?? []).map((r) => `Unavailable — ${r}`),
+    ...(u.preference ? [`Unavailable — ${u.preference}`] : []),
     ...(u.reasons ?? []).map((r) => `Unavailable — ${r}`),
     ...(u.conflicts.length ? [`Unavailable — ${unavailableReason(u.conflicts)}`] : []),
   ];
@@ -33,7 +35,7 @@ export function CarerChoices({ eligibility, renderAvailable, renderOverride, idP
       <p className="text-sm font-semibold">Available carers</p>
       {eligible.length === 0 ? <p className="text-sm text-muted-foreground">No carer is available in this service area at this time.</p> : (
         <ul className="divide-y rounded-md border">
-          {eligible.map((id) => <li key={id} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium">{STAFF_BY_ID[id]?.name ?? id}</p><p className="text-xs text-muted-foreground">Available · no scheduling conflict</p></div>{renderAvailable(id)}</li>)}
+          {eligible.map((id) => <li key={id} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium">{STAFF_BY_ID[id]?.name ?? id}</p><p className="text-xs text-muted-foreground">Available · no scheduling conflict{eligibility.preferred?.includes(id) ? " · Matches client preference" : ""}</p>{(eligibility.warnings?.[id] ?? []).map((w) => <p key={w} className="text-xs text-warning">Warning — {w}</p>)}</div>{renderAvailable(id)}</li>)}
         </ul>
       )}
       {unavailable.length > 0 && (

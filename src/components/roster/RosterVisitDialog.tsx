@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TimePicker } from "./TimePicker";
-import { CarerChoices } from "./CarerChoices";
+import { CarerChoices, SuitabilityTicks, exclusionLines, isOperationalOnly } from "./CarerChoices";
 import { VisitRequirementSummary } from "./VisitRequirementSummary";
 import { requirementFor } from "@/lib/visitRequirements";
 import { useRole } from "@/hooks/useRole";
@@ -22,7 +22,7 @@ import { canOverrideServiceArea, assignmentStatus, ASSIGNMENT_LABELS, canEditRos
 
 const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 const name = (id: string) => STAFF_BY_ID[id as StaffId]?.name ?? id;
-const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", area_overridden: "Service area overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
+const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", area_overridden: "Service area overridden", availability_overridden: "Availability overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const prettyValue = (v?: string) => v?.replace(/STAFF-[A-Z]+/g, (id) => name(id));
@@ -45,9 +45,9 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [ackKey, setAckKey] = useState("");
-  const [override, setOverride] = useState<StaffId[] | null>(null);
-  const [areaPick, setAreaPick] = useState<StaffId[] | null>(null);
-  const [areaReason, setAreaReason] = useState("");
+  const [override, setOverride] = useState<{ ids: StaffId[]; staffId: StaffId } | null>(null);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [summary, setSummary] = useState<{ staffId: StaffId; overridden: boolean } | null>(null);
   const availability = useStaffAvailability();
   const [edit, setEdit] = useState(() => visit ? { date: localDate(visit.scheduledStart), time: hm(visit.scheduledStart), minutes: String(durationMinutes(visit)), carers: String(carersRequiredFor(visit)), note: visit.notesForScheduler ?? "" } : null);
   const [cancelReason, setCancelReason] = useState("");
@@ -65,7 +65,6 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const preference = client.carerPreference;
   const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability, requirement, preference });
   const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
-  const overrideConflicts = override ? scheduleConflicts(visits, override.filter((s) => !visit.staffIds.includes(s)), visit.scheduledStart, visit.scheduledEnd, visit.id) : [];
   const sig = (c: ScheduleConflict[]) => c.map((x) => x.staffId + x.visit.id).join("|");
   const slotState = visit.staffIds.length ? (t: string) => {
     const w = formWindow(edit.date, t, Number(edit.minutes));
@@ -74,12 +73,14 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
 
   const run = (fn: () => void) => {
     setError("");
-    try { fn(); setAckKey(""); setOverride(null); setAreaPick(null); setAreaReason(""); setReason(""); }
+    try { fn(); setAckKey(""); setOverride(null); setOverrideReason(""); setReason(""); }
     catch (e) { setError(e instanceof RosterConflictError ? "Schedule conflict — tick the confirmation to continue." : e instanceof Error ? e.message : "Could not save."); }
   };
-   const assign = (staffIds: StaffId[], acknowledgeConflict = false) => {
+   const assign = (staffIds: StaffId[], overrideFor?: StaffId) => {
      if (dirty) return;
-     run(() => visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, acknowledgeConflict }));
+     const added = staffIds.find((s) => !visit.staffIds.includes(s));
+     setSummary(null);
+     run(() => { visitsStore.assignCarers(visit.id, staffIds, role, { reason: needsReason ? reason : undefined, overrideReason: overrideFor ? overrideReason : undefined }); if (added) setSummary({ staffId: added, overridden: !!overrideFor }); });
    };
   const scheduleAck = scheduleConflictsNow.length > 0 && ackKey === "s:" + sig(scheduleConflictsNow);
   const saveEdit = () => run(() => visitsStore.editVisit(visit.id, { start: win.start, durationMinutes: Number(edit.minutes), carersRequired: Number(edit.carers), notesForScheduler: edit.note }, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: scheduleAck }));
@@ -115,10 +116,10 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
             <Select value={reason} onValueChange={setReason}><SelectTrigger><SelectValue placeholder="Choose a reason" /></SelectTrigger><SelectContent>{ROSTER_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select>
           </div>
         )}
-         {!dirty && override && overrideConflicts.length > 0 && (
-          <div className="space-y-2">
-            <ConflictWarning conflicts={overrideConflicts} acknowledged={ackKey === "o:" + sig(overrideConflicts)} onAcknowledge={(v) => setAckKey(v ? "o:" + sig(overrideConflicts) : "")} />
-            <div className="flex gap-2"><Button disabled={ackKey !== "o:" + sig(overrideConflicts)} onClick={() => assign(override, true)}>Confirm override</Button><Button variant="ghost" onClick={() => { setOverride(null); setAckKey(""); }}>Back</Button></div>
+        {summary && visit.staffIds.includes(summary.staffId) && (
+          <div role="status" className="rounded-md border p-3 text-sm">
+            <p className="font-semibold">Assigned: {name(summary.staffId)}</p>
+            {summary.overridden ? <p className="text-xs text-destructive">Assigned by override — reason recorded in roster history.</p> : <SuitabilityTicks eligibility={{ ...eligibility, preferred: preference && (eligibility.preferred?.length ?? 0) >= 0 ? carerEligibility(visits, [summary.staffId], [], visit.scheduledStart, visit.scheduledEnd, visit.id, { siteId, availability, requirement, preference }).preferred : [] }} staffId={summary.staffId} />}
           </div>
         )}
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
@@ -131,18 +132,23 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
               renderAvailable={(s) => dirty ? null : assignButtons(s)}
               renderOverride={(u) => {
                 if (dirty) return null;
-                if (u.reasons?.length || u.competency?.length || u.preference) return <span className="text-xs text-muted-foreground">Not assignable</span>;
-                if (u.outsideArea) return canOverrideServiceArea(role) && !u.conflicts.length ? assignButtons(u.staffId, "outline", (ids) => { setAreaPick(ids); setAreaReason(""); }) : <span className="text-xs text-muted-foreground">Manager/admin override only</span>;
-                return assignButtons(u.staffId, "outline", (ids) => { setOverride(ids); setAckKey(""); });
+                if (!isOperationalOnly(u)) return <span className="text-xs text-muted-foreground">Blocked — not assignable</span>;
+                if (!canOverrideServiceArea(role)) return <span className="text-xs text-muted-foreground">Manager/admin override only</span>;
+                return assignButtons(u.staffId, "outline", (ids) => { setOverride({ ids, staffId: u.staffId }); setOverrideReason(""); });
               }} />
-            {!dirty && areaPick && (
-              <div role="alert" className="space-y-2 rounded-md border border-destructive bg-destructive/10 p-3">
-                <p className="font-semibold text-destructive">Outside permitted service area</p>
-                <Label htmlFor="area-reason">Override reason (recorded with your name and time)</Label>
-                <Input id="area-reason" value={areaReason} onChange={(e) => setAreaReason(e.target.value)} />
-                <div className="flex gap-2"><Button disabled={!areaReason.trim()} onClick={() => run(() => visitsStore.assignCarers(visit.id, areaPick, role, { reason: needsReason ? reason : undefined, areaOverrideReason: areaReason }))}>Confirm override</Button><Button variant="ghost" onClick={() => setAreaPick(null)}>Back</Button></div>
-              </div>
-            )}
+            {!dirty && override && (() => {
+              const u = eligibility.unavailable.find((x) => x.staffId === override.staffId);
+              if (!u) return null;
+              return (
+                <div role="alert" className="space-y-2 rounded-md border border-destructive bg-destructive/10 p-3">
+                  <p className="font-semibold text-destructive">Override: {name(override.staffId)} is unavailable</p>
+                  <ul className="ml-4 list-disc text-sm">{exclusionLines(u).map((l) => <li key={l}>{l}</li>)}</ul>
+                  <Label htmlFor="override-reason">Override reason (recorded with your name, role and time)</Label>
+                  <Input id="override-reason" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
+                  <div className="flex gap-2"><Button disabled={!overrideReason.trim()} onClick={() => assign(override.ids, override.staffId)}>Confirm override</Button><Button variant="ghost" onClick={() => setOverride(null)}>Back</Button></div>
+                </div>
+              );
+            })()}
           </section>
         )}
 

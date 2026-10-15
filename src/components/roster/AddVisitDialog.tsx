@@ -16,6 +16,10 @@ import { canEditRoster, carerEligibility, formWindow, scheduleConflicts, RosterC
 import { useVisits } from "@/lib/visitsStore";
 import { TimePicker } from "./TimePicker";
 import { CarerChoices } from "./CarerChoices";
+import { VisitRequirementSummary } from "./VisitRequirementSummary";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SUPPORT_CATEGORIES, SUPPORT_CATEGORY_LABELS, type SupportCategory } from "@/lib/visitRequirements";
+import { useWorkforceQualTypes } from "./useWorkforceQualTypes";
 import { ConflictWarning } from "./RosterVisitDialog";
 
 const NONE = "__none";
@@ -26,6 +30,9 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const { users } = useServiceUsers();
   const clients = users.filter((u) => u.status === "active" && canEditRoster(u.siteId, role)).sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)));
   const [f, setF] = useState({ clientId: "", date: new Date().toISOString().slice(0, 10), time: "10:00", minutes: "30", carers: "1", purpose: "", staffId: NONE, note: "" });
+  const [quals, setQuals] = useState<string[]>([]);
+  const [cats, setCats] = useState<SupportCategory[]>([]);
+  const qualTypes = useWorkforceQualTypes();
   const [error, setError] = useState("");
   const [ackKey, setAckKey] = useState("");
   const { visits } = useVisits();
@@ -34,7 +41,7 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const pool = client ? FRONTLINE_IDS : [];
   const chosen = f.staffId === NONE ? [] : [f.staffId as StaffId];
   const win = formWindow(f.date, f.time, Number(f.minutes));
-  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client!.siteId, availability }) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
+  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client!.siteId, availability, requirement: { requiredQualificationIds: quals, supportCategories: cats }, preference: client!.carerPreference }) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
   const conflicts = win ? scheduleConflicts(visits, chosen, win.start, win.end) : [];
   const sig = conflicts.map((c) => c.staffId + c.visit.id).join("|");
   const ack = conflicts.length > 0 && ackKey === sig;
@@ -42,7 +49,7 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const save = () => {
     setError("");
     try {
-      visitsStore.createOneOff({ clientId: f.clientId as never, start: win!.start, durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: chosen, notesForScheduler: f.note }, role, { acknowledgeConflict: ack });
+      visitsStore.createOneOff({ clientId: f.clientId as never, start: win!.start, durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: chosen, notesForScheduler: f.note, requiredQualificationIds: quals, supportCategories: cats }, role, { acknowledgeConflict: ack });
       onClose();
     } catch (e) {
       if (e instanceof RosterConflictError) setError("Schedule conflict — tick the confirmation to continue.");
@@ -68,13 +75,20 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
             <div><Label>Carers required</Label><Select value={f.carers} onValueChange={(v) => setF({ ...f, carers: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem></SelectContent></Select></div>
           </div>
           <div><Label htmlFor="a-purpose">Expected support / visit purpose</Label><Input id="a-purpose" value={f.purpose} onChange={(e) => setF({ ...f, purpose: e.target.value })} placeholder="e.g. Welfare check" /></div>
+          <fieldset className="space-y-1"><legend className="text-sm font-medium">Support categories</legend>
+            <div className="grid grid-cols-2 gap-1">{SUPPORT_CATEGORIES.map((c) => <label key={c} className="flex items-center gap-2 text-sm"><Checkbox checked={cats.includes(c)} onCheckedChange={(v) => setCats(v ? [...cats, c] : cats.filter((x) => x !== c))} />{SUPPORT_CATEGORY_LABELS[c]}</label>)}</div>
+          </fieldset>
+          <fieldset className="space-y-1"><legend className="text-sm font-medium">Required competencies</legend>
+            <div className="grid grid-cols-2 gap-1">{qualTypes.map((q) => <label key={q.id} className="flex items-center gap-2 text-sm"><Checkbox checked={quals.includes(q.id)} onCheckedChange={(v) => setQuals(v ? [...quals, q.id] : quals.filter((x) => x !== q.id))} />{q.name}</label>)}</div>
+          </fieldset>
+          {client && <VisitRequirementSummary requirement={{ requiredQualificationIds: quals, supportCategories: cats }} preference={client.carerPreference} />}
           {win && <p className="text-sm">Visit time: <strong className="tabular-nums">{f.time}–{new Date(win.end).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false })}</strong></p>}
           <div className="space-y-2"><Label>Assign carer (optional)</Label>
             {!client ? <p className="text-sm text-muted-foreground">Choose a {terms.singular} first.</p> : <>
               {chosen.length > 0 && <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{STAFF.find((s) => s.id === chosen[0])?.name}</span><Button size="sm" variant="ghost" onClick={() => setF({ ...f, staffId: NONE })}>Leave unassigned</Button></div>}
               <CarerChoices idPrefix="av" eligibility={eligibility}
                 renderAvailable={(id) => <Button size="sm" onClick={() => setF({ ...f, staffId: id })}>{chosen.length ? "Choose instead" : "Choose"}</Button>}
-                renderOverride={(u) => u.reasons?.length || u.outsideArea ? <span className="text-xs text-muted-foreground">{u.outsideArea ? "Assign after creating (manager/admin override)" : "Not assignable"}</span> : <Button size="sm" variant="outline" onClick={() => { setF({ ...f, staffId: u.staffId }); setAckKey(""); }}>Choose anyway…</Button>} />
+                renderOverride={(u) => u.reasons?.length || u.outsideArea || u.competency?.length || u.preference ? <span className="text-xs text-muted-foreground">{u.outsideArea ? "Assign after creating (manager/admin override)" : "Not assignable"}</span> : <Button size="sm" variant="outline" onClick={() => { setF({ ...f, staffId: u.staffId }); setAckKey(""); }}>Choose anyway…</Button>} />
             </>}
           </div>
           <div><Label htmlFor="a-note">Note for scheduler (optional)</Label><Textarea id="a-note" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></div>

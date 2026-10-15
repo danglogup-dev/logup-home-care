@@ -23,3 +23,4 @@
 - [x] Family role, approved daily summaries, hours report, home support rails, hide Shift coverage
 - [x] Phase 4 roster foundation: Roster page, by visit/carer, manual assign with reasons, overlap override audit, one-off visits, drafts hidden from carers until published.
 - [x] Phase 4A: assign carer shows only free carers (unavailable optional with reason + explicit override), live recalculation from form values, hybrid 15-min/typed time picker with slot availability, end time shown.
+- [x] Phase 5B: visit required competencies (green ok, amber warns, missing/expired excluded), support categories, structured client carer preference (preferred ranks, required filters, intimate-care-only scope, context required); enforced in assignment. No travel logic.

@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TimePicker } from "./TimePicker";
 import { CarerChoices } from "./CarerChoices";
+import { VisitRequirementSummary } from "./VisitRequirementSummary";
+import { requirementFor } from "@/lib/visitRequirements";
 import { useRole } from "@/hooks/useRole";
 import { useVisits, visitsStore, VISIT_STATUS_LABELS, type RosterChange } from "@/lib/visitsStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
@@ -37,7 +39,7 @@ export function ConflictWarning({ conflicts, acknowledged, onAcknowledge }: { co
 
 export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClose: () => void }) {
   const role = useRole();
-  const { visits } = useVisits();
+  const { visits, templates } = useVisits();
   const visit = visits.find((v) => v.id === visitId);
   const client = visit ? serviceUsersStore.getById(visit.clientId) : undefined;
   const [reason, setReason] = useState("");
@@ -59,7 +61,9 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
    const formWin = formWindow(edit.date, edit.time, Number(edit.minutes));
    const win = formWin ?? { start: visit.scheduledStart, end: visit.scheduledEnd };
    const dirty = !formWin || win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
-  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability });
+  const requirement = requirementFor(visit, templates);
+  const preference = client.carerPreference;
+  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability, requirement, preference });
   const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
   const overrideConflicts = override ? scheduleConflicts(visits, override.filter((s) => !visit.staffIds.includes(s)), visit.scheduledStart, visit.scheduledEnd, visit.id) : [];
   const sig = (c: ScheduleConflict[]) => c.map((x) => x.staffId + x.visit.id).join("|");
@@ -95,6 +99,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
           </DialogDescription>
         </DialogHeader>
         {visit.purpose && <p className="text-sm"><strong>Purpose:</strong> {visit.purpose}</p>}
+        <VisitRequirementSummary requirement={requirement} preference={preference} />
         {!isRosterEditable(visit) && <p className="rounded-md border p-3 text-sm">This visit has started, finished or been cancelled, so its schedule is locked to protect the care record.</p>}
         {!canEditRoster(siteId, role) && <p className="rounded-md border p-3 text-sm">Read only — you can't change visits in this service area.</p>}
 
@@ -126,7 +131,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
               renderAvailable={(s) => dirty ? null : assignButtons(s)}
               renderOverride={(u) => {
                 if (dirty) return null;
-                if (u.reasons?.length) return <span className="text-xs text-muted-foreground">Not assignable</span>;
+                if (u.reasons?.length || u.competency?.length || u.preference) return <span className="text-xs text-muted-foreground">Not assignable</span>;
                 if (u.outsideArea) return canOverrideServiceArea(role) && !u.conflicts.length ? assignButtons(u.staffId, "outline", (ids) => { setAreaPick(ids); setAreaReason(""); }) : <span className="text-xs text-muted-foreground">Manager/admin override only</span>;
                 return assignButtons(u.staffId, "outline", (ids) => { setOverride(ids); setAckKey(""); });
               }} />

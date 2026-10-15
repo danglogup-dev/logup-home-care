@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CarerPreferenceCard } from "@/components/clients/CarerPreferenceCard";
+import { SUPPORT_CATEGORY_LABELS } from "@/lib/visitRequirements";
+import { workforceStore as wfStoreForReq } from "@/lib/workforceStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/hooks/useRole";
@@ -210,6 +213,7 @@ function Glance({ u, planned, openEvents }: { u: ServiceUser; planned: number; o
             <Field label="Funding">{u.funding && FUNDING[u.funding]}</Field>
           </CardContent>
         </Card>
+        <CarerPreferenceCard u={u} />
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-base">Family and emergency contacts</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -269,6 +273,7 @@ function ScheduleTab({ templates, upcoming }: { templates: ReturnType<typeof vis
               </div>
               <div className="text-sm">
                 <div>{t.tasks.join(" · ") || "No tasks listed"}</div>
+                {(t.supportCategories?.length || t.requiredQualificationIds?.length) ? <div className="text-muted-foreground mt-1">{[t.supportCategories?.map((c) => SUPPORT_CATEGORY_LABELS[c]).join(", "), t.requiredQualificationIds?.length ? `Requires: ${t.requiredQualificationIds.map((q) => wfStoreForReq.getQualType(q)?.name ?? q).join(", ")}` : ""].filter(Boolean).join(" · ")}</div> : null}
                 {t.medications.length > 0 && <div className="text-muted-foreground mt-1">Medication: {t.medications.map((m) => `${m.name} (${MEDICATION_SUPPORT_LABELS[m.supportLevel]})`).join(", ")}</div>}
               </div>
             </div>

@@ -5,7 +5,7 @@
  */
 import { useSyncExternalStore } from "react";
 import {
-  PEOPLE_SUPPORTED, getSiteName,
+  PEOPLE_SUPPORTED, getSiteName, SEED_CARER_PREFERENCES,
   type DemoPersonSupported, type ServiceUserId, type SiteId, type StaffId,
 } from "./demoDataRegistry";
 import { SCENARIO_LIFECYCLE } from "./demoScenario";
@@ -66,7 +66,11 @@ function load(): State {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as State;
-      if (Array.isArray(parsed.users) && Array.isArray(parsed.events)) return parsed;
+      if (Array.isArray(parsed.users) && Array.isArray(parsed.events)) {
+        // Older saved records predate carer preferences: fill from the seed, never overwrite.
+        parsed.users = parsed.users.map((u) => u.carerPreference || !SEED_CARER_PREFERENCES[u.id] ? u : { ...u, carerPreference: { ...SEED_CARER_PREFERENCES[u.id]! } });
+        return parsed;
+      }
     }
   } catch { /* ignore */ }
   return seed();

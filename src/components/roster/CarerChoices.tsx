@@ -12,20 +12,28 @@ const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2
 export function unavailableReason(conflicts: CarerEligibility["unavailable"][number]["conflicts"]): string {
   return conflicts.map((v) => {
     const c = serviceUsersStore.getById(v.clientId);
-    return `${c ? `assigned to ${clientDisplayName(c)}` : "overlapping visit"} ${hm(v.scheduledStart)}–${hm(v.scheduledEnd)}`;
+    return `another visit overlaps ${hm(v.scheduledStart)}–${hm(v.scheduledEnd)}${c ? ` (${clientDisplayName(c)})` : ""}`;
   }).join("; ");
+}
+/** Every exact reason, e.g. "Unavailable — annual leave", "Outside permitted service area". */
+export function exclusionLines(u: CarerEligibility["unavailable"][number]): string[] {
+  return [
+    ...(u.outsideArea ? ["Outside permitted service area"] : []),
+    ...(u.reasons ?? []).map((r) => `Unavailable — ${r}`),
+    ...(u.conflicts.length ? [`Unavailable — ${unavailableReason(u.conflicts)}`] : []),
+  ];
 }
 
 /** Available carers first; unavailable carers hidden unless toggled, each with its reason and an explicit override action. */
-export function CarerChoices({ eligibility, renderAvailable, renderOverride, idPrefix }: { eligibility: CarerEligibility; renderAvailable: (id: StaffId) => ReactNode; renderOverride?: (id: StaffId) => ReactNode; idPrefix: string }) {
+export function CarerChoices({ eligibility, renderAvailable, renderOverride, idPrefix }: { eligibility: CarerEligibility; renderAvailable: (id: StaffId) => ReactNode; renderOverride?: (u: CarerEligibility["unavailable"][number]) => ReactNode; idPrefix: string }) {
   const [showUnavailable, setShowUnavailable] = useState(false);
   const { eligible, unavailable } = eligibility;
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold">Available carers</p>
-      {eligible.length === 0 ? <p className="text-sm text-muted-foreground">No carer in this service area is free at this time.</p> : (
+      {eligible.length === 0 ? <p className="text-sm text-muted-foreground">No carer is available in this service area at this time.</p> : (
         <ul className="divide-y rounded-md border">
-          {eligible.map((id) => <li key={id} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium">{STAFF_BY_ID[id]?.name ?? id}</p><p className="text-xs text-muted-foreground">No scheduling conflict</p></div>{renderAvailable(id)}</li>)}
+          {eligible.map((id) => <li key={id} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium">{STAFF_BY_ID[id]?.name ?? id}</p><p className="text-xs text-muted-foreground">Available · no scheduling conflict</p></div>{renderAvailable(id)}</li>)}
         </ul>
       )}
       {unavailable.length > 0 && (
@@ -35,7 +43,7 @@ export function CarerChoices({ eligibility, renderAvailable, renderOverride, idP
         <>
           <p className="text-sm font-semibold">Unavailable</p>
           <ul className="divide-y rounded-md border">
-            {unavailable.map((u) => <li key={u.staffId} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium text-muted-foreground">{STAFF_BY_ID[u.staffId]?.name ?? u.staffId}</p><p className="text-xs text-destructive">Unavailable — {unavailableReason(u.conflicts)}</p></div>{renderOverride?.(u.staffId)}</li>)}
+            {unavailable.map((u) => <li key={u.staffId} className="flex flex-wrap items-center gap-3 px-3 py-2"><div className="min-w-0 flex-1"><p className="font-medium text-muted-foreground">{STAFF_BY_ID[u.staffId]?.name ?? u.staffId}</p>{exclusionLines(u).map((l) => <p key={l} className="text-xs text-destructive">{l}</p>)}</div>{renderOverride?.(u)}</li>)}
           </ul>
         </>
       )}

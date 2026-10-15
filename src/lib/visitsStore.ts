@@ -5,7 +5,8 @@ import { useSyncExternalStore } from "react";
 import { PEOPLE_SUPPORTED, STAFF, type ServiceUserId, type StaffId, type SiteId } from "./demoDataRegistry";
 import { timedVisitStatus } from "./visitRules";
 import { serviceUsersStore } from "./serviceUsersStore";
-import { assignmentStatus, canEditRoster, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
+import { FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
+import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
 import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
 
@@ -43,7 +44,7 @@ export interface VisitTemplate {
 }
 
 export type RosterStatus = "draft" | "published";
-export type RosterChangeKind = "created" | "changed" | "assigned" | "removed" | "replaced" | "second_carer_added" | "conflict_overridden" | "cancelled" | "roster_status_changed";
+export type RosterChangeKind = "created" | "changed" | "assigned" | "removed" | "replaced" | "second_carer_added" | "conflict_overridden" | "area_overridden" | "cancelled" | "roster_status_changed";
 /** Append-only roster audit entry. Actor is a staff ID; names are display labels only. */
 export interface RosterChange { id: string; kind: RosterChangeKind; actorStaffId: StaffId; actorRole: string; at: string; previous?: string; next?: string; reason?: string }
 export const ORGANISATION_ID = "ORG-LOGUP-HOMECARE";
@@ -362,15 +363,17 @@ export const visitsStore = {
 
   // ---------- Roster (human-only scheduling; nothing here auto-assigns) ----------
   /** Replace a visit's carers. Published visits need a reason; overlaps need acknowledgement. */
-  assignCarers(id: string, staffIds: StaffId[], actor: RoleState, opts: { reason?: string; acknowledgeConflict?: boolean } = {}) {
+  assignCarers(id: string, staffIds: StaffId[], actor: RoleState, opts: { reason?: string; acknowledgeConflict?: boolean; areaOverrideReason?: string } = {}) {
     const visit = this.getVisit(id);
     if (!visit) throw new Error("Visit not found.");
     guardEdit(visit, actor);
     const next = [...new Set(staffIds)];
     if (next.length > carersRequiredFor(visit)) throw new Error(`This visit needs ${carersRequiredFor(visit)} carer(s).`);
-    const pool = FRONTLINE_BY_SITE(visit.serviceAreaId ?? siteOf(visit.clientId)!);
-    if (next.some((s) => !pool.includes(s))) throw new Error("Carers must belong to the client's service area.");
+    const area = visit.serviceAreaId ?? siteOf(visit.clientId)!;
+    const pool = FRONTLINE_IDS.filter((s) => isPermittedArea(staffAvailabilityStore.getState(), s, area));
     const added = next.filter((s) => !visit.staffIds.includes(s));
+    const outside = added.filter((s) => !pool.includes(s));
+    if (outside.length && !(canOverrideServiceArea(actor) && opts.areaOverrideReason?.trim())) throw new Error("Outside permitted service area — a manager or admin must give an override reason.");
     const removed = visit.staffIds.filter((s) => !next.includes(s));
     if (!added.length && !removed.length) return;
     if (visit.rosterStatus !== "draft" && !opts.reason?.trim()) throw new Error("Give a reason for changing a published visit.");
@@ -385,6 +388,7 @@ export const visitsStore = {
       added.forEach((s) => history.push(entry(visit.staffIds.length - removed.length >= 1 ? "second_carer_added" : "assigned", undefined, s)));
     }
     conflicts.forEach((c) => history.push(entry("conflict_overridden", undefined, `${c.staffId} overlaps ${c.visit.id}`)));
+    outside.forEach((s) => history.push({ ...entry("area_overridden", undefined, `${s} outside permitted service area`), reason: opts.areaOverrideReason!.trim() }));
     patchVisit(id, { staffIds: next, lastUpdatedBy: actor.staffId, lastUpdatedAt: at, rosterHistory: [...(visit.rosterHistory ?? []), ...history] });
   },
   /** Reschedule an unstarted visit. Started/completed visits are never rewritten. */
@@ -445,7 +449,7 @@ export const visitsStore = {
     if (Number.isNaN(Date.parse(input.start))) throw new Error("Choose a date and start time.");
     const staffIds = [...new Set(input.staffIds ?? [])];
     if (staffIds.length > input.carersRequired) throw new Error("Too many carers for this visit.");
-    const pool = FRONTLINE_BY_SITE(client.siteId);
+    const pool = FRONTLINE_IDS.filter((s) => isPermittedArea(staffAvailabilityStore.getState(), s, client.siteId));
     if (staffIds.some((s) => !pool.includes(s))) throw new Error("Carers must belong to the client's service area.");
     const end = new Date(Date.parse(input.start) + input.durationMinutes * 60000).toISOString();
     const conflicts = scheduleConflicts(state.visits, staffIds, input.start, end);

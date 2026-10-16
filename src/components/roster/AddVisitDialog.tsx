@@ -41,7 +41,7 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const pool = client ? FRONTLINE_IDS : [];
   const chosen = f.staffId === NONE ? [] : [f.staffId as StaffId];
   const win = formWindow(f.date, f.time, Number(f.minutes));
-  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client!.siteId, availability, requirement: { requiredQualificationIds: quals, supportCategories: cats }, preference: client!.carerPreference }) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
+  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client!.siteId, availability, requirement: { requiredQualificationIds: quals, supportCategories: cats }, preference: client!.carerPreference, clientId: client!.id }) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
   const conflicts = win ? scheduleConflicts(visits, chosen, win.start, win.end) : [];
   const sig = conflicts.map((c) => c.staffId + c.visit.id).join("|");
   const ack = conflicts.length > 0 && ackKey === sig;

@@ -18,11 +18,12 @@ export function unavailableReason(conflicts: Unavailable["conflicts"]): string {
   }).join("; ");
 }
 
-export type ExclusionGroup = "Scheduling" | "Availability" | "Service area" | "Competency" | "Client requirement";
+export type ExclusionGroup = "Scheduling" | "Travel" | "Availability" | "Service area" | "Competency" | "Client requirement";
 /** Every exact reason, grouped. A carer can have several. */
 export function exclusionGroups(u: Unavailable): { group: ExclusionGroup; lines: string[] }[] {
   const g: { group: ExclusionGroup; lines: string[] }[] = [
     { group: "Scheduling", lines: u.conflicts.map((v) => { const c = serviceUsersStore.getById(v.clientId); return `Another visit ${hm(v.scheduledStart)}–${hm(v.scheduledEnd)}${c ? ` (${clientDisplayName(c)})` : ""}`; }) },
+    { group: "Travel", lines: u.travel ?? [] },
     { group: "Availability", lines: (u.reasons ?? []).map((r) => r.charAt(0).toUpperCase() + r.slice(1)) },
     { group: "Service area", lines: u.outsideArea ? ["Outside permitted service area"] : [] },
     { group: "Competency", lines: u.competency ?? [] },
@@ -37,7 +38,7 @@ export function exclusionLines(u: Unavailable): string[] {
 export const isOperationalOnly = (u: Unavailable) => !(u.competency?.length) && !u.preference;
 
 export function SuitabilityTicks({ eligibility, staffId }: { eligibility: CarerEligibility; staffId: StaffId }) {
-  const ticks = ["Available", "Service area match", "Required competencies current"];
+  const ticks = ["Available", "Travel feasible", "Service area match", "Required competencies current"];
   if (eligibility.preferred?.includes(staffId)) ticks.push("Matches client preference");
   return (
     <ul className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">

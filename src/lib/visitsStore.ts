@@ -8,6 +8,7 @@ import { serviceUsersStore } from "./serviceUsersStore";
 import { availabilityReasons, FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
+import { travelCheck, travelLines } from "./travelTime";
 import { competencyCheck, preferenceExclusion, requirementFor, type SupportCategory } from "./visitRequirements";
 import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
 

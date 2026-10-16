@@ -69,6 +69,9 @@ function load(): State {
       if (Array.isArray(parsed.users) && Array.isArray(parsed.events)) {
         // Older saved records predate carer preferences: fill from the seed, never overwrite.
         parsed.users = parsed.users.map((u) => u.carerPreference || !SEED_CARER_PREFERENCES[u.id] ? u : { ...u, carerPreference: { ...SEED_CARER_PREFERENCES[u.id]! } });
+        // Fill missing home coordinates from the seed (never overwrite stored ones).
+        const seedById = new Map(PEOPLE_SUPPORTED.map((p) => [p.id, p] as const));
+        parsed.users = parsed.users.map((u) => typeof u.latitude === "number" ? u : (() => { const s = seedById.get(u.id); return s?.latitude !== undefined ? { ...u, latitude: s.latitude, longitude: s.longitude } : u; })());
         return parsed;
       }
     }

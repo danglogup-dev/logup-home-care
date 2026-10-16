@@ -28,3 +28,4 @@ Subdirectories have their own AGENTS.md; read it before changing files there.
 - Delivered vs approved hours are derived live in src/lib/hoursReport.ts from visitsStore (scheduled length of completed visits) — never stored.
 - Home Care Clients/Workforce views (HomeCareClients, HomeCareWorkforce, clientRecord.ts) are read-only lenses chosen by HomeSupportSwitch; residential pages stay intact — no second client or staff store.
 - Visit suitability (visitRequirements.ts) reads required qualification IDs and support categories live from the visit or its template, competency status from workforceStore, and the documented carerPreference on the client record; required preferences exclude, preferred only rank — no copied qualification or preference data.
+- Travel feasibility (travelTime.ts) is derived inside carerEligibility via a swappable deterministic provider; conflicts are manager-overridable with a reason, tight legs warn — never cached.

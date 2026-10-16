@@ -153,6 +153,9 @@ export interface DemoPersonSupported {
   // Home support details
   homeAddress?: string;
   eircode?: string;
+  /** Home coordinates for travel estimates (not shown in the UI). */
+  latitude?: number;
+  longitude?: number;
   /** Key safe, pets, parking. */
   accessNotes?: string;
   livesAlone?: boolean;
@@ -251,6 +254,24 @@ const TOWNS: Record<SiteId, string[]> = {
   "SITE-ECK": ["Youghal", "Midleton", "Cobh", "Carrigtwohill"],
   "SITE-WWD": ["Dungarvan", "Lismore", "Cappoquin"],
 };
+/** Approximate town centres (demo coordinates for travel estimates). */
+export const TOWN_CENTRES: Record<string, { lat: number; lng: number }> = {
+  Youghal: { lat: 51.9536, lng: -7.8506 }, Midleton: { lat: 51.9153, lng: -8.1752 }, Cobh: { lat: 51.8503, lng: -8.2967 },
+  Carrigtwohill: { lat: 51.9100, lng: -8.2633 }, Dungarvan: { lat: 52.0845, lng: -7.6397 }, Lismore: { lat: 52.1369, lng: -7.9306 },
+  Cappoquin: { lat: 52.1456, lng: -7.8467 },
+};
+/** Deterministic small offset (≤ ~1.5 km) so homes in one town are not identical points. */
+export function demoHomeCoords(town: string, n: number): { latitude: number; longitude: number } | undefined {
+  const c = TOWN_CENTRES[town]; if (!c) return undefined;
+  const a = ((n * 37) % 100) / 100 - 0.5, b = ((n * 61) % 100) / 100 - 0.5;
+  return { latitude: +(c.lat + a * 0.02).toFixed(5), longitude: +(c.lng + b * 0.03).toFixed(5) };
+}
+const FEATURED_COORDS: Record<string, { latitude: number; longitude: number }> = {
+  "PS-001": { latitude: 51.9561, longitude: -7.8497 }, "PS-002": { latitude: 51.9101, longitude: -8.1689 },
+  "PS-003": { latitude: 51.8498, longitude: -8.2941 }, "PS-004": { latitude: 52.0905, longitude: -7.6214 },
+  "PS-005": { latitude: 52.0889, longitude: -7.6175 }, "PS-006": { latitude: 52.1372, longitude: -7.9311 },
+  "PS-007": { latitude: 52.1449, longitude: -7.8452 },
+};
 const STREETS = ["Main Street", "Church Road", "Chapel Lane", "Bridge Street", "Green Road", "Mill Lane", "Abbey Road"];
 const FOCUS_OLDER = ["Mobility support", "Dementia support", "Nutrition / Hydration", "Skin integrity", "Continence support", "Social engagement", "Diabetes support", "Stable support plan"];
 const FOCUS_DIS = ["Communication support", "Positive behaviour support"];
@@ -296,6 +317,7 @@ function buildBackground(siteId: SiteId, prefix: string, startCode: number, star
       admittedFromName: (["", "Cork University Hospital", "", "Community nursing unit"])[i % 4],
       ...(flags.includes("arr") ? {} : { admissionArrangedBy: ARRANGED_BY[siteId] }),
       homeAddress: `${10 + i} ${street}, ${town}`,
+      ...demoHomeCoords(town, n),
       gp: flags.includes("gp") ? { name: GP[siteId].name, practice: GP[siteId].practice } : GP[siteId],
       createdAt: created, createdByStaffId: "STAFF-AOIFE", updatedAt: created, updatedByStaffId: "STAFF-AOIFE",
     };
@@ -311,7 +333,7 @@ const FEATURED_PEOPLE: DemoPersonSupported[] = FEATURED.map(({ rep, dir, home, .
   const { nokAddress, ...directory } = dir;
   const created = `${p.admissionDate}T09:00:00Z`;
   return {
-    ...p, ...directory, ...home, previousAddress: home.homeAddress, siteName: SITE_NAME_BY_ID[p.siteId], unitId: null, keyWorkerId: p.keyWorkerStaffId,
+    ...p, ...directory, ...home, ...FEATURED_COORDS[p.id], previousAddress: home.homeAddress, siteName: SITE_NAME_BY_ID[p.siteId], unitId: null, keyWorkerId: p.keyWorkerStaffId,
     representatives: [{ id: `REP-${p.id}-1`, ...rep, isPrimary: true, type: "next_of_kin", address: nokAddress }],
     createdAt: created, createdByStaffId: "STAFF-AOIFE", updatedAt: created, updatedByStaffId: "STAFF-AOIFE",
     ...(SEED_CARER_PREFERENCES[p.id] ? { carerPreference: { ...SEED_CARER_PREFERENCES[p.id]! } } : {}),

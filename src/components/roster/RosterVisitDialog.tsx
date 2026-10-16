@@ -22,7 +22,7 @@ import { canOverrideServiceArea, assignmentStatus, ASSIGNMENT_LABELS, canEditRos
 
 const hm = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 const name = (id: string) => STAFF_BY_ID[id as StaffId]?.name ?? id;
-const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", area_overridden: "Service area overridden", availability_overridden: "Availability overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
+const KIND_LABELS: Record<RosterChange["kind"], string> = { created: "Visit created", changed: "Visit changed", assigned: "Carer assigned", removed: "Carer removed", replaced: "Carer replaced", second_carer_added: "Second carer added", conflict_overridden: "Overlap warning overridden", area_overridden: "Service area overridden", availability_overridden: "Availability overridden", travel_overridden: "Travel conflict overridden", cancelled: "Visit cancelled", roster_status_changed: "Roster status changed" };
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const prettyValue = (v?: string) => v?.replace(/STAFF-[A-Z]+/g, (id) => name(id));
@@ -63,7 +63,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
    const dirty = !formWin || win.start !== visit.scheduledStart || win.end !== visit.scheduledEnd;
   const requirement = requirementFor(visit, templates);
   const preference = client.carerPreference;
-  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability, requirement, preference });
+  const eligibility = carerEligibility(visits, pool, visit.staffIds, win.start, win.end, visit.id, { siteId, availability, requirement, preference, clientId: visit.clientId });
   const scheduleConflictsNow = scheduleConflicts(visits, visit.staffIds, win.start, win.end, visit.id);
   const sig = (c: ScheduleConflict[]) => c.map((x) => x.staffId + x.visit.id).join("|");
   const slotState = visit.staffIds.length ? (t: string) => {
@@ -119,7 +119,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
         {summary && visit.staffIds.includes(summary.staffId) && (
           <div role="status" className="rounded-md border p-3 text-sm">
             <p className="font-semibold">Assigned: {name(summary.staffId)}</p>
-            {summary.overridden ? <p className="text-xs text-destructive">Assigned by override — reason recorded in roster history.</p> : <SuitabilityTicks eligibility={carerEligibility(visits, [summary.staffId], [], visit.scheduledStart, visit.scheduledEnd, visit.id, { siteId, availability, requirement, preference })} staffId={summary.staffId} />}
+            {summary.overridden ? <p className="text-xs text-destructive">Assigned by override — reason recorded in roster history.</p> : <SuitabilityTicks eligibility={carerEligibility(visits, [summary.staffId], [], visit.scheduledStart, visit.scheduledEnd, visit.id, { siteId, availability, requirement, preference, clientId: visit.clientId })} staffId={summary.staffId} />}
           </div>
         )}
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}

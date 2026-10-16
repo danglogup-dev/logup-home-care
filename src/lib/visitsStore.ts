@@ -8,6 +8,7 @@ import { serviceUsersStore } from "./serviceUsersStore";
 import { availabilityReasons, FRONTLINE_IDS, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { assignmentStatus, canEditRoster, canOverrideServiceArea, isRosterEditable, scheduleConflicts, startOfWeek, RosterConflictError, carersRequiredFor } from "./rosterRules";
 import type { RoleState } from "./roleStore";
+import { travelCheck, travelLines } from "./travelTime";
 import { competencyCheck, preferenceExclusion, requirementFor, type SupportCategory } from "./visitRequirements";
 import { cloneVisitSchedule, validateVisitSchedule, type CarePlanVisitTemplate } from "./carePlanVisitSchedule";
 
@@ -48,7 +49,7 @@ export interface VisitTemplate {
 }
 
 export type RosterStatus = "draft" | "published";
-export type RosterChangeKind = "created" | "changed" | "assigned" | "removed" | "replaced" | "second_carer_added" | "conflict_overridden" | "area_overridden" | "availability_overridden" | "cancelled" | "roster_status_changed";
+export type RosterChangeKind = "created" | "changed" | "assigned" | "removed" | "replaced" | "second_carer_added" | "conflict_overridden" | "area_overridden" | "availability_overridden" | "travel_overridden" | "cancelled" | "roster_status_changed";
 /** Append-only roster audit entry. Actor is a staff ID; names are display labels only. */
 export interface RosterChange { id: string; kind: RosterChangeKind; actorStaffId: StaffId; actorRole: string; at: string; previous?: string; next?: string; reason?: string }
 export const ORGANISATION_ID = "ORG-LOGUP-HOMECARE";
@@ -404,8 +405,9 @@ export const visitsStore = {
     const outside = added.filter((s) => !isPermittedArea(avail, s, area));
     const unavailable = added.map((s) => ({ s, r: availabilityReasons(avail, s, visit.scheduledStart, visit.scheduledEnd) })).filter((x) => x.r.length);
     const conflicts = scheduleConflicts(state.visits, added, visit.scheduledStart, visit.scheduledEnd, visit.id);
+    const travel = added.filter((s) => !conflicts.some((c) => c.staffId === s)).map((s) => ({ s, r: travelLines(travelCheck(state.visits, s, visit.clientId, visit.scheduledStart, visit.scheduledEnd, visit.id), visit.scheduledStart).conflict })).filter((x) => x.r.length);
     const overrideReason = (opts.overrideReason ?? opts.areaOverrideReason)?.trim();
-    if (outside.length || unavailable.length || conflicts.length) {
+    if (outside.length || unavailable.length || conflicts.length || travel.length) {
       if (!canOverrideServiceArea(actor)) throw new Error("Only a manager or admin can override an unavailable carer.");
       if (!overrideReason) { if (conflicts.length) throw new RosterConflictError(conflicts); throw new Error("Give an override reason."); }
     }
@@ -419,6 +421,7 @@ export const visitsStore = {
     }
     conflicts.forEach((c) => history.push({ ...entry("conflict_overridden", undefined, `${c.staffId} overlaps ${c.visit.id}`), reason: overrideReason }));
     unavailable.forEach((u) => history.push({ ...entry("availability_overridden", undefined, `${u.s} ${u.r.join("; ")}`), reason: overrideReason }));
+    travel.forEach((t) => history.push({ ...entry("travel_overridden", undefined, `${t.s} ${t.r.join("; ")}`), reason: overrideReason }));
     outside.forEach((s) => history.push({ ...entry("area_overridden", undefined, `${s} outside permitted service area`), reason: overrideReason }));
     patchVisit(id, { staffIds: next, lastUpdatedBy: actor.staffId, lastUpdatedAt: at, rosterHistory: [...(visit.rosterHistory ?? []), ...history] });
   },

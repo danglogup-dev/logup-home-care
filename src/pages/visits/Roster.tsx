@@ -13,6 +13,7 @@ import { inScopeSite } from "@/lib/roleStore";
 import { STAFF, STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
 import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, durationMinutes, sameDay, scheduleConflicts, startOfWeek, weekDays, carersRequiredFor } from "@/lib/rosterRules";
+import { travelBetween, legLevel } from "@/lib/travelTime";
 import { RosterVisitDialog } from "@/components/roster/RosterVisitDialog";
 import { AddVisitDialog } from "@/components/roster/AddVisitDialog";
 
@@ -146,9 +147,13 @@ function CarerView({ visits, days, clientsById, siteIds, conflicted, onOpen }: {
             <div key={s.id} className="rounded-lg border bg-card p-4">
               <h3 className="font-heading font-semibold">{s.name}</h3>
               <p className="text-sm text-muted-foreground">{s.roleLabel} · {s.scopeSiteIds.map((x) => SITE_BY_ID[x]?.name).join(", ")} · {mine.length} visits</p>
-              {mine.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No visits.</p> : <ul className="mt-2 space-y-1">{mine.map((v) => {
+              {mine.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No visits.</p> : <ul className="mt-2 space-y-1">{mine.map((v, i) => {
                 const c = clientsById.get(v.clientId);
-                return <li key={v.id}><button onClick={() => onOpen(v.id)} className="flex w-full gap-3 text-left text-sm hover:underline"><span className="w-12 font-semibold tabular-nums">{hm(v.scheduledStart)}</span><span>{c ? clientDisplayName(c) : v.clientId}</span>{conflicted.has(v.id) && <span className="ml-auto font-semibold text-destructive">Schedule conflict</span>}</button></li>;
+                const prev = i > 0 ? mine[i - 1] : undefined;
+                const t = prev ? travelBetween(prev.clientId, v.clientId, prev.scheduledEnd) : undefined;
+                const gap = prev ? Math.round((Date.parse(v.scheduledStart) - Date.parse(prev.scheduledEnd)) / 60000) : 0;
+                const level = prev && gap >= 0 ? legLevel(gap, t?.minutes) : undefined;
+                return <li key={v.id}>{prev && t?.minutes !== undefined && level && <p className={`ml-12 text-xs ${level === "conflict" ? "font-semibold text-destructive" : level === "tight" ? "text-warning" : "text-muted-foreground"}`}>↓ {t.minutes} min travel{level === "conflict" ? ` · ⚠ Travel conflict (${gap} min gap)` : level === "tight" ? ` · Tight (${gap} min gap)` : ""}</p>}<button onClick={() => onOpen(v.id)} className="flex w-full gap-3 text-left text-sm hover:underline"><span className="w-12 font-semibold tabular-nums">{hm(v.scheduledStart)}</span><span>{c ? clientDisplayName(c) : v.clientId}</span>{conflicted.has(v.id) && <span className="ml-auto font-semibold text-destructive">Schedule conflict</span>}</button></li>;
               })}</ul>}
             </div>
           );

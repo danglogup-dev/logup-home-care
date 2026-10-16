@@ -5,6 +5,7 @@ import type { SiteId, StaffId } from "./demoDataRegistry";
 import { inScopeSite, type RoleState } from "./roleStore";
 import { availabilityReasons, isPermittedArea, staffAvailabilityStore } from "./staffAvailabilityStore";
 import { competencyCheck, matchesPreference, preferenceExclusion, type CarerPreference, type VisitRequirement } from "./visitRequirements";
+import { travelCheck, travelLines, type ClientLocator } from "./travelTime";
 type AvailabilityState = ReturnType<typeof staffAvailabilityStore.getState>;
 
 export type AssignmentStatus = "unassigned" | "partial" | "assigned";
@@ -60,9 +61,9 @@ export class RosterConflictError extends Error {
 }
 
 // ---- Phase 4A: eligibility and time selection (derived from current form values, never cached) ----
-export interface CarerUnavailable { staffId: StaffId; conflicts: Visit[]; /** Working-hours / leave reasons. */ reasons?: string[]; outsideArea?: boolean; /** Missing / expired required competencies. */ competency?: string[]; /** Required client preference not met. */ preference?: string }
+export interface CarerUnavailable { staffId: StaffId; conflicts: Visit[]; /** Working-hours / leave reasons. */ reasons?: string[]; outsideArea?: boolean; /** Missing / expired required competencies. */ competency?: string[]; /** Required client preference not met. */ preference?: string; /** Travel-time conflicts with the previous/next visit that day. */ travel?: string[] }
 export interface CarerEligibility { eligible: StaffId[]; unavailable: CarerUnavailable[]; /** Amber (due soon) competency warnings for eligible carers. */ warnings?: Partial<Record<StaffId, string[]>>; /** Eligible carers matching a soft/required client preference (ranked first). */ preferred?: StaffId[] }
-export interface EligibilityContext { siteId: SiteId; availability: AvailabilityState; requirement?: VisitRequirement; preference?: CarerPreference }
+export interface EligibilityContext { siteId: SiteId; availability: AvailabilityState; requirement?: VisitRequirement; preference?: CarerPreference; /** Client of the visit — enables travel feasibility. */ clientId?: string; locate?: ClientLocator }
 /** Eligible = not already on this visit, no overlapping non-cancelled visit, inside working hours, not on leave,
  *  permitted in the visit's service area, holding required competencies (amber = warning) and meeting any
  *  applicable *required* client preference. Preferred carers are ranked first, never excluded. No travel logic. */
@@ -77,8 +78,9 @@ export function carerEligibility(visits: readonly Visit[], pool: readonly StaffI
     const outsideArea = ctx ? !isPermittedArea(ctx.availability, id, ctx.siteId) : false;
     const comp = competencyCheck(id, quals, new Date(start));
     const preference = preferenceExclusion(ctx?.preference, cats, id);
-    if (c.length || reasons.length || outsideArea || comp.excluded.length || preference) unavailable.push({ staffId: id, conflicts: c, reasons, outsideArea, competency: comp.excluded, preference });
-    else { eligible.push(id); if (comp.warnings.length) warnings[id] = comp.warnings; }
+    const tl = ctx?.clientId && !c.length ? travelLines(travelCheck(visits, id, ctx.clientId, start, end, excludeId, ctx.locate), start) : { conflict: [], tight: [] };
+    if (c.length || reasons.length || outsideArea || comp.excluded.length || preference || tl.conflict.length) unavailable.push({ staffId: id, conflicts: c, reasons, outsideArea, competency: comp.excluded, preference, travel: tl.conflict });
+    else { eligible.push(id); const w = [...comp.warnings, ...tl.tight]; if (w.length) warnings[id] = w; }
   }
   const preferred = eligible.filter((id) => matchesPreference(ctx?.preference, cats, id) === true);
   const ranked = [...preferred, ...eligible.filter((id) => !preferred.includes(id))];

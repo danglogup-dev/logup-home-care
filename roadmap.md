@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Phase 6B: rank eligible carers by explainable continuity/preference/travel/workload/primary area/competency factors; Suggest coverage opens choices only; empty-state causes; tests and browser verification.
+
 - [x] Save-before-assignment refinement: live availability preview, explicit save message and primary action, all carer changes gated until saved, same-dialog continuation. Six roster tests pass; browser verified preview retention, reminder removal, retained time and assignment history after explicit save; preview build OK.
 
 - [x] Home support plan: requested mapped sections plus protected Review notes; combined Moving and falls retains existing falls text. Staff-confirmed draft schedules feed visits only on publication; templates are versioned, untouched future calls cancelled with attribution, recorded care preserved. All 31 relevant tests pass; preview build OK. Browser verified edit → consultation → named demo approvals → published plan → assigned carer's visit task readback at 390px without overflow. Existing Cloud note/brief sign-in blockers below remain unchanged.

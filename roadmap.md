@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Phase 6B: rank eligible carers by explainable continuity/preference/travel/workload/primary area/competency factors; Suggest coverage opens choices only; empty-state causes; tests and browser verification.
+- [x] Phase 6B: eligible-only, visible tie-break ranking (continuity → preference → travel → workload → primary area → relevant competency currency), no scores or automatic assignments; Suggest coverage, counted exclusions and live updates. Twelve ranking tests plus eligibility regressions pass; coordinator browser flow verified opening without assignment → required reason → manual assignment → audit readback, plus excluded-carer empty state and safe Add visit opening. Existing one-off override/enforcement gap is unchanged.
 
 - [x] Save-before-assignment refinement: live availability preview, explicit save message and primary action, all carer changes gated until saved, same-dialog continuation. Six roster tests pass; browser verified preview retention, reminder removal, retained time and assignment history after explicit save; preview build OK.
 

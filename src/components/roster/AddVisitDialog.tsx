@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +21,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SUPPORT_CATEGORIES, SUPPORT_CATEGORY_LABELS, type SupportCategory } from "@/lib/visitRequirements";
 import { useWorkforceQualTypes } from "./useWorkforceQualTypes";
 import { ConflictWarning } from "./RosterVisitDialog";
+import { workforceStore } from "@/lib/workforceStore";
 
 const NONE = "__none";
+const workforceSnapshot = () => JSON.stringify(workforceStore.getStaff());
 
 export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const role = useRole();
+  useSyncExternalStore(workforceStore.subscribe, workforceSnapshot, workforceSnapshot);
   const terms = useTerms();
   const { users } = useServiceUsers();
   const clients = users.filter((u) => u.status === "active" && canEditRoster(u.siteId, role)).sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)));
@@ -41,15 +44,16 @@ export function AddVisitDialog({ onClose }: { onClose: () => void }) {
   const pool = client ? FRONTLINE_IDS : [];
   const chosen = f.staffId === NONE ? [] : [f.staffId as StaffId];
   const win = formWindow(f.date, f.time, Number(f.minutes));
-  const eligibility = win ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client!.siteId, availability, requirement: { requiredQualificationIds: quals, supportCategories: cats }, preference: client!.carerPreference, clientId: client!.id }) : { eligible: pool.filter((p) => !chosen.includes(p)), unavailable: [] };
+  const eligibility = win && client ? carerEligibility(visits, pool, chosen, win.start, win.end, undefined, { siteId: client.siteId, availability, requirement: { requiredQualificationIds: quals, supportCategories: cats }, preference: client.carerPreference, clientId: client.id }) : { eligible: [], unavailable: [] };
   const conflicts = win ? scheduleConflicts(visits, chosen, win.start, win.end) : [];
   const sig = conflicts.map((c) => c.staffId + c.visit.id).join("|");
   const ack = conflicts.length > 0 && ackKey === sig;
   const slotState = chosen.length ? (t: string) => { const w = formWindow(f.date, t, Number(f.minutes)); return w ? (scheduleConflicts(visits, chosen, w.start, w.end).length ? "conflict" as const : "available" as const) : undefined; } : undefined;
   const save = () => {
+    if (!win || !client) return;
     setError("");
     try {
-      visitsStore.createOneOff({ clientId: f.clientId as never, start: win!.start, durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: chosen, notesForScheduler: f.note, requiredQualificationIds: quals, supportCategories: cats }, role, { acknowledgeConflict: ack });
+      visitsStore.createOneOff({ clientId: client.id, start: win.start, durationMinutes: Number(f.minutes), carersRequired: Number(f.carers), purpose: f.purpose, staffIds: chosen, notesForScheduler: f.note, requiredQualificationIds: quals, supportCategories: cats }, role, { acknowledgeConflict: ack });
       onClose();
     } catch (e) {
       if (e instanceof RosterConflictError) setError("Schedule conflict — tick the confirmation to continue.");

@@ -1,5 +1,7 @@
 # src/lib rules
 
+- Eligible-only best fit is derived by carerBestFit.ts using visible ordered factors; suggestions only open manual assignment — avoids opaque scores, cached fit and roster writes.
+
 - Event-to-care-plan review rules live only in src/lib/carePlanReviewRules.ts; src/lib/carePlanReviewTrigger.ts wires incidentsStore.submit to associatedIncidentsStore and carePlansStore ReviewSuggestions — one suggestion system, and a suggestion never edits plan text.
 - carePlanTemplateModel defines versioned templates and standard categories; carePlansStore applies updates only through draft "Use latest template" — renaming cannot break rules or change published plans.
 - Ask LogUp proposals come only from proposeCarePlanChanges (src/lib/carePlanAssistant.ts) as a ChangeSet; carePlansStore.acceptAssistantChange is the only path into a draft and records the original proposal — so a real model can replace the rules without touching the UI, and nothing enters a plan unaccepted. Section order lives on the version (sectionOrderOverride) and changes only via drafts; templates are never touched.

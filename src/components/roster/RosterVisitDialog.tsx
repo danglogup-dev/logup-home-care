@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -14,7 +14,9 @@ import { VisitRequirementSummary } from "./VisitRequirementSummary";
 import { requirementFor } from "@/lib/visitRequirements";
 import { useRole } from "@/hooks/useRole";
 import { useVisits, visitsStore, VISIT_STATUS_LABELS, type RosterChange } from "@/lib/visitsStore";
-import { serviceUsersStore } from "@/lib/serviceUsersStore";
+import { serviceUsersStore, useServiceUsers } from "@/lib/serviceUsersStore";
+import { workforceStore } from "@/lib/workforceStore";
+const workforceSnapshot = () => JSON.stringify(workforceStore.getStaff());
 import { STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName } from "@/lib/visitPresentation";
 import { FRONTLINE_IDS, useStaffAvailability } from "@/lib/staffAvailabilityStore";
@@ -40,6 +42,8 @@ export function ConflictWarning({ conflicts, acknowledged, onAcknowledge }: { co
 export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClose: () => void }) {
   const role = useRole();
   const { visits, templates } = useVisits();
+  useServiceUsers();
+  useSyncExternalStore(workforceStore.subscribe, workforceSnapshot, workforceSnapshot);
   const visit = visits.find((v) => v.id === visitId);
   const client = visit ? serviceUsersStore.getById(visit.clientId) : undefined;
   const [reason, setReason] = useState("");
@@ -85,7 +89,7 @@ export function RosterVisitDialog({ visitId, onClose }: { visitId: string; onClo
   const scheduleAck = scheduleConflictsNow.length > 0 && ackKey === "s:" + sig(scheduleConflictsNow);
   const saveEdit = () => run(() => visitsStore.editVisit(visit.id, { start: win.start, durationMinutes: Number(edit.minutes), carersRequired: Number(edit.carers), notesForScheduler: edit.note }, role, { reason: needsReason ? reason : undefined, acknowledgeConflict: scheduleAck }));
   const assignButtons = (s: StaffId, variant: "default" | "outline" = "default", onPick: (ids: StaffId[]) => void = (ids) => assign(ids)) => <>
-    {!full && <Button size="sm" variant={variant} onClick={() => onPick([...visit.staffIds, s])}>{visit.staffIds.length ? "Add" : "Assign"}</Button>}
+    {!full && <Button size="sm" variant={variant} onClick={() => onPick([...visit.staffIds, s])}>{visit.staffIds.length ? "Add" : "Assign"} {name(s).split(" ")[0]}</Button>}
     {full && visit.staffIds.length === 1 && <Button size="sm" variant="outline" onClick={() => onPick([s])}>Replace</Button>}
     {full && visit.staffIds.length > 1 && visit.staffIds.map((old) => <Button key={old} size="sm" variant="outline" onClick={() => onPick(visit.staffIds.map((x) => x === old ? s : x))}>Replace {name(old).split(" ")[0]}</Button>)}
   </>;

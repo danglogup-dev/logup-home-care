@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus, AlertTriangle, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, AlertTriangle, Users, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +12,7 @@ import { useVisits, visitsStore, VISIT_STATUS_LABELS, CALL_NAMES, type Visit } f
 import { inScopeSite } from "@/lib/roleStore";
 import { STAFF, STAFF_BY_ID, SITE_BY_ID, type StaffId } from "@/lib/demoDataRegistry";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
-import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, durationMinutes, sameDay, scheduleConflicts, startOfWeek, weekDays, carersRequiredFor } from "@/lib/rosterRules";
+import { assignmentStatus, ASSIGNMENT_LABELS, canEditRoster, isRosterEditable, durationMinutes, sameDay, scheduleConflicts, startOfWeek, weekDays, carersRequiredFor } from "@/lib/rosterRules";
 import { travelBetween, legLevel } from "@/lib/travelTime";
 import { RosterVisitDialog } from "@/components/roster/RosterVisitDialog";
 import { AddVisitDialog } from "@/components/roster/AddVisitDialog";
@@ -94,8 +94,9 @@ export default function Roster() {
             {list.length === 0 ? <p className="px-4 py-3 text-sm text-muted-foreground">{unassignedOnly ? "Every visit is assigned." : "No visits scheduled."}</p> : (
               <ul className="divide-y">
                 {list.map((v) => {
-                  const c = clientsById.get(v.clientId)!;
-                  return <RosterRow key={v.id} visit={v} client={c} name={visitName(v)} conflict={conflicted.has(v.id)} onOpen={() => setOpenId(v.id)} />;
+                  const c = clientsById.get(v.clientId);
+                  if (!c) return null;
+                  return <RosterRow key={v.id} visit={v} client={c} name={visitName(v)} conflict={conflicted.has(v.id)} canSuggest={canEditRoster(v.serviceAreaId ?? c.siteId, role) && isRosterEditable(v)} onOpen={() => setOpenId(v.id)} />;
                 })}
               </ul>
             )}
@@ -109,7 +110,7 @@ export default function Roster() {
   );
 }
 
-function RosterRow({ visit, client, name, conflict, onOpen }: { visit: Visit; client: ServiceUser; name: string; conflict: boolean; onOpen: () => void }) {
+function RosterRow({ visit, client, name, conflict, canSuggest, onOpen }: { visit: Visit; client: ServiceUser; name: string; conflict: boolean; canSuggest: boolean; onOpen: () => void }) {
   const status = assignmentStatus(visit);
   const cancelled = visit.status === "cancelled";
   return (
@@ -125,10 +126,13 @@ function RosterRow({ visit, client, name, conflict, onOpen }: { visit: Visit; cl
           {conflict && <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />Schedule conflict</Badge>}
         </div>
       </div>
-      <button onClick={onOpen} className="rounded-md border px-3 py-2 text-left text-sm hover:bg-accent">
+      <div className="min-w-0 space-y-1">
+      <Button variant="outline" onClick={onOpen} className="h-auto w-full flex-col items-start px-3 py-2 text-left text-sm">
         {status === "unassigned" && !cancelled ? <span className="font-bold text-destructive">UNASSIGNED</span> : visit.staffIds.map((s) => <span key={s} className="block font-medium">{staffName(s)}</span>)}
         {status === "partial" && !cancelled && <span className="block font-semibold text-warning">{ASSIGNMENT_LABELS.partial}</span>}
-      </button>
+      </Button>
+      {status === "unassigned" && canSuggest && <Button variant="secondary" size="sm" className="w-full" onClick={onOpen}><Lightbulb className="mr-1 h-4 w-4" />Suggest coverage</Button>}
+      </div>
     </li>
   );
 }

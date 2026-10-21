@@ -26,7 +26,7 @@ describe("roster", () => {
 
   it("assigns by staff ID, needs a reason on published visits, and the carer then sees it", () => {
     const users = serviceUsersStore.getState().users;
-    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length && travelCheck(visitsStore.getState().visits, "STAFF-LIAM", v.clientId, v.scheduledStart, v.scheduledEnd, v.id).status !== "conflict");
+    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length && travelCheck(visitsStore.getState().visits, "STAFF-LIAM", v.clientId, v.scheduledStart, v.scheduledEnd, v.id).level !== "conflict");
     if (!target) throw new Error("no target");
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], coordinator)).toThrow(/reason/);
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], liam, { reason: "Sickness" })).toThrow();

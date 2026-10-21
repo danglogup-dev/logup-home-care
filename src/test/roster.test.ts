@@ -4,6 +4,7 @@ import { ROLE_PRESETS } from "@/lib/roleStore";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
 import { availabilityReasons, staffAvailabilityStore } from "@/lib/staffAvailabilityStore";
 import { myVisits } from "@/lib/visitPresentation";
+import { travelCheck } from "@/lib/travelTime";
 import { assignmentStatus, isRosterEditable, RosterConflictError, scheduleConflicts } from "@/lib/rosterRules";
 
 const preset = (id: string) => { const r = ROLE_PRESETS.find((p) => p.id === id); if (!r) throw new Error(id); return r; };
@@ -25,7 +26,7 @@ describe("roster", () => {
 
   it("assigns by staff ID, needs a reason on published visits, and the carer then sees it", () => {
     const users = serviceUsersStore.getState().users;
-    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length);
+    const target = future().find((v) => users.find((u) => u.id === v.clientId)?.siteId === "SITE-ECK" && !v.staffIds.includes("STAFF-LIAM") && (v.carersRequired ?? 1) === 1 && !scheduleConflicts(visitsStore.getState().visits, ["STAFF-LIAM"], v.scheduledStart, v.scheduledEnd, v.id).length && !availabilityReasons(staffAvailabilityStore.getState(), "STAFF-LIAM", v.scheduledStart, v.scheduledEnd).length && travelCheck(visitsStore.getState().visits, "STAFF-LIAM", v.clientId, v.scheduledStart, v.scheduledEnd, v.id).level !== "conflict");
     if (!target) throw new Error("no target");
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], coordinator)).toThrow(/reason/);
     expect(() => visitsStore.assignCarers(target.id, ["STAFF-LIAM"], liam, { reason: "Sickness" })).toThrow();

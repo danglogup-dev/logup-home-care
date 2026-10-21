@@ -92,7 +92,7 @@ export function excerptAnswer(question: string, sources: PolicySource[]): Policy
   if (!top) return { found: false, mode: "excerpt", steps: [], alsoRelevant: [], possibleConflict: false, safety };
   const lines = top.text.split("\n").map((l) => l.replace(/^- /, "").trim()).filter(Boolean).slice(0, 5);
   const seen = new Set([top.docId]);
-  const alsoRelevant = ranked.slice(1).filter((s) => !seen.has(s.docId) && !!seen.add(s.docId)).slice(0, 3);
+  const alsoRelevant = ranked.slice(1).filter((s) => s.score * 2 >= top.score && !seen.has(s.docId) && !!seen.add(s.docId)).slice(0, 3);
   const possibleConflict = !!ranked[1] && ranked[1].docId !== top.docId && ranked[1].score === top.score;
   return { found: true, mode: "excerpt", primary: top, steps: lines.map((text) => ({ text, sourceId: top.sourceId })), alsoRelevant, possibleConflict, safety };
 }

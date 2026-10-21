@@ -63,6 +63,7 @@ import {
 import { useRole } from "@/hooks/useRole";
 import { can } from "@/lib/roleStore";
 import ApprovalQueue from "./ApprovalQueue";
+import { PolicyHelpPanel } from "@/components/policies/PolicyHelpPanel";
 
 const categories: (PolicyCategory | "All")[] = [
   "All",
@@ -319,6 +320,8 @@ export default function PolicyLibrary() {
           )}
         </div>
       </div>
+
+      {tab === "library" && <PolicyHelpPanel onSearch={(q) => setQuery(q)} />}
 
       {/* Tabs — Approval Queue tab is admin-only (managers don't see it by default) */}
       {canApprove && (

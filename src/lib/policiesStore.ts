@@ -547,6 +547,79 @@ const seed = () => {
     ],
   );
 
+  // ---------- NO ACCESS / MISSED VISIT (Home support) ----------
+  mk(
+    {
+      id: "doc-no-access",
+      title: "No Access / Missed Visit Policy",
+      category: "Policy",
+      topicGroup: "Clinical / Care",
+      owner: "Home Support Manager",
+      tags: ["Home support", "No access", "Missed visit", "Lone working"],
+      nextReviewDate: "30 Jun 2027",
+    },
+    [
+      {
+        versionNumber: "4.0",
+        status: "archived",
+        bodyHtml: seedDocBody("No Access / Missed Visit Policy", [
+          { h: "1. No reply at the door", p: "Wait five minutes, then leave and record the visit as missed." },
+        ]),
+        attachments: [],
+        changeSummary: "Previous version.",
+        editedBy: "Home Support Manager",
+        editedAt: "2 Feb 2025",
+        approvedBy: "Home Support Manager",
+        approvedAt: "4 Feb 2025",
+        publishedAt: "5 Feb 2025",
+      },
+      {
+        versionNumber: "4.1",
+        status: "published",
+        bodyHtml: richBody("No Access / Missed Visit Policy", [
+          { h: "1. Purpose", p: "To make sure a client's welfare is checked and escalated when a carer cannot gain access to the home or a visit is missed." },
+          {
+            h: "2. If nobody answers the door",
+            ol: [
+              "Knock and ring again, and check the access notes for the key safe or agreed entry arrangement.",
+              "Follow the agreed contact procedure: phone the client using the number on their record.",
+              "Contact the coordinator or on-call contact and tell them you cannot gain access.",
+              "Stay at the property until the coordinator or on-call contact tells you what to do next.",
+              "If there is concern for the person's welfare, follow the escalation process in section 4.",
+            ],
+          },
+          {
+            h: "3. Missed visits",
+            ul: [
+              "The coordinator contacts the client or their next of kin as soon as a visit is known to be missed.",
+              "Every missed visit is recorded in LogUp as a Missed visit event.",
+            ],
+          },
+          { h: "4. Escalation for welfare concerns", p: "The coordinator or on-call contact decides whether to contact next of kin, the GP or emergency services. If you see or hear signs that the person is in immediate danger, call 112 or 999 and then tell the coordinator." },
+          { h: "5. Lone worker safety", p: "Do not force entry or put yourself at risk. Keep your phone charged and tell the coordinator when you leave the property." },
+        ]),
+        attachments: [],
+        changeSummary: "Added stay-at-property step and lone worker safety.",
+        editedBy: "Home Support Manager",
+        editedAt: "10 Sep 2026",
+        approvedBy: "Home Support Manager",
+        approvedAt: "14 Sep 2026",
+        publishedAt: "15 Sep 2026",
+      },
+      {
+        versionNumber: "4.2",
+        status: "draft",
+        bodyHtml: seedDocBody("No Access / Missed Visit Policy", [
+          { h: "2. If nobody answers the door", p: "DRAFT ONLY: proposed new wait time of ten minutes before contacting the coordinator." },
+        ]),
+        attachments: [],
+        changeSummary: "Draft: proposed wait time change.",
+        editedBy: "Home Support Manager",
+        editedAt: "18 Oct 2026",
+      },
+    ],
+  );
+
   // ---------- FALLS (Clinical / Care) ----------
   mk(
     {

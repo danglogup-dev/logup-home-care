@@ -12,7 +12,7 @@ export async function careFunction(name: string, body: BodyInit, contentType?: s
   }
   return response;
 }
-async function events(response: Response, receive: (data: Record<string, any>) => void) {
+export async function events(response: Response, receive: (data: Record<string, any>) => void) {
   const reader = response.body?.getReader(); if (!reader) throw new Error("No response received.");
   const parser = createParser({ onEvent(event) { if (event.data !== "[DONE]") receive(JSON.parse(event.data)); } });
   const decoder = new TextDecoder();
@@ -35,5 +35,12 @@ export async function draftVisitNote(input: { visitId: string; clientId: string;
   let result: { draftId: string; note: StructuredVisitNote } | undefined;
   await events(response, (data) => { if (data.type === "error") throw new Error(data.message); if (data.type === "note.done") result = { draftId: data.draftId, note: data.note }; });
   if (!result) throw new Error("No complete note draft returned.");
+  return result;
+}export async function askPolicyHelp(question: string, sources: { sourceId: string; title: string; versionNumber: string; section: string; text: string }[]) {
+  const response = await careFunction("policy-help", JSON.stringify({ question, sources }), "application/json");
+  if ((response.headers.get("Content-Type") ?? "").includes("application/json")) return { found: false, primarySourceId: "", steps: [], alsoRelevantSourceIds: [], possibleConflict: false };
+  let result: { found: boolean; primarySourceId: string; steps: { text: string; sourceId: string }[]; alsoRelevantSourceIds: string[]; possibleConflict: boolean } | undefined;
+  await events(response, (data) => { if (data.type === "error") throw new Error(data.message); if (data.type === "help.done") result = data.result; });
+  if (!result) throw new Error("Policy Help did not return an answer.");
   return result;
 }

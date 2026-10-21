@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, LogIn, LogOut, Check, FileText, AlertTriangle, Navigation } from "lucide-react";
+import { ArrowLeft, BookOpen, MapPin, LogIn, LogOut, Check, FileText, AlertTriangle, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/hooks/useRole";
@@ -66,7 +66,7 @@ export default function VisitDetail() {
   }
   return (
     <section className="space-y-6 px-4 py-5" aria-labelledby="visit-heading">
-      <Button asChild variant="ghost" className="min-h-12 px-0 text-base"><Link to="/app/visits/today"><ArrowLeft aria-hidden="true" /> Today</Link></Button>
+      <div className="flex items-center justify-between gap-2"><Button asChild variant="ghost" className="min-h-12 px-0 text-base"><Link to="/app/visits/today"><ArrowLeft aria-hidden="true" /> Today</Link></Button><Button asChild variant="outline" className="min-h-12"><Link to={`/app/visits/policy-help?visit=${visit.id}`}><BookOpen aria-hidden="true" /> Policy Help</Link></Button></div>
       <div>
         <div className="flex flex-wrap items-center gap-2 text-base font-semibold"><span>{VISIT_STATUS_LABELS[visit.status]}</span><span>·</span><span>{template ? `${template.windowStart}–${template.windowEnd}` : timestamp(visit.scheduledStart)}</span></div>
         <h1 id="visit-heading" className="mt-2 break-words text-3xl font-heading font-bold">{clientDisplayName(client)}</h1>

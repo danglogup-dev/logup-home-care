@@ -25,6 +25,7 @@ import AuditReporting from "./pages/audits/AuditReporting";
 import AuditWalkthrough from "./pages/audits/AuditWalkthrough";
 import MyAudits from "./pages/audits/MyAudits";
 import PolicyLibrary from "./pages/policies/PolicyLibrary";
+import PolicyHelpPage from "./pages/visits/PolicyHelpPage";
 import PolicyDocument from "./pages/policies/PolicyDocument";
 import PolicyEditor from "./pages/policies/PolicyEditor";
 import PolicyHistory from "./pages/policies/PolicyHistory";
@@ -94,7 +95,7 @@ const App = () => (
             <Route path="today" element={<VisitsToday />} />
             <Route path="clients" element={<VisitClients />} />
             <Route path="log-event" element={<Guarded moduleKey="incidents.capture" moduleLabel="Log an Event"><Incidents /></Guarded>} />
-            <Route path="policy-help" element={<Guarded moduleKey="policies.library" moduleLabel="Policy Help"><div className="px-2 py-4"><PolicyLibrary /></div></Guarded>} />
+            <Route path="policy-help" element={<Guarded moduleKey="policies.library" moduleLabel="Policy Help"><PolicyHelpPage /></Guarded>} />
             <Route path="me" element={<VisitsMe />} />
             <Route path=":id" element={<VisitDetail />} />
           </Route>

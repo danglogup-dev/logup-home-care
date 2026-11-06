@@ -29,3 +29,4 @@ Subdirectories have their own AGENTS.md; read it before changing files there.
 - Home Care Clients/Workforce views (HomeCareClients, HomeCareWorkforce, clientRecord.ts) are read-only lenses chosen by HomeSupportSwitch; residential pages stay intact — no second client or staff store.
 - Visit suitability (visitRequirements.ts) reads required qualification IDs and support categories live from the visit or its template, competency status from workforceStore, and the documented carerPreference on the client record; required preferences exclude, preferred only rank — no copied qualification or preference data.
 - Travel feasibility (travelTime.ts) is derived inside carerEligibility with a swappable deterministic provider; conflicts need manager override, tight warns.
+- Live visit manager review delegates to VisitManagerReview and visitAlertReviewStore with shared linked Tasks; assessments append separately from attendance — preserves source evidence and prior decisions.

@@ -16,6 +16,7 @@ export type TaskOwnership = "person" | "location";
 export interface ActivityEntry {
   at: string; // ISO
   by: string;
+  byStaffId?: string;
   message: string;
 }
 
@@ -67,6 +68,7 @@ export interface TaskRecord {
   medicationLinks?: MedicationTaskLinks;
   /** Care Assurance insight that prompted this task, with the source record IDs a manager reviewed. */
   insightLinks?: { insightId: string; serviceUserId?: string; sourceIds: string[] };
+  visitReviewLinks?: { visitId: string; serviceUserId: string; alertId: string; reviewId: string; actionKey: string };
 }
 
 export interface MedicationTaskLinks {
@@ -602,7 +604,7 @@ export const createTask = (
     ...input,
     id: uid("tsk"),
     status: input.status ?? "open",
-    activity: [{ at: new Date().toISOString(), by: staffName(input.assignedById), message: "Task created." }],
+    activity: [{ at: new Date().toISOString(), by: staffName(input.assignedById), byStaffId: input.assignedById, message: "Task created." }],
     createdAt: new Date().toISOString(),
   };
   tasks = [t, ...tasks];
@@ -614,7 +616,7 @@ export const updateTask = (id: string, patch: Partial<TaskRecord>, who = "Ana Mu
   tasks = tasks.map(t => {
     if (t.id !== id) return t;
     const next: TaskRecord = { ...t, ...patch };
-    if (note) next.activity = [...t.activity, { at: new Date().toISOString(), by: who, message: note }];
+    if (note) next.activity = [...t.activity, { at: new Date().toISOString(), by: staffName(who), ...(t.visitReviewLinks ? { byStaffId: who } : {}), message: note }];
     return next;
   });
   emit();

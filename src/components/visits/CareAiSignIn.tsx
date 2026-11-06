@@ -1,11 +1,20 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-export function CareAiSignIn({ children, title = "Sign in for voice & notes" }: { children: React.ReactNode; title?: string }) {
-  const [signedIn, setSignedIn] = useState(false); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session)); const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session)); return () => data.subscription.unsubscribe(); }, []);
-  if (signedIn) return <>{children}</>;
-  return <div className="space-y-3 border-t pt-4"><h3 className="text-lg font-semibold">{title}</h3><Button variant="outline" className="min-h-12 w-full" onClick={async () => { setError(""); const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin }); if (result.error) setError(result.error.message); }}>Continue with Google</Button><form className="space-y-3" onSubmit={async (event) => { event.preventDefault(); setBusy(true); setError(""); try { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } catch (e) { setError(e instanceof Error ? e.message : "Sign-in failed."); } finally { setBusy(false); } }}><label className="block">Email<Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="min-h-12" /></label><label className="block">Password<Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="min-h-12" /></label><Button disabled={busy} className="min-h-12 w-full">{busy ? "Signing in…" : "Sign in"}</Button></form>{error && <p role="alert" className="text-destructive">{error}</p>}</div>;
+import type { ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useLogUpSession } from "@/hooks/useLogUpSession";
+import { rememberSignInReturn } from "@/lib/logupAuth";
+
+/**
+ * Shows AI features only to a signed-in LogUp account (the one shared session).
+ * Never shows a second login form: in the fictional demo it explains what is
+ * unavailable and links to the single LogUp sign-in page.
+ */
+export function CareAiSignIn({ children, title = "Voice and AI features" }: { children: ReactNode; title?: string }) {
+  const { loading, session } = useLogUpSession(); const location = useLocation();
+  if (loading) return null;
+  if (session) return <>{children}</>;
+  return <div className="space-y-2 rounded-md border border-dashed p-3 text-sm">
+    <p className="font-semibold">{title}: not available in the fictional demo</p>
+    <p className="text-muted-foreground">Live AI runs only for signed-in LogUp accounts, so demo visitors never use real services.{" "}
+      <Link className="underline" to="/signin" onClick={() => rememberSignInReturn(location.pathname + location.search)}>Staff sign-in</Link></p>
+  </div>;
 }

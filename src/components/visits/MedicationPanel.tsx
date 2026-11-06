@@ -3,8 +3,8 @@ import { AlertTriangle, Check, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LogUpSessionGate } from "@/components/LogUpSessionGate";
-import { medicationStore, type MedicationTask, type VisitMedicationData } from "@/lib/medicationStore";
+import { MedicationSourceGate, useMedicationSource } from "@/components/MedicationSourceGate";
+import { type MedicationTask, type VisitMedicationData } from "@/lib/medicationStore";
 import { CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS, permittedOutcomes, reasonRequired, validateOutcome, type MedicationOutcome } from "@/lib/medicationRules";
 import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
 
@@ -13,6 +13,7 @@ const displayTime = (iso: string) => new Date(iso).toLocaleString("en-IE", { day
 type Draft = { outcome?: MedicationOutcome; reason: string; eventAt: string; correctionReason: string; correcting: boolean };
 
 function MedicationRecords({ visitId, expected, editable, onChange }: { visitId: string; expected: boolean; editable: boolean; onChange?: (data: VisitMedicationData) => void }) {
+  const { store, demo } = useMedicationSource();
   const [data, setData] = useState<VisitMedicationData>();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState("");
@@ -20,7 +21,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
   const [online, setOnline] = useState(navigator.onLine);
   const keys = useRef(new Map<string, string>());
   const load = useCallback(async () => {
-    try { const next = await medicationStore.loadVisit(visitId); setData(next); onChange?.(next); setError(""); }
+    try { const next = await store.loadVisit(visitId); setData(next); onChange?.(next); setError(""); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not load medication records."); }
   }, [visitId, onChange]);
   useEffect(() => { load(); }, [load]);
@@ -39,7 +40,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
     const idempotencyKey = keys.current.get(key) ?? crypto.randomUUID(); keys.current.set(key, idempotencyKey);
     setBusy(task.id); setError("");
     try {
-      await medicationStore.submit({ taskId: task.id, visitId, outcome: draft.outcome!, eventAt: new Date(draft.eventAt).toISOString(), reason: draft.reason, idempotencyKey, correctionOf: draft.correcting ? record?.id : undefined, correctionReason: draft.correcting ? draft.correctionReason : undefined });
+      await store.submit({ taskId: task.id, visitId, outcome: draft.outcome!, eventAt: new Date(draft.eventAt).toISOString(), reason: draft.reason, idempotencyKey, correctionOf: draft.correcting ? record?.id : undefined, correctionReason: draft.correcting ? draft.correctionReason : undefined });
       await load(); setDrafts((all) => { const next = { ...all }; delete next[task.id]; return next; });
     } catch (e) { setError(e instanceof Error ? e.message : "Not saved. Try again using the same information."); }
     finally { setBusy(""); }
@@ -52,7 +53,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
       return <article key={task.id} className="rounded-lg border bg-card p-4" aria-labelledby={`med-${task.id}`}>
         <div className="flex items-start gap-3"><Pill className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" /><div><h3 id={`med-${task.id}`} className="text-xl font-bold">{task.medication.name} · {task.medication.strength}</h3><p className="mt-1 text-base">{task.instruction.dose} · {task.instruction.route} · {task.instruction.regularity === "prn" ? "PRN" : task.instruction.frequency}</p></div></div>
         <dl className="mt-3 space-y-1 text-base"><div><dt className="inline font-semibold">Authorised support: </dt><dd className="inline capitalize">{task.instruction.support_level}</dd></div><div><dt className="inline font-semibold">Instructions: </dt><dd className="inline">{task.instruction.provider_instructions}</dd></div><div><dt className="inline font-semibold">Source: </dt><dd className="inline">{task.instruction.source_document}</dd></div><div><dt className="inline font-semibold">Instruction version: </dt><dd className="inline">{task.instruction.version_number}</dd></div></dl>
-        {record && <div className="mt-4 rounded-md border border-success bg-success/10 p-3"><p className="flex items-center gap-2 text-base font-bold"><Check aria-hidden="true" />Saved to medication record</p><p className="mt-1 text-base">{OUTCOME_LABELS[record.outcome]}</p><p className="mt-1 text-sm">Activity {displayTime(record.event_at)} · submitted {displayTime(record.submitted_at)} by {STAFF_BY_ID[record.staff_id as keyof typeof STAFF_BY_ID]?.name ?? record.staff_id}</p>{record.correction_of && <p className="mt-1 text-sm">Traceable correction · {record.correction_reason}</p>}</div>}
+        {record && <div className="mt-4 rounded-md border border-success bg-success/10 p-3"><p className="flex items-center gap-2 text-base font-bold"><Check aria-hidden="true" />{demo ? "Simulated record · not saved" : "Saved to medication record"}</p><p className="mt-1 text-base">{OUTCOME_LABELS[record.outcome]}</p><p className="mt-1 text-sm">Activity {displayTime(record.event_at)} · submitted {displayTime(record.submitted_at)} by {STAFF_BY_ID[record.staff_id as keyof typeof STAFF_BY_ID]?.name ?? record.staff_id}</p>{record.correction_of && <p className="mt-1 text-sm">Traceable correction · {record.correction_reason}</p>}</div>}
         {exceptions.map((exception) => <div key={exception.id} className="mt-3 rounded-md border border-warning bg-warning/10 p-3"><p className="flex items-start gap-2 text-base font-bold"><AlertTriangle aria-hidden="true" />{exception.kind === "refusal" ? "Refusal exception recorded" : exception.kind === "not_completed" ? "Uncompleted task exception recorded" : exception.kind === "discrepancy" ? "Correction requires review" : "Outcome requires review"}</p><p className="mt-1 text-sm">Follow your provider’s escalation procedure now. This screen is not manager acknowledgement.</p></div>)}
         {editable && <fieldset className="mt-4" disabled={busy === task.id || !online}>
           <legend className="text-base font-semibold">{record ? "Record a traceable correction" : "Manually record the outcome"}</legend>
@@ -66,7 +67,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
             <label className="mt-4 block text-base font-semibold" htmlFor={`reason-${task.id}`}>Reason / explanatory observation{draft.outcome && reasonRequired(draft.outcome) ? " (required)" : ""}</label>
             <Textarea id={`reason-${task.id}`} className="mt-2 min-h-24 text-base" value={draft.reason} onChange={(e) => update(task.id, { reason: e.target.value })} />
             {draft.correcting && <><label className="mt-4 block text-base font-semibold" htmlFor={`correction-${task.id}`}>Why is this correction needed? (required)</label><Textarea id={`correction-${task.id}`} className="mt-2 min-h-24 text-base" value={draft.correctionReason} onChange={(e) => update(task.id, { correctionReason: e.target.value })} /></>}
-            <Button className="mt-4 min-h-14 w-full text-base" disabled={busy === task.id || !online} onClick={() => submit(task)}>{busy === task.id ? "Saving securely…" : record ? "Submit correction" : "Save medication outcome"}</Button>
+            <Button className="mt-4 min-h-14 w-full text-base" disabled={busy === task.id || !online} onClick={() => submit(task)}>{busy === task.id ? "Saving securely…" : demo ? (record ? "Submit correction (demo only)" : "Record outcome (demo only)") : record ? "Submit correction" : "Save medication outcome"}</Button>
           </>}
         </fieldset>}
       </article>;
@@ -77,5 +78,5 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
 
 export function MedicationPanel(props: { visitId: string; expected: boolean; editable: boolean; onChange?: (data: VisitMedicationData) => void }) {
   if (!props.expected) return null;
-  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><LogUpSessionGate><MedicationRecords key={props.visitId} {...props} /></LogUpSessionGate></section>;
+  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><MedicationSourceGate><MedicationRecords key={props.visitId} {...props} /></MedicationSourceGate></section>;
 }

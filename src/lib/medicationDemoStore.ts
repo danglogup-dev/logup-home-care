@@ -19,6 +19,13 @@ let extraVersions: MedicationInstructionVersion[] = [];
 let statusOverrides: Record<string, MedicationInstructionVersion["verification_status"]> = {};
 let audit: MedicationOversightData["audit"] = [];
 let seeded = false;
+let seeding = false;
+const listeners = new Set<() => void>();
+let version = 0;
+const emit = () => { version++; listeners.forEach((l) => l()); };
+/** Live updates for read-only views (Home overview). */
+export const subscribeMedicationDemo = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+export const medicationDemoVersion = () => version;
 
 const id = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const fictionalName = (name: string) => name === "Authorised medication task" ? "Paracetamol (fictional)" : name;
@@ -68,14 +75,15 @@ function record(task: MedicationTask, outcome: MedicationOutcome, staffId: strin
   const kind = exceptionKind(outcome);
   if (kind) exceptions = [...exceptions, { id: id("DEMO-EXC"), organisation_id: ORG, client_id: task.client_id, site_id: task.site_id, task_id: task.id, outcome_id: rec.id, kind, status: "open", created_at: rec.submitted_at, notifications: [{ id: id("n"), status: "simulated", detail: "Demo only: no one was notified." }] }];
   audit = [...audit, { id: id("DEMO-AUD"), client_id: task.client_id, site_id: task.site_id, actor_staff_id: staffId, action: correction ? "outcome_corrected" : "outcome_recorded", entity_type: "medication_outcome", entity_id: rec.id, details: { outcome, simulated: true }, created_at: rec.submitted_at }];
+  if (!seeding) emit();
   return rec;
 }
 
 /** A week of fictional past outcomes (a few refusals) so every chart is populated. */
 function seed() {
-  if (seeded) return; seeded = true;
+  if (seeded) return; seeded = true; seeding = true;
   const now = Date.now();
-  const past = visitsState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && Date.parse(v.scheduledEnd) < now && now - Date.parse(v.scheduledEnd) < 7 * DAY).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart)).flatMap(tasksForVisit);
+  const past = visitsState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && v.status !== "in_progress" && Date.parse(v.scheduledEnd) < now && now - Date.parse(v.scheduledEnd) < 7 * DAY).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart)).flatMap(tasksForVisit);
   past.forEach((task, i) => {
     const support = task.instruction.support_level;
     const outcome: MedicationOutcome = i % 23 === 2 ? "refused" : i % 41 === 7 ? "not_completed" : support === "prompt" ? "prompted" : support === "assist" ? "assistance_provided" : "administered";
@@ -92,10 +100,22 @@ function seed() {
     const t = new Date(Date.parse(out.event_at) + 3 * 3600_000).toISOString();
     return { ...e, created_at: out.event_at, status: "resolved", acknowledged_by_staff_id: "STAFF-DANIEL", acknowledged_at: t, follow_up: "Spoke with client and family; GP informed where needed.", follow_up_by_staff_id: "STAFF-DANIEL", follow_up_at: t, resolution: "No harm. Followed medication policy.", resolved_by_staff_id: "STAFF-DANIEL", resolved_at: t };
   });
+  seeding = false;
 }
 
 function logAudit(clientId: string, siteId: string, action: string, entityId: string, details: Record<string, unknown>) {
   audit = [...audit, { id: id("DEMO-AUD"), client_id: clientId, site_id: siteId, actor_staff_id: roleStore.get().staffId, action, entity_type: "medication_instruction", entity_id: entityId, details, created_at: new Date().toISOString() }];
+  emit();
+}
+
+/** Every fictional exception with its original outcome and dose, in the given service areas (read-only). */
+export function demoExceptionsInScope(siteIds: readonly string[]): { exception: MedicationException; outcome?: MedicationOutcomeRecord; task?: MedicationTask }[] {
+  seed();
+  return exceptions.filter((e) => siteIds.includes(e.site_id)).map((e) => {
+    const outcome = outcomes.find((o) => o.id === e.outcome_id);
+    const visit = outcome?.visit_id ? visitsState().visits.find((v) => v.id === outcome.visit_id) : undefined;
+    return { exception: e, outcome, task: visit ? tasksForVisit(visit).find((t) => t.id === e.task_id) : undefined };
+  });
 }
 
 export interface ClientEmarMedication { medication: Medication; current: MedicationInstructionVersion; versions: MedicationInstructionVersion[] }
@@ -166,6 +186,7 @@ export const medicationDemoStore: typeof medicationStore = {
   async exception(action, exceptionId, text) {
     const staff = roleStore.get().staffId; const at = new Date().toISOString();
     exceptions = exceptions.map((e) => e.id !== exceptionId ? e : action === "acknowledge" ? { ...e, status: "acknowledged", acknowledged_by_staff_id: staff, acknowledged_at: at } : action === "followUp" ? { ...e, follow_up: text ?? "", follow_up_by_staff_id: staff, follow_up_at: at } : { ...e, status: "resolved", resolution: text ?? "", resolved_by_staff_id: staff, resolved_at: at });
+    emit();
     return { saved: true as const };
   },
   async syncVisit() { return { simulated: true }; },
@@ -219,4 +240,4 @@ function draftVersion(medicationId: string, number: number, input: Record<string
 }
 
 /** Test helper. */
-export function resetMedicationDemo() { outcomes = []; exceptions = []; extraMedications = []; extraVersions = []; statusOverrides = {}; audit = []; seeded = false; }
+export function resetMedicationDemo() { version++; outcomes = []; exceptions = []; extraMedications = []; extraVersions = []; statusOverrides = {}; audit = []; seeded = false; }

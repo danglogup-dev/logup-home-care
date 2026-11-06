@@ -10,6 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Paperclip, MessageSquarePlus, User, Home, FileIcon } from "lucide-react";
+import { useRole } from "@/hooks/useRole";
+import { isManagerRole } from "@/lib/roleStore";
+import { followUpAssignees } from "@/components/emar/ExceptionFollowUp";
+import { serviceUsersStore } from "@/lib/serviceUsersStore";
 import {
   useTasksStore, effectiveStatus, statusBadgeClass, statusLabel,
   siteName, unitName, staffName, taskTypeLabel, sourceLabel, formatLocations,
@@ -21,6 +25,7 @@ export default function TaskDetail() {
   const { id = "" } = useParams();
   const nav = useNavigate();
   const { tasks, templates } = useTasksStore();
+  const role = useRole();
   const t = tasks.find(x => x.id === id);
   const linkedTemplate = t?.recurringTemplateId ? templates.find(x => x.id === t.recurringTemplateId) : undefined;
 
@@ -53,10 +58,13 @@ export default function TaskDetail() {
 
   const s = effectiveStatus(t);
   const own = taskOwnership(t);
-  const me = CURRENT_USER;
+  // Medication follow-ups act as the current (demo) role, not the residential demo user.
+  const med = t.medicationLinks;
+  const me = med ? { ...CURRENT_USER, id: role.staffId, name: role.displayName } : CURRENT_USER;
   const meName = me.name;
+  const medCanAct = !!med && (isManagerRole(role.role) || role.role === "admin");
 
-  const canActOnThis =
+  const canActOnThis = medCanAct ||
     isAssignedToUser(t, me.id) ||
     isHouseTaskForUser(t, { onShiftSiteIds: me.onShiftSiteIds, onShiftUnitIds: me.onShiftUnitIds });
 
@@ -123,7 +131,7 @@ export default function TaskDetail() {
           <p className="text-sm text-muted-foreground">{formatLocations(t)}</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          {(t.status === "open" || t.status === "in_progress") && (
+          {(t.status === "open" || t.status === "in_progress") && (!med || medCanAct) && (
             <>
               {t.status === "open" && (
                 <Button variant="outline" onClick={() => { startTask(t.id, meName); toast("Marked in progress"); }}>
@@ -187,6 +195,20 @@ export default function TaskDetail() {
         </Card>
       </div>
 
+      {med && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Linked medication records</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <p className="text-muted-foreground">Closing this task never changes the dose record or the exception. Review and resolve the exception separately in eMAR.</p>
+            <ul className="space-y-1">
+              <li><Link className="text-primary underline" to={`/app/org/service-users/${med.serviceUserId}`}>Client: {serviceUsersStore.getById(med.serviceUserId)?.name ?? med.serviceUserId}</Link></li>
+              <li><Link className="text-primary underline" to={`/app/visits/medication/${med.serviceUserId}?exception=${med.exceptionId}`}>Medication exception and original dose record</Link></li>
+              <li><Link className="text-primary underline" to={`/app/org/service-users/${med.serviceUserId}?tab=history`}>Visit {med.visitId}</Link></li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Attachments */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -245,12 +267,12 @@ export default function TaskDetail() {
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Complete task</DialogTitle></DialogHeader>
-          <Label>Completion note (optional)</Label>
+          <Label>{med ? "Your review decision (required)" : "Completion note (optional)"}</Label>
           <Textarea value={completionNote} onChange={e => setCompletionNote(e.target.value)} placeholder="What was done? Any observations?" />
           <p className="text-xs text-muted-foreground">Recorded as completed by {meName} just now.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompleteOpen(false)}>Cancel</Button>
-            <Button onClick={() => { completeTask(t.id, completionNote.trim() || undefined, meName, me.id); setCompleteOpen(false); setCompletionNote(""); toast("Task completed"); }}>
+            <Button disabled={!!med && !completionNote.trim()} onClick={() => { completeTask(t.id, completionNote.trim() || undefined, meName, me.id); setCompleteOpen(false); setCompletionNote(""); toast("Task completed"); }}>
               Confirm complete
             </Button>
           </DialogFooter>
@@ -290,7 +312,7 @@ export default function TaskDetail() {
           <Label>Assignee</Label>
           <Select value={newAssignee} onValueChange={setNewAssignee}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{STAFF.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.role}</SelectItem>)}</SelectContent>
+            <SelectContent>{med ? followUpAssignees(t.siteId).map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.roleLabel}</SelectItem>) : STAFF.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.role}</SelectItem>)}</SelectContent>
           </Select>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReassignOpen(false)}>Cancel</Button>

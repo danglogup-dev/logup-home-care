@@ -100,9 +100,10 @@ export const ROLE_PRESETS: RolePreset[] = [
   presetFromStaff("coordinator", "Coordinator · East Cork", "East Cork service area", "STAFF-DANIEL", "coordinator", ["SITE-ECK"], { title: "Coordinator" }),
   presetFromStaff("coordinator-waterford", "Coordinator · West Waterford", "West Waterford service area", "STAFF-CLAIRE", "coordinator", ["SITE-WWD"], { title: "Coordinator" }),
   presetFromStaff("coordinator-multi", "Coordinator · Both areas", "East Cork + West Waterford", "STAFF-SIOBHAN", "coordinator", ["SITE-ECK", "SITE-WWD"], { title: "Coordinator" }),
-  presetFromStaff("frontline",         "Frontline staff",            "Support Worker · East Cork",              "STAFF-LIAM",   "frontline", ["SITE-ECK"]),
+  // Aisling is the default home care frontline persona (listed first); Liam is kept for other demos.
+  presetFromStaff("keyworker-aisling", "Frontline staff",            "Aisling Doherty · Carer, key worker for Mary", "STAFF-AISLING","frontline", ["SITE-ECK"]),
+  presetFromStaff("frontline",         "Frontline · Support worker", "Liam · Support Worker · East Cork",       "STAFF-LIAM",   "frontline", ["SITE-ECK"]),
   presetFromStaff("keyworker-emma",    "Frontline · Key worker",     "Emma Ryan · Key worker for Patrick",           "STAFF-EMMA",   "frontline", ["SITE-ECK"]),
-  presetFromStaff("keyworker-aisling", "Frontline · Key worker",     "Aisling Doherty · Key worker for Mary",        "STAFF-AISLING","frontline", ["SITE-ECK"]),
   presetFromStaff("keyworker-niamh",   "Frontline · Key worker",     "Niamh Connolly · Riverside key worker",        "STAFF-NIAMH",  "frontline", ["SITE-WWD"]),
   presetFromStaff("keyworker-orla",    "Frontline · Key worker",     "Orla McCarthy · Elm Grove key worker",         "STAFF-ORLA",   "frontline", ["SITE-WWD"]),
   presetFromStaff("viewonly",          "View only",                  "Governance viewer · read-only, all sites",     "STAFF-CIARAN", "viewonly",  ["SITE-ECK", "SITE-WWD", "SITE-WWD"]),

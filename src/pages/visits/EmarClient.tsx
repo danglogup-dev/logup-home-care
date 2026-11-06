@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { ExceptionFollowUp, ExceptionSource } from "@/components/emar/ExceptionFollowUp";
 import { AlertTriangle, ArrowLeft, History, Pill, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,19 +82,29 @@ function DoseDialog({ task, data, reload, onClose }: { task: MedicationTask; dat
   </DialogContent></Dialog>;
 }
 
-function ExceptionCard({ e, data, reload }: { e: ClientEmar["exceptions"][number]; data: ClientEmar; reload: () => void }) {
+const EXC_STATUS: Record<string, string> = { open: "Open · not yet acknowledged", acknowledged: "Acknowledged", resolved: "Resolved" };
+
+function ExceptionCard({ e, data, reload, highlight }: { e: ClientEmar["exceptions"][number]; data: ClientEmar; reload: () => void; highlight?: boolean }) {
   const { store } = useMedicationSource(); const { error, busy, act } = useAct(reload); const [text, setText] = useState("");
-  const task = data.tasks.find((t) => t.id === e.task_id); const canAct = data.access.access_role !== "frontline" && data.access.access_role !== "viewonly";
-  return <li className="rounded-lg border bg-card p-4 text-sm">
+  const task = data.tasks.find((t) => t.id === e.task_id); const outcome = data.outcomes.find((o) => o.id === e.outcome_id);
+  const canAct = data.access.access_role !== "frontline" && data.access.access_role !== "viewonly";
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => { if (highlight) ref.current?.scrollIntoView({ block: "center" }); }, [highlight]);
+  return <li ref={ref} id={`exception-${e.id}`} className={`rounded-lg border bg-card p-4 text-sm ${highlight ? "ring-2 ring-primary" : ""}`}>
     <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="h-4 w-4 text-destructive" aria-hidden="true" />{e.kind === "refusal" ? "Refused" : e.kind.replace(/_/g, " ")} · {task?.medication.name} · {fmt(task?.scheduled_at)}</p>
-    <p className="mt-1 text-muted-foreground">Status: {e.status}{e.acknowledged_at ? ` · acknowledged by ${staffName(e.acknowledged_by_staff_id)} ${fmt(e.acknowledged_at)}` : ""}</p>
-    {e.follow_up && <p className="mt-1">Follow-up: {e.follow_up} ({staffName(e.follow_up_by_staff_id)})</p>}
+    <dl className="mt-2 grid gap-1 sm:grid-cols-2">
+      <div><dt className="inline font-semibold">Exception: </dt><dd className="inline">{EXC_STATUS[e.status] ?? e.status}{e.acknowledged_at ? ` · by ${staffName(e.acknowledged_by_staff_id)} ${fmt(e.acknowledged_at)}` : ""}</dd></div>
+      <div><dt className="inline font-semibold">Notification: </dt><dd className="inline">{e.notifications?.length ? "Simulated — no one was actually notified" : "None"}</dd></div>
+    </dl>
+    <ExceptionSource outcome={outcome} task={task} />
+    {e.follow_up && <p className="mt-2">Follow-up: {e.follow_up} ({staffName(e.follow_up_by_staff_id)})</p>}
     {e.resolution && <p className="mt-1">Resolved: {e.resolution} ({staffName(e.resolved_by_staff_id)}, {fmt(e.resolved_at)})</p>}
     {canAct && e.status !== "resolved" && <div className="mt-3 space-y-2">
       {!e.acknowledged_at && <Button size="sm" disabled={busy} onClick={() => act(() => store.exception("acknowledge", e.id))}>Acknowledge</Button>}
-      {e.acknowledged_at && <><Textarea placeholder={e.follow_up ? "Resolution" : "Follow-up taken"} value={text} onChange={(ev) => setText(ev.target.value)} />
-        <Button size="sm" disabled={busy || !text.trim()} onClick={() => act(() => store.exception(e.follow_up && canResolveException(e) ? "resolve" : "followUp", e.id, text), () => setText(""))}>{e.follow_up ? "Resolve" : "Save follow-up"}</Button></>}
+      {e.acknowledged_at && <><Label htmlFor={`exc-${e.id}`}>{e.follow_up ? "Your review decision (closes the exception)" : "Follow-up taken"}</Label><Textarea id={`exc-${e.id}`} placeholder={e.follow_up ? "e.g. Reviewed with GP; no harm; continue to monitor" : "e.g. Phoned daughter; pharmacist advised"} value={text} onChange={(ev) => setText(ev.target.value)} />
+        <Button size="sm" disabled={busy || !text.trim()} onClick={() => act(() => store.exception(e.follow_up && canResolveException(e) ? "resolve" : "followUp", e.id, text), () => setText(""))}>{e.follow_up ? "Resolve exception" : "Save follow-up"}</Button></>}
     </div>}
+    <ExceptionFollowUp exception={e} outcome={outcome} task={task} />
     {error && <p role="alert" className="mt-2 text-destructive">{error}</p>}
   </li>;
 }
@@ -101,7 +112,7 @@ function ExceptionCard({ e, data, reload }: { e: ClientEmar["exceptions"][number
 function ClientEmarView({ clientId }: { clientId: string }) {
   const role = useRole(); const [tick, setTick] = useState(0); const reload = () => setTick((t) => t + 1);
   const data = useMemo(() => loadDemoClientEmar(clientId), [clientId, tick, role]); // eslint-disable-line react-hooks/exhaustive-deps
-  const client = serviceUsersStore.getById(clientId);
+  const client = serviceUsersStore.getById(clientId); const [params] = useSearchParams(); const focus = params.get("exception");
   const [medOpen, setMedOpen] = useState<string>(); const [doseOpen, setDoseOpen] = useState<string>(); const [adding, setAdding] = useState(false);
   if (!client) return <p>Client not found.</p>;
   const siteId = client.siteId; const openExc = data.exceptions.filter((e) => e.status !== "resolved");
@@ -134,7 +145,7 @@ function ClientEmarView({ clientId }: { clientId: string }) {
     </section>
 
     <section aria-labelledby="exc-h"><h2 id="exc-h" className="mb-3 text-xl font-semibold">Exceptions</h2>
-      {!data.exceptions.length ? <p className="text-muted-foreground">No refusals or missed doses in the last 7 days.</p> : <ul className="space-y-3">{[...data.exceptions].sort((a, b) => (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0) || b.created_at.localeCompare(a.created_at)).map((e) => <ExceptionCard key={e.id} e={e} data={data} reload={reload} />)}</ul>}
+      {!data.exceptions.length ? <p className="text-muted-foreground">No refusals or missed doses in the last 7 days.</p> : <ul className="space-y-3">{[...data.exceptions].sort((a, b) => (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0) || b.created_at.localeCompare(a.created_at)).map((e) => <ExceptionCard key={e.id} e={e} data={data} reload={reload} highlight={e.id === focus} />)}</ul>}
     </section>
 
     <section aria-labelledby="hist-h"><h2 id="hist-h" className="mb-3 text-xl font-semibold">Change history</h2>

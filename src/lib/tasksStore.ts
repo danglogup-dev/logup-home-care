@@ -1,9 +1,10 @@
 import { eventId } from "./demoScenario";
+import { STAFF_BY_ID } from "./demoDataRegistry";
 // Tasks & Follow-up store — operational tasks for regulated care settings.
 // In-memory store, demo-only. Subscribe pattern matches workforceStore.
 
 export type TaskType = "recurring" | "follow_up" | "one_off";
-export type TaskSourceType = "manual" | "incident" | "audit" | "recurring_template";
+export type TaskSourceType = "manual" | "incident" | "audit" | "recurring_template" | "medication_exception";
 export type TaskStatus = "open" | "in_progress" | "completed" | "skipped";
 export type TaskPriority = "low" | "normal" | "high";
 export type Recurrence = "daily" | "weekly" | "monthly" | "custom";
@@ -62,6 +63,16 @@ export interface TaskRecord {
   attachments?: TaskAttachment[];
   activity: ActivityEntry[];
   createdAt: string;
+  /** Medication follow-up links (IDs only). Closing the task never changes these records. */
+  medicationLinks?: MedicationTaskLinks;
+}
+
+export interface MedicationTaskLinks {
+  serviceUserId: string;
+  visitId: string;
+  medicationTaskId: string;
+  medicationOutcomeId: string;
+  exceptionId: string;
 }
 
 export interface RecurringTemplate {
@@ -145,7 +156,7 @@ export const siteName = (id: string) => SITES.find(s => s.id === id)?.name ?? id
 // Units are intentionally hidden in the current demo UI (site-only geography).
 // Kept in the type system to preserve future support.
 export const unitName = (_siteId: string, _unitId?: string) => "";
-export const staffName = (id: string) => STAFF.find(s => s.id === id)?.name ?? id;
+export const staffName = (id: string) => STAFF.find(s => s.id === id)?.name ?? STAFF_BY_ID[id as keyof typeof STAFF_BY_ID]?.name ?? id;
 
 export const isOverdue = (t: TaskRecord) =>
   (t.status === "open" || t.status === "in_progress") && new Date(t.dueAt).getTime() < Date.now();
@@ -180,6 +191,7 @@ export const sourceLabel = (s: TaskSourceType) =>
     incident: "Incident",
     audit: "Audit",
     recurring_template: "Recurring",
+    medication_exception: "Medication exception",
   }[s]);
 
 // ---------- Multi-location & recurrence helpers ----------
@@ -573,6 +585,9 @@ export const subscribe = (l: () => void) => {
 export const getTasks = () => tasks;
 export const getTemplates = () => templates;
 export const getTask = (id: string) => tasks.find(t => t.id === id);
+
+/** Follow-up tasks linked to one medication exception. */
+export const tasksForException = (exceptionId: string) => tasks.filter(t => t.medicationLinks?.exceptionId === exceptionId);
 
 // ---------- Mutations ----------
 export const createTask = (

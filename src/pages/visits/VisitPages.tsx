@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { signOutOfLogUp } from "@/lib/logupAuth";
+import { toast } from "sonner";
 import { Navigation, MapPin, Clock3, ChevronRight, LogOut, AlertTriangle, Pill, ListChecks } from "lucide-react";
 import { visitBriefSources } from "@/lib/visitBriefSources";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ export function VisitClients() {
 }
 
 export function VisitsMe() {
+  const navigate = useNavigate();
   const role = useRole(); const links = [{ key: "workforce.qualifications", label: "My qualifications", path: "/app/workforce/qualifications" }, { key: "policies.library", label: "Policy Help", path: "/app/visits/policy-help" }] as const;
-  return <section className="px-4 py-6" aria-labelledby="me-heading"><h1 id="me-heading" className="text-3xl font-heading font-bold">Me</h1><h2 className="mt-5 break-words text-2xl font-semibold">{role.displayName}</h2><p className="mt-2 text-lg">{role.title}</p><h3 className="mt-5 text-lg font-bold">My service areas</h3><p className="mt-1 text-base">{role.scope.join(" · ") || "None assigned"}</p><div className="mt-6 space-y-2 border-t pt-4">{links.filter((l) => canAccess(l.key, role.role) && isModuleKeyReleased(l.key)).map((link) => <Button asChild key={link.key} variant="outline" className="min-h-14 w-full justify-between whitespace-normal text-left text-base"><Link to={link.path}>{link.label}<ChevronRight aria-hidden="true" /></Link></Button>)}<Button asChild variant="secondary" className="mt-4 min-h-14 w-full text-base"><Link to="/signin"><LogOut aria-hidden="true" /> Sign out</Link></Button></div></section>;
+  return <section className="px-4 py-6" aria-labelledby="me-heading"><h1 id="me-heading" className="text-3xl font-heading font-bold">Me</h1><h2 className="mt-5 break-words text-2xl font-semibold">{role.displayName}</h2><p className="mt-2 text-lg">{role.title}</p><h3 className="mt-5 text-lg font-bold">My service areas</h3><p className="mt-1 text-base">{role.scope.join(" · ") || "None assigned"}</p><div className="mt-6 space-y-2 border-t pt-4">{links.filter((l) => canAccess(l.key, role.role) && isModuleKeyReleased(l.key)).map((link) => <Button asChild key={link.key} variant="outline" className="min-h-14 w-full justify-between whitespace-normal text-left text-base"><Link to={link.path}>{link.label}<ChevronRight aria-hidden="true" /></Link></Button>)}<Button variant="secondary" className="mt-4 min-h-14 w-full text-base" onClick={async () => { try { await signOutOfLogUp(); navigate("/signin"); } catch { toast.error("Could not sign out. Please try again."); } }}><LogOut aria-hidden="true" /> Sign out</Button></div></section>;
 }

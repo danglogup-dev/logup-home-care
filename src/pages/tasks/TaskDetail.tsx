@@ -287,7 +287,7 @@ export default function TaskDetail() {
           <DialogHeader><DialogTitle>Complete task</DialogTitle></DialogHeader>
           <Label>{roleActs ? "Your review decision (required)" : "Completion note (optional)"}</Label>
           <Textarea value={completionNote} onChange={e => setCompletionNote(e.target.value)} placeholder="What was done? Any observations?" />
-          <p className="text-xs text-muted-foreground">Recorded as completed by {meName} just now.</p>
+          <p className="text-xs text-muted-foreground">Recorded as completed by {staffName(meName)} just now.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompleteOpen(false)}>Cancel</Button>
             <Button disabled={roleActs && !completionNote.trim()} onClick={() => { completeTask(t.id, completionNote.trim() || undefined, meName, me.id); setCompleteOpen(false); setCompletionNote(""); toast("Task completed"); }}>

@@ -41,7 +41,7 @@ export default function LiveVisits() {
   const [area, setArea] = useState("all");
   const [open, setOpen] = useState<{ visitId: string; alertId?: string } | null>(null);
   useEffect(() => { const h = window.location.hash.match(/^#visit-(.+)$/); if (h) setOpen({ visitId: decodeURIComponent(h[1]) }); }, []);
-  const openAlert = open?.alertId ? alerts.find((a) => a.id === open.alertId) : undefined;
+  const openAlert = open?.alertId ? alerts.find((a) => a.id === open.alertId) : alerts.find((a) => a.visitId === open?.visitId && !a.eventId);
   const visible = today.filter((v) => area === "all" || byClient.get(v.clientId)?.siteId === area);
   const visibleAlerts = alerts.filter((a) => area === "all" || byClient.get(a.clientId)?.siteId === area);
   useEffect(() => setArea("all"), [role.presetId]);

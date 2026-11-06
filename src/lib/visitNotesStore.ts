@@ -47,7 +47,7 @@ export const visitNotesStore = {
     const visit = accessibleVisit(visitId, role);
     if (!visit || visit.status !== "in_progress") throw new Error("Confirm the note for your checked-in visit before saving.");
     const at = new Date().toISOString();
-    const provenance: FieldProvenance[] = (Object.keys(finalText) as (keyof StructuredVisitNote)[]).map((key) => ({ key, label: key, origin: "ai_draft", originalValue: draft[key], value: finalText[key], state: "human_confirmed", edited: draft[key] !== finalText[key], confirmedByStaffId: role.staffId, confirmedAt: at } as FieldProvenance));
+    const provenance: FieldProvenance[] = (Object.keys(finalText) as (keyof StructuredVisitNote)[]).map((key) => ({ key, label: key, origin: "source", originalValue: draft[key], value: finalText[key], state: "human_confirmed", edited: draft[key] !== finalText[key], confirmedByStaffId: role.staffId, confirmedAt: at } as FieldProvenance));
     const note: VisitNote = { id: `DEMO-NOTE-${crypto.randomUUID()}`, visit_id: visitId, client_id: visit.clientId, transcript, ai_draft: draft, final_text: finalText, confirmed_by_staff_id: role.staffId, confirmed_at: at, provenance, demo: true };
     demoNotes = [...demoNotes, note]; emit(); return note;
   },

@@ -60,9 +60,10 @@ export default function TaskDetail() {
   const own = taskOwnership(t);
   // Medication follow-ups act as the current (demo) role, not the residential demo user.
   const med = t.medicationLinks;
-  const me = med ? { ...CURRENT_USER, id: role.staffId, name: role.displayName } : CURRENT_USER;
+  const roleActs = !!(t.medicationLinks || t.insightLinks);
+  const me = roleActs ? { ...CURRENT_USER, id: role.staffId, name: role.displayName } : CURRENT_USER;
   const meName = me.name;
-  const medCanAct = !!med && (isManagerRole(role.role) || role.role === "admin");
+  const medCanAct = roleActs && (isManagerRole(role.role) || role.role === "admin");
 
   const canActOnThis = medCanAct ||
     isAssignedToUser(t, me.id) ||
@@ -131,7 +132,7 @@ export default function TaskDetail() {
           <p className="text-sm text-muted-foreground">{formatLocations(t)}</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          {(t.status === "open" || t.status === "in_progress") && (!med || medCanAct) && (
+          {(t.status === "open" || t.status === "in_progress") && (!roleActs || medCanAct) && (
             <>
               {t.status === "open" && (
                 <Button variant="outline" onClick={() => { startTask(t.id, meName); toast("Marked in progress"); }}>
@@ -194,6 +195,17 @@ export default function TaskDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {t.insightLinks && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Prompted by a Care Assurance insight</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <p className="text-muted-foreground">The insight only pointed at these records. Your decision is recorded here when you complete the task.</p>
+            {t.insightLinks.serviceUserId && <p><Link className="text-primary underline" to={`/app/org/service-users/${t.insightLinks.serviceUserId}?tab=history`}>Original visit notes</Link> · <Link className="text-primary underline" to={`/app/care-plans/people/${t.insightLinks.serviceUserId}`}>Approved care plan</Link> · <Link className="text-primary underline" to={`/app/org/service-users/${t.insightLinks.serviceUserId}?tab=timeline`}>Chronology</Link></p>}
+            <p className="text-xs text-muted-foreground">Source records: {t.insightLinks.sourceIds.join(", ")}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {med && (
         <Card>
@@ -267,12 +279,12 @@ export default function TaskDetail() {
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Complete task</DialogTitle></DialogHeader>
-          <Label>{med ? "Your review decision (required)" : "Completion note (optional)"}</Label>
+          <Label>{roleActs ? "Your review decision (required)" : "Completion note (optional)"}</Label>
           <Textarea value={completionNote} onChange={e => setCompletionNote(e.target.value)} placeholder="What was done? Any observations?" />
           <p className="text-xs text-muted-foreground">Recorded as completed by {meName} just now.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompleteOpen(false)}>Cancel</Button>
-            <Button disabled={!!med && !completionNote.trim()} onClick={() => { completeTask(t.id, completionNote.trim() || undefined, meName, me.id); setCompleteOpen(false); setCompletionNote(""); toast("Task completed"); }}>
+            <Button disabled={roleActs && !completionNote.trim()} onClick={() => { completeTask(t.id, completionNote.trim() || undefined, meName, me.id); setCompleteOpen(false); setCompletionNote(""); toast("Task completed"); }}>
               Confirm complete
             </Button>
           </DialogFooter>

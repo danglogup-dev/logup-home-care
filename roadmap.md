@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] eMAR authentication: replace the navigation-only LogUp sign-in with shared account sign-in, remove medication-only credential forms, preserve server staff permissions and verify navigation/refresh/access denial. Authenticated oversight testing depends on a registered account and trusted staff mapping.
+
 - [x] eMAR visibility: existing medication oversight now has a direct eMAR menu entry, retaining existing role permissions and release flag; browser verified opening from a client record, five medication safety tests pass and preview build OK. Medication records still require authenticated staff access.
 
 - [x] Integrated mobile visit + controlled eMAR: one phone workflow with Today/Upcoming/Completed, independent care/task reasons, medication outcomes/corrections, notes and final review; verified/versioned instructions, MAR/exception/audit oversight, scoped backend access and offline save prevention. All 83 tests and typecheck pass; signed-out carer/manager screens checked without browser errors or 390px overflow. Rolled-back database tests verified refusal exception status, correction lineage and idempotent retries.

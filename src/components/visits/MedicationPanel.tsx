@@ -3,8 +3,8 @@ import { AlertTriangle, Check, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LogUpSessionGate } from "@/components/LogUpSessionGate";
-import { medicationStore, type MedicationTask, type VisitMedicationData } from "@/lib/medicationStore";
+import { MedicationSourceGate, useMedicationSource } from "@/components/MedicationSourceGate";
+import { type MedicationTask, type VisitMedicationData } from "@/lib/medicationStore";
 import { CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS, permittedOutcomes, reasonRequired, validateOutcome, type MedicationOutcome } from "@/lib/medicationRules";
 import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
 
@@ -20,7 +20,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
   const [online, setOnline] = useState(navigator.onLine);
   const keys = useRef(new Map<string, string>());
   const load = useCallback(async () => {
-    try { const next = await medicationStore.loadVisit(visitId); setData(next); onChange?.(next); setError(""); }
+    try { const next = await store.loadVisit(visitId); setData(next); onChange?.(next); setError(""); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not load medication records."); }
   }, [visitId, onChange]);
   useEffect(() => { load(); }, [load]);
@@ -39,7 +39,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
     const idempotencyKey = keys.current.get(key) ?? crypto.randomUUID(); keys.current.set(key, idempotencyKey);
     setBusy(task.id); setError("");
     try {
-      await medicationStore.submit({ taskId: task.id, visitId, outcome: draft.outcome!, eventAt: new Date(draft.eventAt).toISOString(), reason: draft.reason, idempotencyKey, correctionOf: draft.correcting ? record?.id : undefined, correctionReason: draft.correcting ? draft.correctionReason : undefined });
+      await store.submit({ taskId: task.id, visitId, outcome: draft.outcome!, eventAt: new Date(draft.eventAt).toISOString(), reason: draft.reason, idempotencyKey, correctionOf: draft.correcting ? record?.id : undefined, correctionReason: draft.correcting ? draft.correctionReason : undefined });
       await load(); setDrafts((all) => { const next = { ...all }; delete next[task.id]; return next; });
     } catch (e) { setError(e instanceof Error ? e.message : "Not saved. Try again using the same information."); }
     finally { setBusy(""); }
@@ -77,5 +77,5 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
 
 export function MedicationPanel(props: { visitId: string; expected: boolean; editable: boolean; onChange?: (data: VisitMedicationData) => void }) {
   if (!props.expected) return null;
-  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><LogUpSessionGate><MedicationRecords key={props.visitId} {...props} /></LogUpSessionGate></section>;
+  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><MedicationSourceGate><MedicationRecords key={props.visitId} {...props} /></MedicationSourceGate></section>;
 }

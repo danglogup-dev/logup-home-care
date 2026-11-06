@@ -62,7 +62,7 @@ export default function TaskDetail() {
   const med = t.medicationLinks;
   const me = med ? { ...CURRENT_USER, id: role.staffId, name: role.displayName } : CURRENT_USER;
   const meName = me.name;
-  const medCanAct = !!med && isManagerRole(role.role);
+  const medCanAct = !!med && (isManagerRole(role.role) || role.role === "admin");
 
   const canActOnThis = medCanAct ||
     isAssignedToUser(t, me.id) ||

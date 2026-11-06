@@ -41,7 +41,7 @@ export function ExceptionSource({ outcome, task }: { outcome?: MedicationOutcome
 export function ExceptionFollowUp({ exception, outcome, task }: { exception: MedicationException; outcome?: MedicationOutcomeRecord; task?: MedicationTask }) {
   const role = useRole(); const { tasks } = useTasksStore(); const [open, setOpen] = useState(false);
   const linked = tasks.filter((t) => t.medicationLinks?.exceptionId === exception.id);
-  const canCreate = isManagerRole(role.role) && !!outcome && !!task?.visit_id;
+  const canCreate = (isManagerRole(role.role) || role.role === "admin") && !!outcome && !!task?.visit_id;
   return <div className="mt-3 space-y-2">
     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Follow-up tasks</p>
     {!linked.length && <p className="text-muted-foreground">No follow-up task yet.</p>}

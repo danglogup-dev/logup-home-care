@@ -11,6 +11,7 @@ import { STAFF_BY_ID, SITE_BY_ID } from "@/lib/demoDataRegistry";
 import { liveVisits, liveVisitAlerts, LIVE_STATUS_ORDER, telephoneHref } from "@/lib/liveVisitRules";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
 import FamilySummaryReview from "@/components/visits/FamilySummaryReview";
+import LiveVisitDrawer from "@/components/visits/LiveVisitDrawer";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
 
@@ -38,6 +39,8 @@ export default function LiveVisits() {
   const alerts = liveVisitAlerts(today, events, visits, users, role, now);
   const byClient = new Map(users.map((u) => [u.id, u]));
   const [area, setArea] = useState("all");
+  const [open, setOpen] = useState<{ visitId: string; alertId?: string } | null>(null);
+  const openAlert = open?.alertId ? alerts.find((a) => a.id === open.alertId) : undefined;
   const visible = today.filter((v) => area === "all" || byClient.get(v.clientId)?.siteId === area);
   const visibleAlerts = alerts.filter((a) => area === "all" || byClient.get(a.clientId)?.siteId === area);
   useEffect(() => setArea("all"), [role.presetId]);
@@ -52,7 +55,7 @@ export default function LiveVisits() {
         <h2 id="alerts-heading" className="text-xl font-heading font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-destructive" />Alerts <span className="text-muted-foreground">({visibleAlerts.length})</span></h2>
         {visibleAlerts.length === 0 ? <p className="py-5 text-muted-foreground">No active alerts.</p> : <ul className="mt-4 divide-y border-y" aria-live="polite">{visibleAlerts.map((alert) => {
           const client = byClient.get(alert.clientId);
-          return <li key={alert.id} className="py-4 space-y-2"><p className={`font-semibold ${alert.kind !== "event" ? "text-destructive" : "text-foreground"}`}>{alert.title} · {client ? clientDisplayName(client) : terms.Singular}</p><p className="text-sm break-words">{alert.detail}</p><p className="text-xs text-muted-foreground">{time(alert.at)}</p><Button asChild size="sm" variant="outline" className="min-h-11"><Link to={alert.eventId ? `/app/incidents/board?eventId=${encodeURIComponent(alert.eventId)}` : `#visit-${alert.visitId}`}>{alert.eventId ? "Open event" : "View visit"}</Link></Button></li>;
+          return <li key={alert.id} className="py-4 space-y-2"><p className={`font-semibold ${alert.kind !== "event" ? "text-destructive" : "text-foreground"}`}>{alert.title} · {client ? clientDisplayName(client) : terms.Singular}</p><p className="text-sm break-words">{alert.detail}</p><p className="text-xs text-muted-foreground">{time(alert.at)}</p><div className="flex flex-wrap gap-2">{alert.eventId && <Button asChild size="sm" variant="outline" className="min-h-11"><Link to={`/app/incidents/board?eventId=${encodeURIComponent(alert.eventId)}`}>Open event</Link></Button>}<Button size="sm" variant="outline" className="min-h-11" aria-label={`View visit · ${client ? clientDisplayName(client) : terms.Singular}`} onClick={() => setOpen({ visitId: alert.visitId, alertId: alert.id })}>View visit</Button></div></li>;
         })}</ul>}
       </aside>
       <div className="min-w-0 space-y-6">
@@ -68,12 +71,13 @@ export default function LiveVisits() {
             return <li id={`visit-${v.id}`} key={v.id} className="scroll-mt-6 rounded-lg border bg-card p-4 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-semibold break-words">{clientDisplayName(client)}</h3><p className="text-sm text-muted-foreground">{clientTown(client) ?? client.homeAddress ?? "Town not recorded"} · {SITE_BY_ID[client.siteId]?.name}</p></div><p className="flex items-center gap-1 text-sm font-semibold tabular-nums"><Clock3 className="h-4 w-4" />{template ? `${template.windowStart}–${template.windowEnd}` : `${time(v.scheduledStart)}–${time(v.scheduledEnd)}`}</p></div>
               <p className="text-sm">{carers.map((c) => c.name).join(" · ") || "No carer assigned"}{v.checkInAt ? ` · Checked in ${time(v.checkInAt)}` : ""}{v.checkOutAt ? ` · Checked out ${time(v.checkOutAt)}` : ""}</p>
-              <div className="flex flex-wrap gap-2">{carers.map((carer) => <CallContact key={carer.id} name={carer.name} label={carers.length > 1 ? `Call carer · ${carer.name}` : "Call carer"} phone={carer.phone} />)}{!carers.length && <CallContact name="Unassigned carer" label="Call carer" />}<CallContact name={clientDisplayName(client)} label={`Call ${terms.singular}`} phone={client.phone} /></div>
+              <div className="flex flex-wrap gap-2">{carers.map((carer) => <CallContact key={carer.id} name={carer.name} label={carers.length > 1 ? `Call carer · ${carer.name}` : "Call carer"} phone={carer.phone} />)}{!carers.length && <CallContact name="Unassigned carer" label="Call carer" />}<Button variant="secondary" className="min-h-11" aria-label={`View visit · ${clientDisplayName(client)}`} onClick={() => setOpen({ visitId: v.id, alertId: alerts.find((a) => a.visitId === v.id && !a.eventId)?.id })}>View visit</Button><CallContact name={clientDisplayName(client)} label={`Call ${terms.singular}`} phone={client.phone} /></div>
             </li>;
           })}</ul></section>;
         })}
       </div>
     </div>
     <FamilySummaryReview />
+    <LiveVisitDrawer visitId={open?.visitId ?? null} alert={openAlert} onClose={() => setOpen(null)} />
   </section>;
 }

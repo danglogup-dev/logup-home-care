@@ -1,7 +1,7 @@
 import { useTerms } from "@/hooks/useTerms";
 import { useState, useEffect, useMemo } from "react";
 import {
-  Users, AlertTriangle, ClipboardList, BookOpen, ChevronRight, ShieldCheck, ListChecks, Sparkles, Settings, HeartPulse, Building2,
+  Users, AlertTriangle, ClipboardList, BookOpen, ChevronRight, ShieldCheck, ListChecks, Sparkles, Settings, HeartPulse, Building2, Pill,
 } from "lucide-react";
 
 import { NavLink } from "@/components/NavLink";
@@ -47,8 +47,9 @@ const homeCareModules: ModuleItem[] = [
     icon: HeartPulse,
     basePath: "/app/visits",
     defaultPath: "/app/visits/roster",
-    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }, { title: "Medication oversight", url: "/app/visits/medication", key: "visits.medication" }],
+    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
   },
+  { title: "eMAR", icon: Pill, basePath: "/app/visits/medication", defaultPath: "/app/visits/medication", key: "visits.medication" },
   { title: "Clients", icon: Users, basePath: "/app/org/service-users", defaultPath: "/app/org/service-users", key: "org.serviceUsers" },
   {
     title: "Policy Hub",
@@ -69,8 +70,9 @@ const modules: ModuleItem[] = [
     icon: HeartPulse,
     basePath: "/app/visits",
     defaultPath: "/app/visits/roster",
-    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }, { title: "Medication oversight", url: "/app/visits/medication", key: "visits.medication" }],
+    subItems: [{ title: "Roster", url: "/app/visits/roster", key: "visits.roster" }, { title: "Live visits", url: "/app/visits/live", key: "visits.live" }, { title: "Hours vs approved", url: "/app/visits/hours", key: "visits.hours" }],
   },
+  { title: "eMAR", icon: Pill, basePath: "/app/visits/medication", defaultPath: "/app/visits/medication", key: "visits.medication" },
   {
     title: "Insights",
     icon: Sparkles,
@@ -264,7 +266,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleModules.map((mod) => {
-                const isActive = location.pathname.startsWith(mod.basePath);
+                const isActive = mod.subItems
+                  ? mod.subItems.some((sub) => location.pathname === sub.url || location.pathname.startsWith(sub.url + "/"))
+                  : location.pathname.startsWith(mod.basePath);
                 const Icon = mod.icon;
 
                 // Simple item (Team) or collapsed rail

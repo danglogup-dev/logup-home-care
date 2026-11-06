@@ -40,7 +40,7 @@ export default function VisitDetail() {
   const tasks = visit.log?.tasks ?? visit.taskRecords ?? []; const visitNotes = notes.filter((note) => note.visit_id === visit.id); const confirmedNote = visitNotes.at(-1) ?? savedNote;
   const taskCount = template?.tasks.length ?? 0; const tasksRecorded = template?.tasks.filter((_, index) => tasks.some((r) => r.index === index)).length ?? 0;
   const medicationExpected = !!template?.medications.length || visit.id === "VIS-DEMO-MARY-0930";
-  const medicationRecorded = medicationData?.tasks.filter((task) => medicationData.outcomes.some((o) => o.task_id === task.id)).length ?? 0;
+  const medicationRecorded = medicationData ? documentationProgress(medicationData.tasks, medicationData.outcomes).recorded : 0;
   const act = (action: () => void) => { setError(""); try { action(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save."); } };
   async function checkIn() { if (!visit) return; setBusy(true); setError(""); try { visitsStore.checkIn(visit.id, await browserLocation(), role.staffId); } catch (e) { setError(e instanceof Error ? e.message : "Could not check in."); } finally { setBusy(false); } }
   function finish() {

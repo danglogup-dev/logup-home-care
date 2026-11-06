@@ -111,13 +111,13 @@ function Body({ visitId, alert, onClose }: { visitId: string; alert?: LiveVisitA
 
     <Section title="Medication support">{meds.length ? <ul className="text-sm space-y-1">{meds.map((m, i) => { const r = v.medicationRecords?.find((mr) => mr.index === i); return <li key={i}>{m.name} ({m.supportLevel}) — {r ? r.outcome.replace("_", " ") : "Not recorded"}</li>; })}</ul> : <Empty>No medication support on this visit.</Empty>}</Section>
 
-    <Section title="Visit note">{visitNotes.length ? visitNotes.map((n) => <p key={n.id} className="text-sm">Confirmed by {STAFF_BY_ID[n.confirmed_by_staff_id as never]?.name ?? n.confirmed_by_staff_id} at {t(n.confirmed_at)}. <Link className="underline" to={`/app/org/service-users/${client.id}#visit-${v.id}`}>View note</Link></p>) : <Empty>No visit note recorded.</Empty>}</Section>
+    <Section title="Visit note">{visitNotes.length ? visitNotes.map((n) => <p key={n.id} className="text-sm">Confirmed by {(STAFF_BY_ID as Record<string, { name: string } | undefined>)[n.confirmed_by_staff_id]?.name ?? n.confirmed_by_staff_id} at {t(n.confirmed_at)}. <Link className="underline" to={`/app/org/service-users/${client.id}#visit-${v.id}`}>View note</Link></p>) : <Empty>No visit note recorded.</Empty>}</Section>
 
     <Section title="Events and concerns">{events.length ? events.map((e) => <Link key={e.id} className="block text-sm underline" to={`/app/incidents/board?eventId=${encodeURIComponent(e.id)}`}>{e.eventType ?? "Event"} — {e.summary}</Link>) : <Empty>No events linked to this visit.</Empty>}</Section>
 
     <Section title="Follow-up tasks">{linkedTasks.length ? linkedTasks.map((x) => <Link key={x.id} className="block text-sm underline" to={`/app/tasks/${x.id}`}>{x.title} · {statusLabel(effectiveStatus(x))}</Link>) : <Empty>No follow-up tasks.</Empty>}</Section>
 
-    <Section title="Manager review">{reviews.length ? <ul className="text-sm space-y-1">{reviews.map((r) => <li key={r.id}><span className="font-medium">{REVIEW_LABEL[r.kind]}</span> · {STAFF_BY_ID[r.byStaffId as never]?.name ?? r.byStaffId} · {t(r.at)}{r.note && <span className="block text-muted-foreground">{r.note}</span>}</li>)}</ul> : <Empty>No manager review yet.</Empty>}
+    <Section title="Manager review">{reviews.length ? <ul className="text-sm space-y-1">{reviews.map((r) => <li key={r.id}><span className="font-medium">{REVIEW_LABEL[r.kind]}</span> · {(STAFF_BY_ID as Record<string, { name: string } | undefined>)[r.byStaffId]?.name ?? r.byStaffId} · {t(r.at)}{r.note && <span className="block text-muted-foreground">{r.note}</span>}</li>)}</ul> : <Empty>No manager review yet.</Empty>}
       {canAct ? <div className="space-y-2 pt-2">
         <Textarea aria-label="Investigation note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Phoned carer — car broke down; client's daughter visited instead" />
         <div className="flex flex-wrap gap-2">

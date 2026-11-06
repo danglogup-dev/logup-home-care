@@ -33,6 +33,12 @@ const KIND_META: Record<TimelineKind, { label: string; icon: typeof User }> = {
   event: { label: "Events", icon: AlertTriangle },
   care_plan: { label: "Care plan", icon: HeartPulse },
   review_flag: { label: "Review flags", icon: Flag },
+  visit: { label: "Visits", icon: HeartPulse },
+  visit_note: { label: "Visit notes", icon: HeartPulse },
+  medication_outcome: { label: "Medication", icon: HeartPulse },
+  medication_exception: { label: "Medication exceptions", icon: AlertTriangle },
+  manager_decision: { label: "Manager decisions", icon: Flag },
+  task: { label: "Follow-up tasks", icon: Flag },
 };
 
 const ACTION_TITLES: Record<LifecycleEventType, string> = {

@@ -13,6 +13,12 @@ export const featureFlags = {
 
 export type FeatureFlag = keyof typeof featureFlags;
 
+/**
+ * Prototype mode: false = "Sign in" opens the app with the chosen demo view and
+ * eMAR always uses in-memory demo records. Real-account code is kept for later.
+ */
+export const REAL_AUTH_ENABLED = false;
+
 const PREFIX_TO_FLAG: Record<string, FeatureFlag> = {
   audits: "audits",
   tasks: "tasks",

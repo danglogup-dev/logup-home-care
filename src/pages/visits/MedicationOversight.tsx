@@ -1,55 +1,66 @@
-import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Check, FileText, Pill, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, ChevronRight, Pill, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MedicationSourceGate, useMedicationSource } from "@/components/MedicationSourceGate";
-import { type MedicationOversightData, type Medication, type MedicationInstructionVersion } from "@/lib/medicationStore";
-import { canResolveException, CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS } from "@/lib/medicationRules";
+import { MedicationSourceGate, PROTOTYPE_DATA_NOTE } from "@/components/MedicationSourceGate";
+import { demoAccess, demoMedicationClientIds, loadDemoClientEmar } from "@/lib/medicationDemoStore";
+import { currentOutcome } from "@/lib/medicationRules";
+import { doseState } from "@/lib/emarPresentation";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
-import { SITE_BY_ID, STAFF_BY_ID } from "@/lib/demoDataRegistry";
+import { SITE_BY_ID } from "@/lib/demoDataRegistry";
 import { useRole } from "@/hooks/useRole";
-import { visitsStore } from "@/lib/visitsStore";
 
-const NONE = "__none";
-const dt = (iso?: string | null) => iso ? new Date(iso).toLocaleString("en-IE", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
-const localInput = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
-const clientName = (id: string) => serviceUsersStore.getById(id)?.name ?? id;
-const staffName = (id?: string | null) => id ? STAFF_BY_ID[id as keyof typeof STAFF_BY_ID]?.name ?? id : "—";
+const today = () => new Date().toISOString().slice(0, 10);
 
-type InstructionForm = { name: string; strength: string; dose: string; route: string; frequency: string; scheduledTimes: string; regularity: "regular" | "prn"; supportLevel: "prompt" | "assist" | "administer"; startDate: string; endDate: string; sourceDocument: string; providerInstructions: string };
-const blank: InstructionForm = { name: "", strength: "", dose: "", route: "Oral", frequency: "", scheduledTimes: "", regularity: "regular", supportLevel: "prompt", startDate: new Date().toISOString().slice(0, 10), endDate: "", sourceDocument: "", providerInstructions: "" };
+function Overview() {
+  const role = useRole();
+  const [q, setQ] = useState("");
+  const rows = useMemo(() => {
+    const access = demoAccess(role);
+    return demoMedicationClientIds(access.site_ids).map((id) => {
+      const client = serviceUsersStore.getById(id);
+      if (!client || !access.site_ids.includes(client.siteId)) return null;
+      const emar = loadDemoClientEmar(id);
+      const todays = emar.tasks.filter((t) => t.scheduled_at.slice(0, 10) === today());
+      const states = todays.map((t) => doseState(currentOutcome(emar.outcomes, t.id)?.outcome, t.scheduled_at, t.documentation_due_at));
+      return {
+        id, name: client.name, area: SITE_BY_ID[client.siteId as keyof typeof SITE_BY_ID]?.name ?? "",
+        meds: emar.medications.filter((m) => m.medication.status !== "stopped").length,
+        due: todays.length, done: states.filter((s) => s !== "due" && s !== "outstanding").length,
+        refused: states.filter((s) => s === "refused" || s === "not_done").length,
+        openExceptions: emar.exceptions.filter((e) => e.status !== "resolved"),
+        drafts: emar.medications.filter((m) => m.versions.some((v) => v.verification_status === "draft")).length,
+      };
+    }).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => b.openExceptions.length - a.openExceptions.length || a.name.localeCompare(b.name));
+  }, [role]);
+  const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
+  const totals = rows.reduce((t, r) => ({ due: t.due + r.due, done: t.done + r.done, refused: t.refused + r.refused, exc: t.exc + r.openExceptions.length, drafts: t.drafts + r.drafts }), { due: 0, done: 0, refused: 0, exc: 0, drafts: 0 });
+  const tiles = [["Doses due today", totals.due], ["Recorded", totals.done], ["Refused / not done", totals.refused], ["Open exceptions", totals.exc], ["Awaiting verification", totals.drafts]] as const;
 
-function InstructionEditor({ medication, version, clientId, siteId, onSaved }: { medication?: Medication; version?: MedicationInstructionVersion; clientId: string; siteId: string; onSaved: () => Promise<void> }) {
-  const { store } = useMedicationSource();
-  const [open, setOpen] = useState(false); const [form, setForm] = useState<InstructionForm>(blank); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
-  const start = () => { setForm(version ? { name: medication!.name, strength: medication!.strength, dose: version.dose, route: version.route, frequency: version.frequency, scheduledTimes: version.scheduled_times.join(", "), regularity: version.regularity, supportLevel: version.support_level, startDate: version.start_date, endDate: version.end_date ?? "", sourceDocument: version.source_document, providerInstructions: version.provider_instructions } : blank); setOpen(true); };
-  const set = <K extends keyof InstructionForm>(key: K, value: InstructionForm[K]) => setForm((f) => ({ ...f, [key]: value }));
-  const save = async () => { setBusy(true); setError(""); try { const input = { ...form, scheduledTimes: form.scheduledTimes.split(",").map((x) => x.trim()).filter(Boolean), endDate: form.endDate || null }; if (medication) await store.updateInstruction({ ...input, medicationId: medication.id }); else await store.createInstruction({ ...input, clientId, siteId }); setOpen(false); await onSaved(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save instruction."); } finally { setBusy(false); } };
-  return <div className="mt-3">{!open ? <Button variant="outline" onClick={start}>{medication ? "Create new draft version" : "Add medication instruction"}</Button> : <div className="space-y-3 rounded-md border p-4"><h3 className="text-lg font-bold">{medication ? `New draft based on version ${version?.version_number}` : "New medication instruction"}</h3><p className="text-sm">Enter only provider-approved source information. AI is never used here. A separate authorised person must verify before activation.</p><div className="grid gap-3 md:grid-cols-2">{([ ["name","Medication name"],["strength","Strength"],["dose","Approved dose"],["route","Route"],["frequency","Frequency"],["scheduledTimes","Scheduled times (comma separated)"],["startDate","Start date"],["endDate","End date (optional)"],["sourceDocument","Approved source documentation"] ] as const).map(([key,label]) => <Label key={key}>{label}<Input type={key.includes("Date") ? "date" : "text"} value={form[key]} onChange={(e) => set(key, e.target.value)} /></Label>)}<Label>Regular or PRN<Select value={form.regularity} onValueChange={(v) => set("regularity", v as "regular" | "prn")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="regular">Regular</SelectItem><SelectItem value="prn">PRN</SelectItem></SelectContent></Select></Label><Label>Support type<Select value={form.supportLevel} onValueChange={(v) => set("supportLevel", v as InstructionForm["supportLevel"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="prompt">Prompt</SelectItem><SelectItem value="assist">Assist</SelectItem><SelectItem value="administer">Administer</SelectItem></SelectContent></Select></Label></div><Label>Provider-approved instructions<Textarea value={form.providerInstructions} onChange={(e) => set("providerInstructions", e.target.value)} /></Label>{error && <p role="alert" className="text-destructive">{error}</p>}<div className="flex gap-2"><Button disabled={busy} onClick={save}>{busy ? "Saving draft…" : "Save draft"}</Button><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button></div></div>}</div>;
+  return <div className="space-y-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">{tiles.map(([label, n]) => <div key={label} className="rounded-lg border bg-card p-4"><p className="text-2xl font-bold">{n}</p><p className="text-sm text-muted-foreground">{label}</p></div>)}</div>
+    <div className="relative max-w-sm"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input aria-label="Search clients" placeholder="Search clients" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+    {!shown.length && <p className="text-muted-foreground">No clients with medication support in your service areas.</p>}
+    <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{shown.map((r) => <li key={r.id}>
+      <Link to={`/app/visits/medication/${r.id}`} className="group flex h-full items-start gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Pill className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{r.name}</p>
+          <p className="text-sm text-muted-foreground">{r.area} · {r.meds} medicine{r.meds === 1 ? "" : "s"}</p>
+          <p className="mt-2 text-sm">Today: {r.done} of {r.due} recorded{r.refused ? <span className="text-destructive"> · {r.refused} refused/not done</span> : null}</p>
+          {r.openExceptions.length > 0 && <p className="mt-1 flex items-center gap-1 text-sm font-medium text-destructive"><AlertTriangle className="h-4 w-4" aria-hidden="true" />{r.openExceptions.length} open exception{r.openExceptions.length === 1 ? "" : "s"}</p>}
+          {r.drafts > 0 && <p className="mt-1 text-sm text-muted-foreground">{r.drafts} change{r.drafts === 1 ? "" : "s"} awaiting verification</p>}
+        </div>
+        <ChevronRight className="mt-1 h-5 w-5 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
+      </Link>
+    </li>)}</ul>
+  </div>;
 }
 
-function Oversight() {
-  const { store } = useMedicationSource();
-  const role = useRole(); const [data, setData] = useState<MedicationOversightData>(); const [error, setError] = useState(""); const [busy, setBusy] = useState(""); const [text, setText] = useState<Record<string, string>>({}); const [filters, setFilters] = useState({ clientId: NONE, siteId: NONE }); const [schedule, setSchedule] = useState<Record<string, { visitId: string; at: string; due: string }>>({});
-  const load = useCallback(async () => { setError(""); try { setData(await store.loadOversight({ clientId: filters.clientId === NONE ? undefined : filters.clientId, siteId: filters.siteId === NONE ? undefined : filters.siteId })); } catch (e) { setError(e instanceof Error ? e.message : "Could not load medication oversight."); } }, [filters]);
-  useEffect(() => { load(); }, [load]);
-  const act = async (key: string, fn: () => Promise<unknown>) => { setBusy(key); setError(""); try { await fn(); await load(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(""); } };
-  if (!data && !error) return <p>Loading medication oversight…</p>;
-  if (error && !data) return <div role="alert" className="space-y-3"><h2 className="text-lg font-semibold">Medication access unavailable</h2><p className="text-destructive">{error}</p><p className="text-sm text-muted-foreground">Your signed-in LogUp account determines access. Selecting Admin in the demo does not grant medication permissions.</p><Button variant="outline" onClick={load}>Check access again</Button></div>;
-  if (!data) return null;
-  const taskById = new Map(data.tasks.map((t) => [t.id, t]));
-  const syncVisits = () => act("sync", async () => { const visits = visitsStore.getState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && data.access.site_ids.includes(v.serviceAreaId ?? "")); for (const v of visits.slice(0, 100)) await store.syncVisit({ visitId: v.id, clientId: v.clientId, siteId: v.serviceAreaId!, assignedStaffIds: v.staffIds, scheduledStart: v.scheduledStart, scheduledEnd: v.scheduledEnd }); });
-  return <div className="space-y-5"><div className="rounded-md border border-warning bg-warning/10 p-4 text-sm">{CONTROLLED_TEST_NOTICE}</div><div className="flex flex-wrap gap-3"><Select value={filters.siteId} onValueChange={(v) => setFilters((f) => ({ ...f, siteId: v }))}><SelectTrigger className="w-56"><SelectValue placeholder="All service areas" /></SelectTrigger><SelectContent><SelectItem value={NONE}>All service areas</SelectItem>{data.access.site_ids.map((id) => <SelectItem key={id} value={id}>{SITE_BY_ID[id as keyof typeof SITE_BY_ID]?.name ?? id}</SelectItem>)}</SelectContent></Select><Select value={filters.clientId} onValueChange={(v) => setFilters((f) => ({ ...f, clientId: v }))}><SelectTrigger className="w-56"><SelectValue placeholder="All clients" /></SelectTrigger><SelectContent><SelectItem value={NONE}>All clients</SelectItem>{serviceUsersStore.getState().users.filter((u) => data.access.site_ids.includes(u.siteId)).map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={load}><RefreshCw />Refresh</Button><Button variant="outline" disabled={busy === "sync"} onClick={syncVisits}>Sync authorised visit references</Button></div>{error && <p role="alert" className="text-destructive">{error}</p>}
-    <Tabs defaultValue="mar"><TabsList className="h-auto flex-wrap"><TabsTrigger value="mar">MAR records</TabsTrigger><TabsTrigger value="exceptions">Exceptions ({data.exceptions.filter((e) => e.status !== "resolved").length})</TabsTrigger><TabsTrigger value="instructions">Instructions</TabsTrigger><TabsTrigger value="audit">Evidence</TabsTrigger></TabsList>
-      <TabsContent value="mar" className="space-y-3">{!data.tasks.length && <p>No scheduled medication tasks match these filters.</p>}{data.tasks.map((task) => { const outcome = currentOutcome(data.outcomes, task.id); return <article key={task.id} className="rounded-lg border bg-card p-4"><div className="flex flex-wrap justify-between gap-2"><div><h2 className="text-lg font-bold">{clientName(task.client_id)} · {task.medication.name}</h2><p className="text-sm">{task.medication.strength} · {task.instruction.dose} · {task.instruction.route} · instruction v{task.instruction.version_number}</p></div><Pill /></div><dl className="mt-3 grid gap-2 text-sm md:grid-cols-2"><div><dt className="font-semibold">Scheduled task</dt><dd>{dt(task.scheduled_at)} · {task.visit_id}</dd></div><div><dt className="font-semibold">Outcome</dt><dd>{outcome ? OUTCOME_LABELS[outcome.outcome] : Date.parse(task.documentation_due_at) < Date.now() ? "Documentation outstanding — not proof of omission" : "Not yet documented"}</dd></div>{outcome && <><div><dt className="font-semibold">Actual activity / submission</dt><dd>{dt(outcome.event_at)} / {dt(outcome.submitted_at)}</dd></div><div><dt className="font-semibold">Staff / reason</dt><dd>{staffName(outcome.staff_id)} · {outcome.reason || "No additional observation"}</dd></div></>}</dl>{outcome && <p className="mt-2 text-xs">Record {outcome.id} · task {task.id} · medication {task.medication_id} · version {task.instruction_version_id}</p>}</article>; })}</TabsContent>
-      <TabsContent value="exceptions" className="space-y-3">{!data.exceptions.length && <p>No medication exceptions match these filters.</p>}{data.exceptions.map((e) => { const task = taskById.get(e.task_id); return <article key={e.id} className="rounded-lg border bg-card p-4"><h2 className="flex items-center gap-2 text-lg font-bold"><AlertTriangle />{e.kind.replace(/_/g, " ")} · {e.status}</h2><p className="mt-1">{clientName(e.client_id)} · {task?.medication.name ?? e.task_id} · created {dt(e.created_at)}</p>{e.kind === "documentation_missing" && <p className="mt-2 text-sm">The documentation deadline passed. This does not establish that medication was missed.</p>}{e.notifications?.map((n) => <p key={n.id} className="mt-2 rounded-md bg-secondary p-2 text-sm">{n.detail}</p>)}<p className="mt-2 text-sm">Acknowledged by {staffName(e.acknowledged_by_staff_id)} at {dt(e.acknowledged_at)}</p>{e.follow_up && <p className="mt-2 text-sm">Follow-up: {e.follow_up} · {staffName(e.follow_up_by_staff_id)} · {dt(e.follow_up_at)}</p>}{e.resolution && <p className="mt-2 text-sm">Resolution: {e.resolution}</p>}<Label className="mt-3 block">Follow-up / resolution<Textarea value={text[e.id] ?? ""} onChange={(ev) => setText((all) => ({ ...all, [e.id]: ev.target.value }))} /></Label><div className="mt-3 flex flex-wrap gap-2">{e.status === "open" && <Button disabled={busy === e.id} onClick={() => act(e.id, () => store.exception("acknowledge", e.id))}><Check />Acknowledge</Button>}{e.status !== "resolved" && <Button variant="outline" disabled={busy === e.id || e.status === "open" || !(text[e.id] ?? "").trim()} onClick={() => act(e.id, () => store.exception("followUp", e.id, text[e.id]))}>Record follow-up</Button>}{e.status !== "resolved" && <Button variant="outline" disabled={busy === e.id || !canResolveException(e) || !(text[e.id] ?? "").trim()} onClick={() => act(e.id, () => store.exception("resolve", e.id, text[e.id]))}>Resolve</Button>}</div></article>; })}</TabsContent>
-      <TabsContent value="instructions" className="space-y-4">{data.access.can_configure && <InstructionEditor clientId={filters.clientId === NONE ? "PS-002" : filters.clientId} siteId={filters.siteId === NONE ? data.access.site_ids[0] : filters.siteId} onSaved={load} />}{data.medications.map((med) => { const versions = data.versions.filter((v) => v.medication_id === med.id); return <article key={med.id} className="rounded-lg border bg-card p-4"><h2 className="text-xl font-bold">{med.name} · {med.strength}</h2><p>{clientName(med.client_id)} · {SITE_BY_ID[med.site_id as keyof typeof SITE_BY_ID]?.name ?? med.site_id} · {med.status}</p>{data.access.can_configure && <InstructionEditor medication={med} version={versions.find((v) => v.id === med.current_version_id)} clientId={med.client_id} siteId={med.site_id} onSaved={load} />}<div className="mt-4 space-y-3">{versions.map((v) => <div key={v.id} className="rounded-md border p-3"><h3 className="font-bold">Version {v.version_number} · {v.verification_status}{v.id === med.current_version_id ? " · current" : ""}</h3><p className="text-sm">{v.dose} · {v.route} · {v.frequency} · {v.support_level} · {v.regularity}</p><p className="text-sm">Source: {v.source_document} · effective {dt(v.effective_from)} · verified by {staffName(v.verified_by_staff_id)}</p>{data.access.can_configure && <div className="mt-2 flex flex-wrap gap-2">{v.verification_status === "draft" && <Button size="sm" onClick={() => act(v.id, () => store.setInstructionStatus(med.id, v.id, "verified"))}>Verify</Button>}{v.verification_status === "verified" && <Button size="sm" onClick={() => act(v.id, () => store.setInstructionStatus(med.id, v.id, "active"))}>Activate</Button>}{v.id === med.current_version_id && v.verification_status === "active" && <><Button size="sm" variant="outline" onClick={() => act(v.id, () => store.setInstructionStatus(med.id, v.id, "suspended"))}>Suspend</Button><Button size="sm" variant="outline" onClick={() => act(v.id, () => store.setInstructionStatus(med.id, v.id, "discontinued"))}>Discontinue</Button></>}</div>}{v.verification_status === "active" && data.access.can_configure && <div className="mt-3 grid gap-2 md:grid-cols-4"><Input placeholder="Visit ID" value={schedule[v.id]?.visitId ?? ""} onChange={(e) => setSchedule((s) => ({ ...s, [v.id]: { visitId: e.target.value, at: s[v.id]?.at ?? localInput(), due: s[v.id]?.due ?? localInput() } }))} /><Input type="datetime-local" value={schedule[v.id]?.at ?? ""} onChange={(e) => setSchedule((s) => ({ ...s, [v.id]: { visitId: s[v.id]?.visitId ?? "", at: e.target.value, due: s[v.id]?.due ?? localInput() } }))} /><Input type="datetime-local" value={schedule[v.id]?.due ?? ""} onChange={(e) => setSchedule((s) => ({ ...s, [v.id]: { visitId: s[v.id]?.visitId ?? "", at: s[v.id]?.at ?? localInput(), due: e.target.value } }))} /><Button disabled={!schedule[v.id]?.visitId || busy === `task-${v.id}`} onClick={() => act(`task-${v.id}`, () => store.createTask({ medicationId: med.id, versionId: v.id, visitId: schedule[v.id].visitId, scheduledAt: new Date(schedule[v.id].at).toISOString(), documentationDueAt: new Date(schedule[v.id].due).toISOString() }))}>Schedule task</Button></div>}</div>)}</div></article>; })}</TabsContent>
-      <TabsContent value="audit" className="space-y-2">{data.audit.map((a) => <div key={a.id} className="rounded-md border p-3 text-sm"><p className="font-semibold">{a.action.replace(/_/g, " ")} · {a.entity_type} {a.entity_id}</p><p>{a.client_id ? `${clientName(a.client_id)} · ` : ""}{staffName(a.actor_staff_id)} · {dt(a.created_at)}</p><details><summary>Trace details</summary><pre className="mt-2 whitespace-pre-wrap break-words text-xs">{JSON.stringify(a.details, null, 2)}</pre></details></div>)}</TabsContent>
-    </Tabs></div>;
+export default function MedicationOversight() {
+  return <section className="space-y-5 p-6 md:p-8">
+    <div><h1 className="text-3xl font-heading font-bold">eMAR</h1><p className="mt-2 text-muted-foreground">Choose a client to see their medicines, what was given, when and by whom.</p></div>
+    <MedicationSourceGate><Overview /></MedicationSourceGate>
+    <p className="text-xs text-muted-foreground">{PROTOTYPE_DATA_NOTE}</p>
+  </section>;
 }
-
-export default function MedicationOversight() { const role = useRole(); return <section className="space-y-5 p-6 md:p-8"><div><h1 className="text-3xl font-heading font-bold">Medication & care oversight</h1><p className="mt-2 text-muted-foreground">Trace each outcome to its client, visit, authorised instruction and reviewer. No AI selects outcomes or closes exceptions.</p></div><MedicationSourceGate><Oversight key={role.presetId} /></MedicationSourceGate></section>; }

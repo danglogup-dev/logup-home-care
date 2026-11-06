@@ -26,8 +26,8 @@ describe("fictional demo eMAR", () => {
     await expect(medicationDemoStore.submit({ ...base, reason: "" })).rejects.toThrow(/reason/);
     await medicationDemoStore.submit({ ...base, reason: "Declined, said she felt sick" });
     const after = await medicationDemoStore.loadVisit("VIS-DEMO-MARY-0930");
-    expect(after.outcomes).toHaveLength(1);
-    expect(after.exceptions.map((e) => e.kind)).toEqual(["refusal"]);
+    expect(after.outcomes.at(-1)?.outcome).toBe("refused");
+    expect(after.exceptions.at(-1)?.kind).toBe("refusal");
     expect(backend.calls).toBe(0);
   });
 

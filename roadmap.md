@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] eMAR authentication UI: main LogUp sign-in now authenticates with the existing client; medication-only credential forms removed from oversight and visits. Demo switcher explicitly labels fictional perspectives and never grants Cloud access. Desktop/mobile sign-out ends the shared session. All 92 tests pass; browser verified no internal login form, central return destination, manager demo access blocked, refresh/navigation safe and frontline oversight denial with no runtime errors. No medication records or database permissions changed.
+- [ ] Authenticated eMAR acceptance: blocked by verified zero registered auth users and zero trusted staff mappings; session mint failed for that reason. Authorised Admin/manager/frontline medication readback cannot be tested until an account signs in and organisation-approved staff access is provisioned. No identity or elevated permissions were invented.
+
 - [x] eMAR visibility: existing medication oversight now has a direct eMAR menu entry, retaining existing role permissions and release flag; browser verified opening from a client record, five medication safety tests pass and preview build OK. Medication records still require authenticated staff access.
 
 - [x] Integrated mobile visit + controlled eMAR: one phone workflow with Today/Upcoming/Completed, independent care/task reasons, medication outcomes/corrections, notes and final review; verified/versioned instructions, MAR/exception/audit oversight, scoped backend access and offline save prevention. All 83 tests and typecheck pass; signed-out carer/manager screens checked without browser errors or 390px overflow. Rolled-back database tests verified refusal exception status, correction lineage and idempotent retries.

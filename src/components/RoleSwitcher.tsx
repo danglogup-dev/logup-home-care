@@ -34,7 +34,7 @@ export function RoleSwitcher() {
           aria-label="Demo role switcher"
         >
           <Icon className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Viewing as</span>
+          <span className="hidden sm:inline">Demo view:</span>
           <span className="font-semibold">{meta.label}</span>
           {isManagerRole(s.role) && s.scope.length > 0 && (
             <span className="hidden md:inline text-[10px] opacity-75 border-l border-current/30 pl-2 ml-1">
@@ -47,7 +47,7 @@ export function RoleSwitcher() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="px-4 py-3 border-b bg-secondary/40">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Demo role switcher</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Switch perspectives to see how access changes.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Fictional perspectives only. This does not change your signed-in account or medication permissions.</p>
         </div>
         <div className="max-h-96 overflow-y-auto p-1">
           {ROLE_PRESETS.map((p) => {

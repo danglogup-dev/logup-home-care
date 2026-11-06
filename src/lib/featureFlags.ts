@@ -8,6 +8,7 @@ export const featureFlags = {
   policies: true,
   workforce: true,
   visits: true,
+  medication: true,
 } as const;
 
 export type FeatureFlag = keyof typeof featureFlags;

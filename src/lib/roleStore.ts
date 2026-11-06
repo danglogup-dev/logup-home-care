@@ -164,6 +164,7 @@ export type ModuleKey =
   | "visits.roster"
   | "visits.today"
   | "visits.hours"
+  | "visits.medication"
   | "family.portal"
   | "incidents.overview"
   | "incidents.board"

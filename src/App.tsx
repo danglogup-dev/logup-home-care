@@ -10,6 +10,7 @@ import VisitDetail from "./pages/visits/VisitDetail";
 import LiveVisits from "./pages/visits/LiveVisits";
 import HoursReport from "./pages/visits/HoursReport";
 import Roster from "./pages/visits/Roster";
+import MedicationOversight from "./pages/visits/MedicationOversight";
 import FamilyPortal from "./pages/family/FamilyPortal";
 import { NotForHomeSupport } from "./components/NotForHomeSupport";
 import Incidents from "./pages/Incidents";

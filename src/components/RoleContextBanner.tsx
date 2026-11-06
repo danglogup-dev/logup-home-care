@@ -50,7 +50,7 @@ export function NoAccessPanel({ moduleLabel, notReleased }: { moduleLabel: strin
       </div>
       <h2 className="font-heading text-lg font-semibold text-foreground">{moduleLabel} isn't part of your access</h2>
       <p className="text-sm text-muted-foreground mt-2">
-        You're signed in as <span className="font-medium text-foreground">{r.displayName}</span> ({r.title}).
+        Your demo perspective is <span className="font-medium text-foreground">{r.displayName}</span> ({r.title}).
         This area is reserved for other roles in the prototype.
       </p>
       <p className="text-[11px] text-muted-foreground mt-4">

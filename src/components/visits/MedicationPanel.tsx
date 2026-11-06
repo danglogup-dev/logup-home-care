@@ -29,7 +29,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
   if (error) return <div role="alert" className="space-y-3 text-base"><p className="text-destructive">{error}</p><Button variant="outline" className="min-h-12" onClick={load}>Try again</Button></div>;
   if (!data?.tasks.length) return expected ? <p className="rounded-md border border-warning bg-warning/10 p-3 text-base">Medication appears in the visit schedule, but no authorised eMAR task is available. Do not use the old visit log as an eMAR; contact a manager.</p> : null;
   const draftFor = (task: MedicationTask): Draft => drafts[task.id] ?? { reason: "", eventAt: localInput(), correctionReason: "", correcting: false };
-  const update = (taskId: string, patch: Partial<Draft>) => setDrafts((all) => ({ ...all, [taskId]: { ...draftFor(all as never), ...patch } }));
+  const update = (taskId: string, patch: Partial<Draft>) => setDrafts((all) => ({ ...all, [taskId]: { ...(all[taskId] ?? { reason: "", eventAt: localInput(), correctionReason: "", correcting: false }), ...patch } }));
   const submit = async (task: MedicationTask) => {
     const draft = draftFor(task); const record = currentOutcome(data.outcomes, task.id);
     const validation = validateOutcome({ support: task.instruction.support_level, canAdminister: data.access.can_administer, outcome: draft.outcome, reason: draft.reason, eventAt: new Date(draft.eventAt).toISOString() });

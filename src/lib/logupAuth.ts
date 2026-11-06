@@ -18,3 +18,12 @@ export async function signOutOfLogUp() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
+/** Plain-language sign-in errors; never hides the real reason. */
+export function signInErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : typeof error === "object" && error && "message" in error ? String((error as { message: unknown }).message) : "";
+  if (/invalid login credentials/i.test(message)) return "That email and password don't match a LogUp account. If you have never been given a LogUp login, use Explore fictional demo instead.";
+  if (/email not confirmed/i.test(message)) return "This account's email address hasn't been confirmed yet. Check your inbox for the confirmation link.";
+  if (/unsupported provider|provider is not enabled/i.test(message)) return "This sign-in method isn't switched on for LogUp yet.";
+  if (/failed to fetch|network/i.test(message)) return "LogUp couldn't be reached. Check your connection and try again.";
+  return message || "Could not sign in to LogUp. Please try again.";
+}

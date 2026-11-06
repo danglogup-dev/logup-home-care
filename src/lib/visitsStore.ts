@@ -362,11 +362,11 @@ export const visitsStore = {
     if (!visit || !visit.staffIds.includes(staffId) || visit.checkInAt || visit.status === "completed" || visit.status === "cancelled") throw new Error("This visit cannot be checked in.");
     patchVisit(id, { checkInAt: nowIso(), checkInLocation: location, checkInByStaffId: staffId, status: "in_progress" });
   },
-  recordTask(id: string, index: number, outcome: TaskOutcome, staffId: StaffId) {
+  recordTask(id: string, index: number, outcome: TaskOutcome, staffId: StaffId, reason?: string) {
     const visit = this.getVisit(id);
     const template = state.templates.find((t) => t.id === visit?.templateId);
     if (!visit || !visit.staffIds.includes(staffId) || visit.status !== "in_progress" || !template?.tasks[index]) throw new Error("Check in before recording tasks.");
-    const record: VisitTaskRecord = { index, task: template.tasks[index], outcome, recordedByStaffId: staffId, recordedAt: nowIso() };
+    const record: VisitTaskRecord = { index, task: template.tasks[index], outcome, reason: reason?.trim() || undefined, recordedByStaffId: staffId, recordedAt: nowIso() };
     patchVisit(id, { taskRecords: [...(visit.taskRecords ?? []), record] });
   },
   recordMedication(id: string, index: number, outcome: MedicationOutcome, reason: string, staffId: StaffId) {

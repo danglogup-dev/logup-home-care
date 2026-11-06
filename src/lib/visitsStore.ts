@@ -57,7 +57,7 @@ export const ORGANISATION_ID = "ORG-LOGUP-HOMECARE";
 export interface CheckLocation { lat: number; lng: number; accuracyM?: number }
 export type TaskOutcome = "done" | "part_completed" | "refused" | "not_needed" | "concern";
 export type MedicationOutcome = "given" | "prompted" | "refused" | "not_available";
-export interface VisitTaskRecord { index: number; task: string; outcome: TaskOutcome; recordedByStaffId: StaffId; recordedAt: string }
+export interface VisitTaskRecord { index: number; task: string; outcome: TaskOutcome; reason?: string; recordedByStaffId: StaffId; recordedAt: string }
 export interface VisitMedicationRecord { index: number; medication: VisitMedication; outcome: MedicationOutcome; reason: string; recordedByStaffId: StaffId; recordedAt: string }
 export interface VisitLog { id: string; recordedByStaffId: StaffId; recordedAt: string; tasks: VisitTaskRecord[]; medications: VisitMedicationRecord[] }
 
@@ -289,9 +289,19 @@ function seedOneOffs(visits: Visit[], from = new Date()): Visit[] {
 // ---------- State + subscribe ----------
 
 interface State { templates: VisitTemplate[]; visits: Visit[] }
-const initialTemplates = seedTemplates();
-const initialVisits = generateVisits(initialTemplates);
-let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs(initialVisits)] };
+const baseTemplates = seedTemplates();
+const initialVisits = generateVisits(baseTemplates);
+const demoDay = new Date(); demoDay.setHours(0, 0, 0, 0);
+const demoTemplates: VisitTemplate[] = [
+  { id: "VT-DEMO-MARY-EMAR", clientId: "PS-002", callType: "morning", name: "Morning support · controlled eMAR demo", daysOfWeek: ALL_DAYS, windowStart: "09:30", windowEnd: "10:15", durationMinutes: 45, carersRequired: 1, active: true, tasks: ["Personal care and wash", "Prepare breakfast", "Encourage fluids"], medications: [{ name: "Authorised medication task", supportLevel: "prompt" }], supportCategories: ["personal_care", "medication_support"] },
+  { id: "VT-DEMO-MARY-NOMED", clientId: "PS-002", callType: "lunch", name: "Lunch call · no medication", daysOfWeek: ALL_DAYS, windowStart: "12:00", windowEnd: "12:30", durationMinutes: 30, carersRequired: 1, active: true, tasks: ["Prepare lunch", "Encourage fluids"], medications: [], supportCategories: ["meal_support"] },
+];
+const demoVisits: Visit[] = demoTemplates.map((template, index): Visit => {
+  const start = at(demoDay, template.windowStart), end = at(demoDay, template.windowStart, template.durationMinutes);
+  return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: "scheduled", organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
+});
+const initialTemplates = [...baseTemplates, ...demoTemplates];
+let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs(initialVisits), ...demoVisits] };
 const appliedScheduleVersions = new Set<string>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());

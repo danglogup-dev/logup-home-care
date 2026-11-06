@@ -1,4 +1,4 @@
-import RoleSwitcher from "@/components/RoleSwitcher";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signOutOfLogUp } from "@/lib/logupAuth";

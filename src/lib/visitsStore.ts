@@ -379,7 +379,7 @@ export const visitsStore = {
     const visit = this.getVisit(id);
     const template = state.templates.find((t) => t.id === visit?.templateId);
     if (!visit || !visit.staffIds.includes(staffId) || !visit.checkInAt || visit.status !== "in_progress") throw new Error("This visit cannot be checked out.");
-    if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i)) || template?.medications.some((_, i) => !visit.medicationRecords?.some((r) => r.index === i))) throw new Error("Record every task and medication before checking out.");
+    if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i))) throw new Error("Record every care activity before checking out. Medication records are saved separately.");
     const recordedAt = nowIso();
     patchVisit(id, { checkOutAt: recordedAt, status: "completed", log: { id: crypto.randomUUID(), recordedByStaffId: staffId, recordedAt, tasks: [...(visit.taskRecords ?? [])], medications: [...(visit.medicationRecords ?? [])] } });
   },

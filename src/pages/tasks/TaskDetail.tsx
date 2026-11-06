@@ -324,7 +324,7 @@ export default function TaskDetail() {
           <Label>Assignee</Label>
           <Select value={newAssignee} onValueChange={setNewAssignee}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{med ? followUpAssignees(t.siteId).map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.roleLabel}</SelectItem>) : STAFF.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.role}</SelectItem>)}</SelectContent>
+            <SelectContent>{roleActs ? followUpAssignees(t.siteId).map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.roleLabel}</SelectItem>) : STAFF.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.role}</SelectItem>)}</SelectContent>
           </Select>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReassignOpen(false)}>Cancel</Button>

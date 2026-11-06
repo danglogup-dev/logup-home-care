@@ -267,7 +267,7 @@ export default function TaskDetail() {
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Complete task</DialogTitle></DialogHeader>
-          <Label>Completion note (optional)</Label>
+          <Label>{med ? "Your review decision (required)" : "Completion note (optional)"}</Label>
           <Textarea value={completionNote} onChange={e => setCompletionNote(e.target.value)} placeholder="What was done? Any observations?" />
           <p className="text-xs text-muted-foreground">Recorded as completed by {meName} just now.</p>
           <DialogFooter>

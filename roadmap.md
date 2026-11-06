@@ -38,3 +38,7 @@
 - [x] Phase 4A: assign carer shows only free carers (unavailable optional with reason + explicit override), live recalculation from form values, hybrid 15-min/typed time picker with slot availability, end time shown.
 - [x] Phase 5B: visit required competencies (green ok, amber warns, missing/expired excluded), support categories, structured client carer preference (preferred ranks, required filters, intimate-care-only scope, context required); enforced in assignment. No travel logic.
 - [x] Phase 5C: grouped Assign carer list (Available & suitable / Other available / excluded with grouped reasons), assignment summary, operational overrides manager/admin only with reason + audit; competency and required preference always block.
+
+- [x] Demo tidy-up: Aisling as sign-in carer, role switch redirect, no Visit History sign-in error
+- [x] Mobile care plan in visit; simulated voice note, missing-info questions
+- [ ] Next (awaiting pick): simulated AI brief, family summaries, Operational Home

@@ -1,5 +1,6 @@
 import { isManagerRole } from "@/lib/roleStore";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ShieldCheck, ChevronDown, Eye, Users, Briefcase, HardHat, Building2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ const ROLE_META: Record<Role, { label: string; icon: typeof ShieldCheck; tone: s
 export function RoleSwitcher() {
   const [s, setS] = useState<RoleState>(roleStore.get());
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => roleStore.subscribe(setS), []);
   const meta = ROLE_META[s.role];
   const Icon = meta.icon;
@@ -56,7 +58,7 @@ export function RoleSwitcher() {
             return (
               <button
                 key={p.id}
-                onClick={() => { roleStore.setPreset(p.id); setOpen(false); }}
+                onClick={() => { roleStore.setPreset(p.id); setOpen(false); navigate(roleStore.get().role === "family" ? "/family" : "/app", { replace: true }); }}
                 className={cn(
                   "w-full text-left rounded-md px-3 py-2 hover:bg-secondary transition-colors flex items-start gap-2.5",
                   active && "bg-primary/5 ring-1 ring-primary/20",

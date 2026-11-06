@@ -13,7 +13,7 @@ export const SIGN_IN_VIEWS = [
   { presetId: "admin", label: "Admin" },
   { presetId: "manager-multi", label: "Manager" },
   { presetId: "coordinator", label: "Coordinator · East Cork" },
-  { presetId: "keyworker-emma", label: "Carer · Emma Ryan" },
+  { presetId: "keyworker-aisling", label: "Carer · Aisling Doherty" },
   { presetId: "family-patrick", label: "Family · Mary Murphy" },
 ] as const;
 

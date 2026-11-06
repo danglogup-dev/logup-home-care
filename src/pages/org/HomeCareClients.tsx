@@ -305,7 +305,7 @@ function HistoryTab({ u, visits, events }: { u: ServiceUser; visits: Visit[]; ev
   const ids = visits.map((v) => v.id).join();
   useEffect(() => {
     if (!visits.length) return;
-    visitNotesStore.loadForClient(u.id, visits.map((v) => v.id), role).then(() => setNoteError(""), () => setNoteError("Visit notes need you to be signed in to LogUp care AI."));
+    visitNotesStore.loadForClient(u.id, visits.map((v) => v.id), role).then(() => setNoteError(""), () => setNoteError(""));
   }, [u.id, ids, role.staffId]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Card className="mt-4">

@@ -18,6 +18,8 @@ import {
 } from "@/lib/notifications";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { useRole } from "@/hooks/useRole";
+import { signOutOfLogUp } from "@/lib/logupAuth";
+import { toast } from "sonner";
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -144,13 +146,9 @@ const AppLayout = () => {
                       <Settings className="h-4 w-4 text-muted-foreground" />
                       Team & sites
                     </Link>
-                    <Link
-                      to="/signin"
-                      className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <LogOut className="h-4 w-4 text-muted-foreground" />
-                      Sign out
-                    </Link>
+                    <Button variant="ghost" className="w-full justify-start" onClick={async () => { try { await signOutOfLogUp(); navigate("/signin"); } catch { toast.error("Could not sign out. Please try again."); } }}>
+                      <LogOut className="h-4 w-4 text-muted-foreground" /> Sign out
+                    </Button>
                   </div>
                 </PopoverContent>
               </Popover>

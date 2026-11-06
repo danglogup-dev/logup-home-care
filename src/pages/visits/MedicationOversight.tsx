@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CareAiSignIn } from "@/components/visits/CareAiSignIn";
+import { LogUpSessionGate } from "@/components/LogUpSessionGate";
 import { medicationStore, type MedicationOversightData, type Medication, type MedicationInstructionVersion } from "@/lib/medicationStore";
 import { canResolveException, CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS } from "@/lib/medicationRules";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
@@ -37,7 +37,7 @@ function Oversight() {
   useEffect(() => { load(); }, [load]);
   const act = async (key: string, fn: () => Promise<unknown>) => { setBusy(key); setError(""); try { await fn(); await load(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(""); } };
   if (!data && !error) return <p>Loading medication oversight…</p>;
-  if (error && !data) return <div role="alert" className="space-y-3"><p className="text-destructive">{error}</p><Button variant="outline" onClick={load}>Try again</Button></div>;
+  if (error && !data) return <div role="alert" className="space-y-3"><h2 className="text-lg font-semibold">Medication access unavailable</h2><p className="text-destructive">{error}</p><p className="text-sm text-muted-foreground">Your signed-in LogUp account determines access. Selecting Admin in the demo does not grant medication permissions.</p><Button variant="outline" onClick={load}>Check access again</Button></div>;
   if (!data) return null;
   const taskById = new Map(data.tasks.map((t) => [t.id, t]));
   const syncVisits = () => act("sync", async () => { const visits = visitsStore.getState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && data.access.site_ids.includes(v.serviceAreaId ?? "")); for (const v of visits.slice(0, 100)) await medicationStore.syncVisit({ visitId: v.id, clientId: v.clientId, siteId: v.serviceAreaId!, assignedStaffIds: v.staffIds, scheduledStart: v.scheduledStart, scheduledEnd: v.scheduledEnd }); });
@@ -50,4 +50,4 @@ function Oversight() {
     </Tabs></div>;
 }
 
-export default function MedicationOversight() { return <section className="space-y-5 p-6 md:p-8"><div><h1 className="text-3xl font-heading font-bold">Medication & care oversight</h1><p className="mt-2 text-muted-foreground">Trace each outcome to its client, visit, authorised instruction and reviewer. No AI selects outcomes or closes exceptions.</p></div><CareAiSignIn title="Sign in for medication oversight"><Oversight /></CareAiSignIn></section>; }
+export default function MedicationOversight() { const role = useRole(); return <section className="space-y-5 p-6 md:p-8"><div><h1 className="text-3xl font-heading font-bold">Medication & care oversight</h1><p className="mt-2 text-muted-foreground">Trace each outcome to its client, visit, authorised instruction and reviewer. No AI selects outcomes or closes exceptions.</p></div><LogUpSessionGate><Oversight key={role.presetId} /></LogUpSessionGate></section>; }

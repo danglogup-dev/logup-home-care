@@ -5,15 +5,28 @@ import LogUpLogo from "@/components/LogUpLogo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { lovable } from "@/integrations/lovable/index";
+import { useLogUpSession } from "@/hooks/useLogUpSession";
+import { signInToLogUp, signInReturnPath } from "@/lib/logupAuth";
+import { useEffect } from "react";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { loading, session } = useLogUpSession();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!loading && session) navigate(signInReturnPath(), { replace: true });
+  }, [loading, session, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/app");
+    setBusy(true); setError("");
+    try { await signInToLogUp(email, password); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not sign in to LogUp."); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -27,7 +40,7 @@ const SignIn = () => {
         <div className="text-center mb-10 flex flex-col items-center">
           <LogUpLogo variant="horizontal" size="lg" className="w-[160px]" />
           <p className="text-muted-foreground mt-3 text-sm">
-            Inspection-ready event &amp; evidence management
+            Home care workspace
           </p>
         </div>
 
@@ -40,6 +53,8 @@ const SignIn = () => {
               <Input
                 id="email"
                 type="email"
+                required
+                autoComplete="email"
                 placeholder="you@facility.ie"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -51,24 +66,33 @@ const SignIn = () => {
               <Input
                 id="password"
                 type="password"
+                required
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11 rounded-xl bg-background border-input"
               />
             </div>
-            <Button type="submit" className="w-full h-11 rounded-xl font-semibold text-sm">
-              Sign in
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" disabled={busy || loading} className="w-full h-11 rounded-xl font-semibold text-sm">
+              {busy ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="text-center text-xs text-muted-foreground mt-5">
-            Forgot your password?{" "}
-            <span className="text-primary cursor-pointer hover:underline">Reset it</span>
-          </p>
+          <Button variant="outline" disabled={busy || loading} className="mt-4 w-full min-h-11" onClick={async () => {
+            setBusy(true); setError("");
+            try {
+              const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+              if (result.error) throw result.error;
+            } catch (e) { setError(e instanceof Error ? e.message : "Could not sign in."); }
+            finally { setBusy(false); }
+          }}>Continue with Google</Button>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Use your existing LogUp account. Staff access is assigned by your organisation.</p>
+          <Button variant="ghost" className="mt-4 w-full min-h-11" onClick={() => navigate("/app")}>Explore fictional demo</Button>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Protected by LogUp · HIQA-aligned event management
+          LogUp Home Care
         </p>
       </motion.div>
     </div>

@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CareAiSignIn } from "./CareAiSignIn";
+import { LogUpSessionGate } from "@/components/LogUpSessionGate";
 import { medicationStore, type MedicationTask, type VisitMedicationData } from "@/lib/medicationStore";
 import { CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS, permittedOutcomes, reasonRequired, validateOutcome, type MedicationOutcome } from "@/lib/medicationRules";
 import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
@@ -77,5 +77,5 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
 
 export function MedicationPanel(props: { visitId: string; expected: boolean; editable: boolean; onChange?: (data: VisitMedicationData) => void }) {
   if (!props.expected) return null;
-  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><CareAiSignIn title="Sign in for authorised medication records"><MedicationRecords {...props} /></CareAiSignIn></section>;
+  return <section className="space-y-4 border-t pt-5" aria-labelledby="medication-heading"><h2 id="medication-heading" className="text-2xl font-heading font-bold">Medication</h2><LogUpSessionGate><MedicationRecords key={props.visitId} {...props} /></LogUpSessionGate></section>;
 }

@@ -10,7 +10,7 @@ export function CareVoiceRecorder({ onTranscript, onRecorded, disabled = false }
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; clearInterval(timer.current); const current = recorder.current; recorder.current = undefined; current?.stop().catch(() => {}); }; }, []);
   async function stop() {
     const current = recorder.current; if (!current) return; recorder.current = undefined; clearInterval(timer.current); setRecording(false); setBusy(true);
-    try { const text = await transcribeCareAudio(await current.stop()); if (mounted.current) onTranscript(text); } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Could not transcribe."); } finally { if (mounted.current) setBusy(false); }
+    try { const file = await current.stop(); onRecorded?.(file); const text = await transcribeCareAudio(file); if (mounted.current) onTranscript(text); } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Could not transcribe."); } finally { if (mounted.current) setBusy(false); }
   }
   async function start() {
     setBusy(true); setError("");

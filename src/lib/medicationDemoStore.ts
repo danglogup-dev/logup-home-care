@@ -100,6 +100,7 @@ function seed() {
     const t = new Date(Date.parse(out.event_at) + 3 * 3600_000).toISOString();
     return { ...e, created_at: out.event_at, status: "resolved", acknowledged_by_staff_id: "STAFF-DANIEL", acknowledged_at: t, follow_up: "Spoke with client and family; GP informed where needed.", follow_up_by_staff_id: "STAFF-DANIEL", follow_up_at: t, resolution: "No harm. Followed medication policy.", resolved_by_staff_id: "STAFF-DANIEL", resolved_at: t };
   });
+  seeding = false;
 }
 
 function logAudit(clientId: string, siteId: string, action: string, entityId: string, details: Record<string, unknown>) {

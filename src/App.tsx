@@ -11,6 +11,7 @@ import LiveVisits from "./pages/visits/LiveVisits";
 import HoursReport from "./pages/visits/HoursReport";
 import Roster from "./pages/visits/Roster";
 import MedicationOversight from "./pages/visits/MedicationOversight";
+import EmarClient from "./pages/visits/EmarClient";
 import FamilyPortal from "./pages/family/FamilyPortal";
 import { NotForHomeSupport } from "./components/NotForHomeSupport";
 import Incidents from "./pages/Incidents";
@@ -105,6 +106,7 @@ const App = () => (
             <Route path="visits/roster" element={<Guarded moduleKey="visits.roster" moduleLabel="Roster"><Roster /></Guarded>} />
             <Route path="visits/live" element={<Guarded moduleKey="visits.live" moduleLabel="Live visits"><LiveVisits /></Guarded>} />
             <Route path="visits/hours" element={<Guarded moduleKey="visits.hours" moduleLabel="Hours vs approved"><HoursReport /></Guarded>} />
+            <Route path="visits/medication/:clientId" element={<Guarded moduleKey="visits.medication" moduleLabel="eMAR"><EmarClient /></Guarded>} />
             <Route path="visits/medication" element={<Guarded moduleKey="visits.medication" moduleLabel="Medication oversight"><MedicationOversight /></Guarded>} />
 
             {/* Incidents module */}

@@ -185,6 +185,9 @@ const at = (day: Date, hhmm: string, addMin = 0) => {
  * only when free, so some visits are left unassigned for coordinators — the real
  * roster never auto-assigns. Past days of the current week are backfilled as delivered.
  */
+/** Visits per day for the fictional demo persona (including Mary's two demo calls). */
+export const DEMO_DAY_LIMITS: Partial<Record<StaffId, number>> = { "STAFF-AISLING": 6 };
+
 function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutcomes = true, existing: readonly Visit[] = []): Visit[] {
   const out: Visit[] = [];
   const today = new Date(from); today.setHours(0, 0, 0, 0);
@@ -192,7 +195,14 @@ function generateVisits(templates: VisitTemplate[], from = new Date(), demoOutco
   const now = from.getTime();
   const clientSite = new Map(serviceUsersStore.getState().users.map((p) => [p.id, p] as const));
   const nextWeek = new Date(startOfWeek(today)); nextWeek.setDate(nextWeek.getDate() + 7);
-  const busy = (staffId: StaffId, s: number, e: number) => [...existing, ...out].some((v) => v.status !== "cancelled" && v.staffIds.includes(staffId) && Date.parse(v.scheduledStart) < e && Date.parse(v.scheduledEnd) > s);
+  // Demo persona Aisling gets a plausible day: travel gaps and a daily cap (demo seeding only).
+  const pad = (staffId: StaffId) => (DEMO_DAY_LIMITS[staffId] ? 15 * 60000 : 0);
+  const busy = (staffId: StaffId, s: number, e: number) => {
+    const all = [...existing, ...out].filter((v) => v.status !== "cancelled" && v.staffIds.includes(staffId));
+    const cap = DEMO_DAY_LIMITS[staffId];
+    if (cap && all.filter((v) => new Date(v.scheduledStart).toDateString() === new Date(s).toDateString()).length >= cap) return true;
+    return all.some((v) => Date.parse(v.scheduledStart) < e + pad(staffId) && Date.parse(v.scheduledEnd) + pad(staffId) > s);
+  };
   let n = 0;
   const totalDays = Math.round((today.getTime() - first.getTime()) / 86400000) + DAYS_AHEAD;
   for (let d = 0; d < totalDays; d++) {
@@ -290,7 +300,6 @@ function seedOneOffs(visits: Visit[], from = new Date()): Visit[] {
 
 interface State { templates: VisitTemplate[]; visits: Visit[] }
 const baseTemplates = seedTemplates();
-const initialVisits = generateVisits(baseTemplates);
 const demoDay = new Date(); demoDay.setHours(0, 0, 0, 0);
 const demoTemplates: VisitTemplate[] = [
   { id: "VT-DEMO-MARY-EMAR", clientId: "PS-002", callType: "morning", name: "Morning support · controlled eMAR demo", daysOfWeek: ALL_DAYS, windowStart: "09:30", windowEnd: "10:15", durationMinutes: 45, carersRequired: 1, active: true, tasks: ["Personal care and wash", "Prepare breakfast", "Encourage fluids"], medications: [{ name: "Authorised medication task", supportLevel: "prompt" }], supportCategories: ["personal_care", "medication_support"] },
@@ -300,8 +309,9 @@ const demoVisits: Visit[] = demoTemplates.map((template, index): Visit => {
   const start = at(demoDay, template.windowStart), end = at(demoDay, template.windowStart, template.durationMinutes);
   return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: index === 0 ? "in_progress" : "scheduled", checkInAt: index === 0 ? start.toISOString() : undefined, checkInByStaffId: index === 0 ? "STAFF-AISLING" : undefined, organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
 });
+const initialVisits = generateVisits(baseTemplates, new Date(), true, demoVisits);
 const initialTemplates = [...baseTemplates, ...demoTemplates];
-let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs(initialVisits), ...demoVisits] };
+let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs([...initialVisits, ...demoVisits]), ...demoVisits] };
 const appliedScheduleVersions = new Set<string>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());

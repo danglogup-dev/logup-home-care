@@ -20,7 +20,7 @@ export function VisitNoteEditor({ visitId, clientId, onSaved, onCancel }: { visi
   };
   const save = async () => {
     if (!note) return;
-    const answerLines = questions.map((q) => answers[q]?.trim()).filter(Boolean).map((answer, index) => `${questions[index]} ${answer}`);
+    const answerLines = questions.flatMap((question) => { const answer = answers[question]?.trim(); return answer ? [`${question} ${answer}`] : []; });
     setBusy(true); setError("");
     try { onSaved(await visitNotesStore.confirm({ draftId, finalText: { ...note, followUp: [note.followUp === "Not recorded" && answerLines.length ? "" : note.followUp, answerLines.length ? `Missing-information answers:\n${answerLines.join("\n")}` : ""].filter(Boolean).join("\n\n") }, confirmedByStaffId: role.staffId })); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not save note."); }

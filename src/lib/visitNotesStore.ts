@@ -5,10 +5,12 @@ import { accessibleVisit } from "./visitActions";
 import type { RoleState } from "./roleStore";
 import type { FieldProvenance } from "./incidentsStore";
 import type { StructuredVisitNote } from "./visitNoteRules";
+import { getState as visitsState } from "./visitsStore";
+import { buildHistoricalDemoNotes } from "./demoHistoricalNotes";
 export interface VisitNote { id: string; visit_id: string; client_id: string; transcript: string; ai_draft: StructuredVisitNote; final_text: StructuredVisitNote; confirmed_by_staff_id: string; confirmed_at: string; provenance: FieldProvenance[]; /** Fictional demo only: in memory, never sent to the backend. */ demo?: boolean }
 let notes: VisitNote[] = [];
-let demoNotes: VisitNote[] = [];
-let merged: VisitNote[] = [];
+let demoNotes: VisitNote[] = buildHistoricalDemoNotes(visitsState().visits, visitsState().templates);
+let merged: VisitNote[] = [...demoNotes];
 const listeners = new Set<() => void>();
 const emit = () => { merged = [...notes, ...demoNotes]; listeners.forEach((listener) => listener()); };
 export const visitNotesStore = {

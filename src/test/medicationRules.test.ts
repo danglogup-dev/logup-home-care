@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentOutcome, exceptionKind, permittedOutcomes, validateOutcome } from "@/lib/medicationRules";
+import { canResolveException, currentOutcome, documentationProgress, exceptionKind, permittedOutcomes, validateOutcome } from "@/lib/medicationRules";
 
 describe("authorised medication outcomes", () => {
   it("never offers administration for prompting or assistance", () => {
@@ -19,6 +19,12 @@ describe("authorised medication outcomes", () => {
     expect(exceptionKind("refused")).toBe("refusal");
     expect(exceptionKind("not_completed")).toBe("not_completed");
     expect(exceptionKind("prompted")).toBeUndefined();
+  });
+  it("leaves undocumented tasks outstanding instead of treating visit completion as administration", () => {
+    expect(documentationProgress([{ id: "t1" }, { id: "t2" }], [{ task_id: "t1" }])).toEqual({ recorded: 1, total: 2, outstanding: 1 });
+    expect(canResolveException({ status: "open" })).toBe(false);
+    expect(canResolveException({ status: "acknowledged", acknowledged_at: "2026-11-06T10:00:00Z" })).toBe(false);
+    expect(canResolveException({ status: "follow_up", acknowledged_at: "2026-11-06T10:00:00Z", follow_up: "Spoke with manager" })).toBe(true);
   });
   it("keeps corrections traceable to the original record", () => {
     const original = { id: "o1", task_id: "t1", correction_of: null, submitted_at: "2026-11-06T10:00:00Z" };

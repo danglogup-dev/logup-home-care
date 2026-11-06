@@ -298,7 +298,7 @@ const demoTemplates: VisitTemplate[] = [
 ];
 const demoVisits: Visit[] = demoTemplates.map((template, index): Visit => {
   const start = at(demoDay, template.windowStart), end = at(demoDay, template.windowStart, template.durationMinutes);
-  return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: "scheduled", organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
+  return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: index === 0 ? "in_progress" : "scheduled", checkInAt: index === 0 ? start.toISOString() : undefined, checkInByStaffId: index === 0 ? "STAFF-AISLING" : undefined, organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
 });
 const initialTemplates = [...baseTemplates, ...demoTemplates];
 let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs(initialVisits), ...demoVisits] };
@@ -362,11 +362,11 @@ export const visitsStore = {
     if (!visit || !visit.staffIds.includes(staffId) || visit.checkInAt || visit.status === "completed" || visit.status === "cancelled") throw new Error("This visit cannot be checked in.");
     patchVisit(id, { checkInAt: nowIso(), checkInLocation: location, checkInByStaffId: staffId, status: "in_progress" });
   },
-  recordTask(id: string, index: number, outcome: TaskOutcome, staffId: StaffId) {
+  recordTask(id: string, index: number, outcome: TaskOutcome, staffId: StaffId, reason?: string) {
     const visit = this.getVisit(id);
     const template = state.templates.find((t) => t.id === visit?.templateId);
     if (!visit || !visit.staffIds.includes(staffId) || visit.status !== "in_progress" || !template?.tasks[index]) throw new Error("Check in before recording tasks.");
-    const record: VisitTaskRecord = { index, task: template.tasks[index], outcome, recordedByStaffId: staffId, recordedAt: nowIso() };
+    const record: VisitTaskRecord = { index, task: template.tasks[index], outcome, reason: reason?.trim() || undefined, recordedByStaffId: staffId, recordedAt: nowIso() };
     patchVisit(id, { taskRecords: [...(visit.taskRecords ?? []), record] });
   },
   recordMedication(id: string, index: number, outcome: MedicationOutcome, reason: string, staffId: StaffId) {
@@ -379,7 +379,7 @@ export const visitsStore = {
     const visit = this.getVisit(id);
     const template = state.templates.find((t) => t.id === visit?.templateId);
     if (!visit || !visit.staffIds.includes(staffId) || !visit.checkInAt || visit.status !== "in_progress") throw new Error("This visit cannot be checked out.");
-    if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i)) || template?.medications.some((_, i) => !visit.medicationRecords?.some((r) => r.index === i))) throw new Error("Record every task and medication before checking out.");
+    if (template?.tasks.some((_, i) => !visit.taskRecords?.some((r) => r.index === i))) throw new Error("Record every care activity before checking out. Medication records are saved separately.");
     const recordedAt = nowIso();
     patchVisit(id, { checkOutAt: recordedAt, status: "completed", log: { id: crypto.randomUUID(), recordedByStaffId: staffId, recordedAt, tasks: [...(visit.taskRecords ?? [])], medications: [...(visit.medicationRecords ?? [])] } });
   },

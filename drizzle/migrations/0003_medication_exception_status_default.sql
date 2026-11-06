@@ -1,0 +1,2 @@
+ALTER TABLE public.medication_exceptions ALTER COLUMN status SET DEFAULT 'open';
+COMMENT ON COLUMN public.medication_exceptions.status IS 'New exceptions start open; acknowledgement, follow-up and resolution are separate recorded actions.';

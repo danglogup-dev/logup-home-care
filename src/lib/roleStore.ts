@@ -164,6 +164,7 @@ export type ModuleKey =
   | "visits.roster"
   | "visits.today"
   | "visits.hours"
+  | "visits.medication"
   | "family.portal"
   | "incidents.overview"
   | "incidents.board"
@@ -207,7 +208,7 @@ export type ModuleKey =
 
 const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
   admin: new Set<ModuleKey>([
-    "visits.roster","visits.live","visits.hours",
+    "visits.roster","visits.live","visits.hours","visits.medication",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library","policies.approvals","policies.chainTemplates",
@@ -221,7 +222,7 @@ const MATRIX: Record<Exclude<Role, "coordinator">, Set<ModuleKey>> = {
     "debug.permissions",
   ]),
   manager: new Set<ModuleKey>([
-    "visits.roster","visits.live","visits.hours",
+    "visits.roster","visits.live","visits.hours","visits.medication",
     "incidents.overview","incidents.board","incidents.capture","incidents.reporting",
     "audits.overview","audits.my","audits.templates","audits.reporting",
     "policies.library",

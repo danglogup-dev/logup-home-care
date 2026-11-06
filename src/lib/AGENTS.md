@@ -1,5 +1,7 @@
 # src/lib rules
 
+- Controlled medication support uses medicationRules for task-specific outcomes and medicationStore/medication-workspace for authenticated, scoped, append-only Cloud records; visit checkout never completes medication, AI never selects outcomes, and exceptions require separate human acknowledgement/follow-up — preserves clinical intent and an auditable trail.
+
 - Eligible-only best fit is derived by carerBestFit.ts using visible ordered factors; suggestions only open manual assignment — avoids opaque scores, cached fit and roster writes.
 
 - Event-to-care-plan review rules live only in src/lib/carePlanReviewRules.ts; src/lib/carePlanReviewTrigger.ts wires incidentsStore.submit to associatedIncidentsStore and carePlansStore ReviewSuggestions — one suggestion system, and a suggestion never edits plan text.

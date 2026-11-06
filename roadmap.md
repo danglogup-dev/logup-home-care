@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Integrated mobile visit + controlled eMAR: one phone workflow with Today/Upcoming/Completed, independent care/task reasons, medication outcomes/corrections, notes and final review; verified/versioned instructions, MAR/exception/audit oversight, scoped backend access and offline save prevention. All 83 tests and typecheck pass; signed-out carer/manager screens checked without browser errors or 390px overflow. Rolled-back database tests verified refusal exception status, correction lineage and idempotent retries.
+- [ ] Authenticated integrated medication and AI-note run: blocked because the project has no auth users and no authenticated-user-to-staff access mapping. First real sign-up/sign-in and an administrator-approved staff mapping are required; client-side demo roles are not backend authorization. Signed-out API rejection is verified, but real audio, AI questions, medication save/readback and manager acknowledgement remain untested.
+- [ ] Production medication readiness: controlled fictional testing only, not approved for live medication use; qualified medication-safety, Irish regulatory/EU medical-device, provider-policy, privacy, security, failure and usability reviews remain required. Missing-documentation sweep currently runs on manager oversight load, not a scheduled job.
+
 - [x] Phase 7A: Policy Help grounded in current approved policies (sources, no-source, safety, conflicts, audit).
 - [x] Phase 6B: eligible-only, visible tie-break ranking (continuity → preference → travel → workload → primary area → relevant competency currency), no scores or automatic assignments; Suggest coverage, counted exclusions and live updates. Twelve ranking tests plus eligibility regressions pass; coordinator browser flow verified opening without assignment → required reason → manual assignment → audit readback, plus excluded-carer empty state and safe Add visit opening. Existing one-off override/enforcement gap is unchanged.
 

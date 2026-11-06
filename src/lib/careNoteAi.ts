@@ -32,7 +32,7 @@ export async function transcribeCareAudio(file: File) {
 }
 export async function draftVisitNote(input: { visitId: string; clientId: string; transcript: string; sourceKind: "voice" | "text" }) {
   const response = await careFunction("draft-visit-note", JSON.stringify(input), "application/json");
-  let result: { draftId: string; note: StructuredVisitNote } | undefined;
+  let result: { draftId: string; note: StructuredVisitNote & { questions?: string[] } } | undefined;
   await events(response, (data) => { if (data.type === "error") throw new Error(data.message); if (data.type === "note.done") result = { draftId: data.draftId, note: data.note }; });
   if (!result) throw new Error("No complete note draft returned.");
   return result;

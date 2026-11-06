@@ -115,7 +115,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by_staff_id?: string | null
           site_id: string
-          status: string
+          status?: string
           task_id: string
         }
         Update: {

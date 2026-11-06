@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Navigation, MapPin, Clock3, ChevronRight, LogOut, AlertTriangle } from "lucide-react";
+import { Navigation, MapPin, Clock3, ChevronRight, LogOut, AlertTriangle, Pill, ListChecks } from "lucide-react";
 import { visitBriefSources } from "@/lib/visitBriefSources";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
@@ -13,130 +13,28 @@ import { clientDisplayName, clientTown, directionsUrl, myVisits, visitsOnDate } 
 
 const CALL_LABELS = { morning: "Morning support", lunch: "Lunch call", tea: "Tea call", bed: "Bed call" } as const;
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
-const STATUS_TONES: Record<VisitStatus, string> = {
-  scheduled: "border-border bg-secondary text-foreground",
-  in_progress: "border-primary bg-accent text-accent-foreground",
-  completed: "border-border bg-card text-foreground",
-  late: "border-destructive bg-destructive text-destructive-foreground",
-  missed: "border-destructive bg-destructive text-destructive-foreground",
-  cancelled: "border-border bg-secondary text-foreground",
-};
-
-function Directions({ client }: { client: ServiceUser }) {
-  const url = directionsUrl(client);
-  return url ? (
-    <Button asChild variant="outline" className="min-h-12 w-full border-primary text-base font-semibold text-primary">
-      <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`Directions to ${clientDisplayName(client)}`}>
-        <Navigation aria-hidden="true" /> Directions
-      </a>
-    </Button>
-  ) : <p className="text-base">Address not recorded</p>;
-}
+const STATUS_TONES: Record<VisitStatus, string> = { scheduled: "border-border bg-secondary text-foreground", in_progress: "border-primary bg-accent text-accent-foreground", completed: "border-border bg-card text-foreground", late: "border-destructive bg-destructive text-destructive-foreground", missed: "border-destructive bg-destructive text-destructive-foreground", cancelled: "border-border bg-secondary text-foreground" };
+function Directions({ client }: { client: ServiceUser }) { const url = directionsUrl(client); return url ? <Button asChild variant="outline" className="min-h-12 w-full border-primary text-base font-semibold text-primary"><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`Directions to ${clientDisplayName(client)}`}><Navigation aria-hidden="true" /> Directions</a></Button> : <p className="text-base">Address not recorded</p>; }
 
 export function VisitsToday() {
-  const role = useRole();
-  const { visits, templates } = useVisits();
-  const { users } = useServiceUsers();
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-  const today = visitsOnDate(myVisits(visits, users, role), now);
-  const alertFor = (visitId: string) => {
-    try {
-      const open = visitBriefSources(visitId, role).events.sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
-      return open ? `Open concern: ${open.summary}` : undefined;
-    } catch { return undefined; }
-  };
-  const completed = today.filter((v) => v.status === "completed").length;
-  return (
-    <section className="space-y-5 px-4 py-6" aria-labelledby="today-heading">
-      <div>
-        <p className="text-base font-medium">{now.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <h1 id="today-heading" className="mt-1 text-3xl font-heading font-bold">Today</h1>
-        <p className="mt-2 text-lg">{today.length} visits · {completed} completed</p>
-      </div>
-      {today.length === 0 && <p className="border-t py-8 text-lg">No visits assigned to you today.</p>}
-      <ol className="space-y-4" aria-label="Today's visits">
-        {today.map((visit) => {
-          const client = users.find((u) => u.id === visit.clientId);
-          if (!client) return null;
-          const template = templates.find((t) => t.id === visit.templateId);
-          const windowLabel = template ? `${template.windowStart}–${template.windowEnd}` : `${time(visit.scheduledStart)}–${time(visit.scheduledEnd)}`;
-          const town = clientTown(client);
-          return (
-            <li key={visit.id} className="rounded-lg border bg-card p-4">
-              <Link to={`/app/visits/${visit.id}`} className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Open visit for ${clientDisplayName(client)} at ${time(visit.scheduledStart)}`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="flex items-center gap-2 text-lg font-bold tabular-nums"><Clock3 className="h-5 w-5" aria-hidden="true" />{windowLabel}</p>
-                <span className={`rounded-md border px-2 py-1 text-sm font-semibold ${STATUS_TONES[visit.status]}`}>{VISIT_STATUS_LABELS[visit.status]}</span>
-              </div>
-              <h2 className="mt-3 break-words text-2xl font-heading font-bold">{clientDisplayName(client)}</h2>
-              {client.preferredName && client.preferredName !== client.name && <p className="mt-1 text-base">{client.name}</p>}
-              <p className="mt-2 flex items-start gap-2 text-base"><MapPin className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{town || client.homeAddress || "Town not recorded"}</p>
-              <p className="mt-2 text-base">{template ? `${CALL_LABELS[template.callType]} · ` : ""}{template?.durationMinutes ?? Math.round((Date.parse(visit.scheduledEnd) - Date.parse(visit.scheduledStart)) / 60000)} mins</p>
-              {alertFor(visit.id) && <p className="mt-3 flex items-start gap-2 rounded-md border border-warning bg-warning/10 p-2 text-base font-medium"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><span className="break-words">{alertFor(visit.id)}</span></p>}
-              </Link>
-              <div className="mt-4"><Directions client={client} /></div>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
-  );
+  const role = useRole(); const { visits, templates } = useVisits(); const { users } = useServiceUsers(); const [now, setNow] = useState(() => new Date()); const [view, setView] = useState<"today" | "upcoming" | "completed">("today");
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60000); return () => window.clearInterval(timer); }, []);
+  const mine = myVisits(visits, users, role); const today = visitsOnDate(mine, now);
+  const shown = view === "today" ? today : view === "completed" ? mine.filter((v) => v.status === "completed").sort((a, b) => b.scheduledStart.localeCompare(a.scheduledStart)) : mine.filter((v) => v.status !== "completed" && v.status !== "cancelled" && Date.parse(v.scheduledStart) >= new Date(now).setHours(0,0,0,0)).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart));
+  const alertFor = (visitId: string) => { try { const open = visitBriefSources(visitId, role).events.sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return open ? `Open concern: ${open.summary}` : undefined; } catch { return undefined; } };
+  return <section className="space-y-5 px-4 py-6" aria-labelledby="visits-heading"><div><p className="text-base font-medium">{now.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}</p><h1 id="visits-heading" className="mt-1 text-3xl font-heading font-bold">My Visits</h1><p className="mt-2 text-lg">{today.length} today · {today.filter((v) => v.status === "completed").length} completed</p></div>
+    <div className="grid grid-cols-3 gap-1 rounded-md bg-muted p-1" role="tablist" aria-label="Visit views">{(["today","upcoming","completed"] as const).map((tab) => <Button key={tab} role="tab" aria-selected={view === tab} variant={view === tab ? "default" : "ghost"} className="min-h-12 px-1 text-sm capitalize" onClick={() => setView(tab)}>{tab}</Button>)}</div>
+    {!shown.length && <p className="border-t py-8 text-lg">No {view === "today" ? "visits assigned to you today" : `${view} visits`}.</p>}
+    <ol className="space-y-4" aria-label={`${view} visits`}>{shown.map((visit) => { const client = users.find((u) => u.id === visit.clientId); if (!client) return null; const template = templates.find((t) => t.id === visit.templateId); const windowLabel = template ? `${template.windowStart}–${template.windowEnd}` : `${time(visit.scheduledStart)}–${time(visit.scheduledEnd)}`; const town = clientTown(client); return <li key={visit.id} className="rounded-lg border bg-card p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="flex items-center gap-2 text-lg font-bold tabular-nums"><Clock3 className="h-5 w-5" aria-hidden="true" />{windowLabel}</p><span className={`rounded-md border px-2 py-1 text-sm font-semibold ${STATUS_TONES[visit.status]}`}>{VISIT_STATUS_LABELS[visit.status]}</span></div><h2 className="mt-3 break-words text-2xl font-heading font-bold">{clientDisplayName(client)}</h2>{client.preferredName && client.preferredName !== client.name && <p className="mt-1 text-base">{client.name}</p>}<p className="mt-2 flex items-start gap-2 text-base"><MapPin className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{town || client.homeAddress || "Town not recorded"}</p><p className="mt-2 text-base">{template ? `${CALL_LABELS[template.callType]} · ` : ""}{template?.durationMinutes ?? Math.round((Date.parse(visit.scheduledEnd) - Date.parse(visit.scheduledStart)) / 60000)} mins</p>{!!template?.tasks.length && <p className="mt-3 flex items-start gap-2 text-base"><ListChecks className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><span>{template.tasks.slice(0, 2).join(" · ")}{template.tasks.length > 2 ? ` · +${template.tasks.length - 2} more` : ""}</span></p>}{!!template?.medications.length && <p className="mt-2 flex items-center gap-2 text-base font-semibold"><Pill className="h-5 w-5" aria-hidden="true" />Medication support scheduled</p>}{alertFor(visit.id) && <p className="mt-3 flex items-start gap-2 rounded-md border border-warning bg-warning/10 p-2 text-base font-medium"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><span className="break-words">{alertFor(visit.id)}</span></p>}<div className="mt-4 grid gap-2"><Button asChild className="min-h-14 w-full text-base"><Link to={`/app/visits/${visit.id}`} aria-label={`Open visit for ${clientDisplayName(client)} at ${time(visit.scheduledStart)}`}>Open Visit <ChevronRight aria-hidden="true" /></Link></Button><Directions client={client} /></div></li>; })}</ol>
+  </section>;
 }
 
 export function VisitClients() {
-  const terms = useTerms();
-  const role = useRole();
-  const { visits } = useVisits();
-  const { users } = useServiceUsers();
-  const assigned = new Set(myVisits(visits, users, role).map((v) => v.clientId));
-  const clients = users.filter((u) => assigned.has(u.id)).sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)));
-  return (
-    <section className="space-y-5 px-4 py-6" aria-labelledby="clients-heading">
-      <h1 id="clients-heading" className="text-3xl font-heading font-bold">{terms.Plural}</h1>
-      {clients.length === 0 && <p className="text-lg">No {terms.plural} assigned to your visits.</p>}
-      <ul className="space-y-4">
-        {clients.map((client) => (
-          <li key={client.id} className="rounded-lg border bg-card p-4">
-            <h2 className="break-words text-2xl font-heading font-bold">{clientDisplayName(client)}</h2>
-            <p className="mt-2 text-base">{client.homeAddress || "Address not recorded"}</p>
-            {client.eircode && <p className="mt-1 text-base font-semibold">{client.eircode}</p>}
-            {client.accessNotes && <p className="mt-3 text-base leading-relaxed">{client.accessNotes}</p>}
-            <div className="mt-4 space-y-2">
-              <Directions client={client} />
-              <Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Approved care plan <ChevronRight aria-hidden="true" /></Link></Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+  const terms = useTerms(); const role = useRole(); const { visits } = useVisits(); const { users } = useServiceUsers(); const assigned = new Set(myVisits(visits, users, role).map((v) => v.clientId)); const clients = users.filter((u) => assigned.has(u.id)).sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)));
+  return <section className="space-y-5 px-4 py-6" aria-labelledby="clients-heading"><h1 id="clients-heading" className="text-3xl font-heading font-bold">{terms.Plural}</h1>{clients.length === 0 && <p className="text-lg">No {terms.plural} assigned to your visits.</p>}<ul className="space-y-4">{clients.map((client) => <li key={client.id} className="rounded-lg border bg-card p-4"><h2 className="break-words text-2xl font-heading font-bold">{clientDisplayName(client)}</h2><p className="mt-2 text-base">{client.homeAddress || "Address not recorded"}</p>{client.eircode && <p className="mt-1 text-base font-semibold">{client.eircode}</p>}{client.accessNotes && <p className="mt-3 text-base leading-relaxed">{client.accessNotes}</p>}<div className="mt-4 space-y-2"><Directions client={client} /><Button asChild variant="secondary" className="min-h-12 w-full text-base"><Link to={`/app/care-plans/people/${client.id}`}>Approved care plan <ChevronRight aria-hidden="true" /></Link></Button></div></li>)}</ul></section>;
 }
 
 export function VisitsMe() {
-  const role = useRole();
-  const links = [
-    { key: "workforce.qualifications", label: "My qualifications", path: "/app/workforce/qualifications" },
-    { key: "policies.library", label: "Policy Help", path: "/app/visits/policy-help" },
-  ] as const;
-  return (
-    <section className="px-4 py-6" aria-labelledby="me-heading">
-      <h1 id="me-heading" className="text-3xl font-heading font-bold">Me</h1>
-      <h2 className="mt-5 break-words text-2xl font-semibold">{role.displayName}</h2>
-      <p className="mt-2 text-lg">{role.title}</p>
-      <h3 className="mt-5 text-lg font-bold">My service areas</h3>
-      <p className="mt-1 text-base">{role.scope.join(" · ") || "None assigned"}</p>
-      <div className="mt-6 space-y-2 border-t pt-4">
-        {links.filter((l) => canAccess(l.key, role.role) && isModuleKeyReleased(l.key)).map((link) => (
-          <Button asChild key={link.key} variant="outline" className="min-h-14 w-full justify-between whitespace-normal text-left text-base">
-            <Link to={link.path}>{link.label}<ChevronRight aria-hidden="true" /></Link>
-          </Button>
-        ))}
-        <Button asChild variant="secondary" className="mt-4 min-h-14 w-full text-base"><Link to="/signin"><LogOut aria-hidden="true" /> Sign out</Link></Button>
-      </div>
-    </section>
-  );
+  const role = useRole(); const links = [{ key: "workforce.qualifications", label: "My qualifications", path: "/app/workforce/qualifications" }, { key: "policies.library", label: "Policy Help", path: "/app/visits/policy-help" }] as const;
+  return <section className="px-4 py-6" aria-labelledby="me-heading"><h1 id="me-heading" className="text-3xl font-heading font-bold">Me</h1><h2 className="mt-5 break-words text-2xl font-semibold">{role.displayName}</h2><p className="mt-2 text-lg">{role.title}</p><h3 className="mt-5 text-lg font-bold">My service areas</h3><p className="mt-1 text-base">{role.scope.join(" · ") || "None assigned"}</p><div className="mt-6 space-y-2 border-t pt-4">{links.filter((l) => canAccess(l.key, role.role) && isModuleKeyReleased(l.key)).map((link) => <Button asChild key={link.key} variant="outline" className="min-h-14 w-full justify-between whitespace-normal text-left text-base"><Link to={link.path}>{link.label}<ChevronRight aria-hidden="true" /></Link></Button>)}<Button asChild variant="secondary" className="mt-4 min-h-14 w-full text-base"><Link to="/signin"><LogOut aria-hidden="true" /> Sign out</Link></Button></div></section>;
 }

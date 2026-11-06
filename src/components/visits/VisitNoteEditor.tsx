@@ -1,14 +1,38 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useRole } from "@/hooks/useRole";
+import { NOTE_SECTIONS, noteText, type StructuredVisitNote } from "@/lib/visitNoteRules";
+import { CareVoiceRecorder } from "@/components/visits/CareVoiceRecorder";
 import { draftVisitNote } from "@/lib/careNoteAi";
 import { visitNotesStore, type VisitNote } from "@/lib/visitNotesStore";
-import { NOTE_SECTIONS, type StructuredVisitNote } from "@/lib/visitNoteRules";
-import { CareVoiceRecorder } from "./CareVoiceRecorder";
-import { CareAiSignIn } from "./CareAiSignIn";
+
 export function VisitNoteEditor({ visitId, clientId, onSaved, onCancel }: { visitId: string; clientId: string; onSaved: (note: VisitNote) => void; onCancel: () => void }) {
-  const role = useRole(); const [source, setSource] = useState(""); const [kind, setKind] = useState<"voice" | "text">("text"); const [draft, setDraft] = useState<{ draftId: string; note: StructuredVisitNote }>(); const [final, setFinal] = useState<StructuredVisitNote>(); const [confirmed, setConfirmed] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
-  return <div className="space-y-4 border-t pt-5"><h2 className="text-2xl font-bold">Visit note</h2>{!draft ? <><CareVoiceRecorder disabled={busy} onTranscript={(text) => { setSource((old) => old ? `${old}\n${text}` : text); setKind("voice"); }} /><label className="block text-base font-semibold" htmlFor="visit-note-source">Source</label><Textarea id="visit-note-source" className="min-h-36 text-base" maxLength={16000} value={source} disabled={busy} readOnly={kind === "voice"} onChange={(e) => setSource(e.target.value)} /><CareAiSignIn><Button className="min-h-12 w-full" disabled={busy || !source.trim()} onClick={async () => { setBusy(true); setError(""); try { const result = await draftVisitNote({ visitId, clientId, transcript: source, sourceKind: kind }); setDraft(result); setFinal({ ...result.note }); } catch (e) { setError(e instanceof Error ? e.message : "Could not draft note."); } finally { setBusy(false); } }}>{busy ? "Drafting…" : "Draft note"}</Button></CareAiSignIn></> : <><details><summary className="min-h-12 cursor-pointer font-semibold">Source</summary><p className="whitespace-pre-wrap break-words">{source}</p></details><details><summary className="min-h-12 cursor-pointer font-semibold">AI draft</summary>{NOTE_SECTIONS.map(({ key, label }) => <div key={key} className="mb-3"><h3 className="font-semibold">{label}</h3><p className="whitespace-pre-wrap break-words">{draft.note[key]}</p></div>)}</details>{final && NOTE_SECTIONS.map(({ key, label }) => <label key={key} className="block text-base font-semibold">{label}<Textarea value={final[key]} disabled={busy} maxLength={12000} className="mt-2 min-h-24 text-base" onChange={(e) => { setFinal({ ...final, [key]: e.target.value }); setConfirmed(false); }} /></label>)}<label className="flex items-start gap-3 text-base"><Checkbox checked={confirmed} disabled={busy} onCheckedChange={(value) => setConfirmed(value === true)} className="mt-1 h-6 w-6" /><span>I confirm this note is factual and accurate.</span></label><p className="text-sm text-muted-foreground">Confirming as {role.displayName} · demo staff identity</p><Button className="min-h-14 w-full whitespace-normal text-base" disabled={busy || !confirmed || !final} onClick={async () => { if (!final) return; setBusy(true); setError(""); try { onSaved(await visitNotesStore.confirm(visitId, draft.draftId, final, confirmed, role)); } catch (e) { setError(e instanceof Error ? e.message : "Could not save note."); } finally { setBusy(false); } }}>{busy ? "Saving…" : "Confirm & save note"}</Button></>}{error && <p role="alert" className="break-words text-destructive">{error}</p>}<Button variant="ghost" className="min-h-12 w-full" disabled={busy} onClick={onCancel}>Cancel</Button></div>;
+  const role = useRole(); const [source, setSource] = useState<"voice" | "text" | null>(null); const [audio, setAudio] = useState<File>(); const [transcript, setTranscript] = useState("");
+  const [note, setNote] = useState<StructuredVisitNote>(); const [questions, setQuestions] = useState<string[]>([]); const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [draftId, setDraftId] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const draft = async (text: string, kind: "voice" | "text") => {
+    setBusy(true); setError("");
+    try { const result = await draftVisitNote({ visitId, clientId, transcript: text, sourceKind: kind }); setNote(result.note); setQuestions(result.note.questions ?? []); setAnswers({}); setDraftId(result.draftId); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not draft note."); }
+    finally { setBusy(false); }
+  };
+  const save = async () => {
+    if (!note) return;
+    const answerLines = questions.map((q) => answers[q]?.trim()).filter(Boolean).map((answer, index) => `${questions[index]} ${answer}`);
+    setBusy(true); setError("");
+    try { onSaved(await visitNotesStore.confirm({ draftId, finalText: { ...note, followUp: [note.followUp === "Not recorded" && answerLines.length ? "" : note.followUp, answerLines.length ? `Missing-information answers:\n${answerLines.join("\n")}` : ""].filter(Boolean).join("\n\n") }, confirmedByStaffId: role.staffId })); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not save note."); }
+    finally { setBusy(false); }
+  };
+  return <section className="space-y-4" aria-labelledby="visit-note-heading"><h3 id="visit-note-heading" className="text-xl font-bold">Record the visit</h3>
+    {!note && <div className="grid grid-cols-2 gap-2"><Button variant={source === "voice" ? "default" : "outline"} className="min-h-12" onClick={() => { setSource("voice"); setNote(undefined); }}>Speak</Button><Button variant={source === "text" ? "default" : "outline"} className="min-h-12" onClick={() => { setSource("text"); setNote(undefined); }}>Type</Button></div>}
+    {source === "voice" && !note && <CareVoiceRecorder onRecorded={setAudio} onTranscript={async (text) => { setTranscript(text); await draft(text, "voice"); }} />}
+    {source === "text" && !note && <><Label className="text-base">What happened?<Textarea className="mt-2 min-h-32 text-base" value={transcript} onChange={(e) => setTranscript(e.target.value)} /></Label><Button disabled={busy || !transcript.trim()} onClick={() => draft(transcript, "text")}>Draft note with AI</Button></>}
+    {error && <div className="space-y-2"><p role="alert" className="text-base text-destructive">{error}</p>{source === "voice" && audio && <Button variant="outline" onClick={async () => { const { transcribeCareAudio } = await import("@/lib/careNoteAi"); try { setError(""); const text = await transcribeCareAudio(audio); setTranscript(text); await draft(text, "voice"); } catch (e) { setError(e instanceof Error ? e.message : "Retry failed."); } }}>Retry saved audio</Button>}</div>}
+    {note && <><p className="text-sm font-semibold">AI draft · review every section; the AI cannot confirm care.</p><Label className="text-base">Source transcript<Textarea className="mt-2 text-base" value={transcript} readOnly /></Label>{NOTE_SECTIONS.map(({ key, label }) => <Label key={key} className="text-base">{label}<Textarea className="mt-2 min-h-24 text-base" value={note[key]} onChange={(e) => setNote({ ...note, [key]: e.target.value })} /></Label>)}
+      {questions.length > 0 && <div className="space-y-3 rounded-md border p-3"><h4 className="font-bold">Missing information to consider</h4><p className="text-sm">These are questions, not answers or evidence. Add only what you actually observed or were told.</p>{questions.map((question) => <Label key={question} className="text-base">{question}<Textarea className="mt-2 text-base" value={answers[question] ?? ""} onChange={(e) => setAnswers((all) => ({ ...all, [question]: e.target.value }))} /></Label>)}</div>}
+      <p className="whitespace-pre-wrap break-words text-sm">Confirmed note preview: {noteText(note)}</p><div className="grid gap-2"><Button className="min-h-12 text-base" disabled={busy || NOTE_SECTIONS.some(({ key }) => !note[key].trim())} onClick={save}>{busy ? "Saving…" : "Confirm & save note"}</Button><Button variant="outline" onClick={onCancel}>Cancel</Button></div></>}
+  </section>;
 }

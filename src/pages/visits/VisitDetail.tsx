@@ -28,7 +28,7 @@ const reasonNeeded = (outcome?: TaskOutcome) => outcome !== "done" && outcome !=
 export default function VisitDetail() {
   const { id } = useParams(); const role = useRole(); const navigate = useNavigate(); const notes = useVisitNotes();
   const [noteOpen, setNoteOpen] = useState(false); const [savedNote, setSavedNote] = useState<VisitNote>(); const [taskReasons, setTaskReasons] = useState<Record<number, string>>({});
-  const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [medicationData, setMedicationData] = useState<VisitMedicationData>();
+  const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [medicationData, setMedicationData] = useState<VisitMedicationData>(); const [medWarn, setMedWarn] = useState(false);
   useEffect(() => { if (id) visitNotesStore.load(id, role).catch(() => {}); }, [id, role.staffId]);
   useCarePlans(); const { templates } = useVisits(); const { users } = useServiceUsers();
   const visit = id ? accessibleVisit(id, role) : undefined; const client = users.find((u) => u.id === visit?.clientId); const template = templates.find((t) => t.id === visit?.templateId);
@@ -45,7 +45,6 @@ export default function VisitDetail() {
   const act = (action: () => void) => { setError(""); try { action(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save."); } };
   async function checkIn() { if (!visit) return; setBusy(true); setError(""); try { visitsStore.checkIn(visit.id, await browserLocation(), role.staffId); } catch (e) { setError(e instanceof Error ? e.message : "Could not check in."); } finally { setBusy(false); } }
   const medicationOutstanding = medicationData ? medicationData.tasks.length - medicationRecorded : 0;
-  const [medWarn, setMedWarn] = useState(false);
   function finish(leaveMedicationUnrecorded = false) {
     if (!visit) return;
     if (medicationOutstanding > 0 && !leaveMedicationUnrecorded && tasksRecorded === taskCount && confirmedNote) { setMedWarn(true); return; }

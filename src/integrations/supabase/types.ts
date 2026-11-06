@@ -631,6 +631,48 @@ export type Database = {
         Args: { _organisation_id: string; _roles?: string[]; _site_id: string }
         Returns: boolean
       }
+      submit_medication_outcome: {
+        Args: {
+          p_correction_of?: string
+          p_correction_reason?: string
+          p_event_at: string
+          p_idempotency_key: string
+          p_outcome: string
+          p_reason: string
+          p_task_id: string
+          p_user_id: string
+          p_visit_id: string
+        }
+        Returns: {
+          client_id: string
+          correction_of: string | null
+          correction_reason: string | null
+          event_at: string
+          id: string
+          idempotency_key: string
+          instruction_version_id: string
+          medication_id: string
+          organisation_id: string
+          outcome: string
+          reason: string
+          site_id: string
+          staff_id: string
+          submitted_at: string
+          submitted_by_user_id: string
+          task_id: string
+          visit_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "medication_outcomes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      sweep_medication_documentation: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

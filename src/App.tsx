@@ -105,6 +105,7 @@ const App = () => (
             <Route path="visits/roster" element={<Guarded moduleKey="visits.roster" moduleLabel="Roster"><Roster /></Guarded>} />
             <Route path="visits/live" element={<Guarded moduleKey="visits.live" moduleLabel="Live visits"><LiveVisits /></Guarded>} />
             <Route path="visits/hours" element={<Guarded moduleKey="visits.hours" moduleLabel="Hours vs approved"><HoursReport /></Guarded>} />
+            <Route path="visits/medication" element={<Guarded moduleKey="visits.medication" moduleLabel="Medication oversight"><MedicationOversight /></Guarded>} />
 
             {/* Incidents module */}
             <Route path="incidents" element={<RoleHomeRedirect fallback="/app/incidents/board" />} />

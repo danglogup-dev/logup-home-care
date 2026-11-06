@@ -24,6 +24,7 @@ type InstructionForm = { name: string; strength: string; dose: string; route: st
 const blank: InstructionForm = { name: "", strength: "", dose: "", route: "Oral", frequency: "", scheduledTimes: "", regularity: "regular", supportLevel: "prompt", startDate: new Date().toISOString().slice(0, 10), endDate: "", sourceDocument: "", providerInstructions: "" };
 
 function InstructionEditor({ medication, version, clientId, siteId, onSaved }: { medication?: Medication; version?: MedicationInstructionVersion; clientId: string; siteId: string; onSaved: () => Promise<void> }) {
+  const { store } = useMedicationSource();
   const [open, setOpen] = useState(false); const [form, setForm] = useState<InstructionForm>(blank); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   const start = () => { setForm(version ? { name: medication!.name, strength: medication!.strength, dose: version.dose, route: version.route, frequency: version.frequency, scheduledTimes: version.scheduled_times.join(", "), regularity: version.regularity, supportLevel: version.support_level, startDate: version.start_date, endDate: version.end_date ?? "", sourceDocument: version.source_document, providerInstructions: version.provider_instructions } : blank); setOpen(true); };
   const set = <K extends keyof InstructionForm>(key: K, value: InstructionForm[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -32,6 +33,7 @@ function InstructionEditor({ medication, version, clientId, siteId, onSaved }: {
 }
 
 function Oversight() {
+  const { store } = useMedicationSource();
   const role = useRole(); const [data, setData] = useState<MedicationOversightData>(); const [error, setError] = useState(""); const [busy, setBusy] = useState(""); const [text, setText] = useState<Record<string, string>>({}); const [filters, setFilters] = useState({ clientId: NONE, siteId: NONE }); const [schedule, setSchedule] = useState<Record<string, { visitId: string; at: string; due: string }>>({});
   const load = useCallback(async () => { setError(""); try { setData(await store.loadOversight({ clientId: filters.clientId === NONE ? undefined : filters.clientId, siteId: filters.siteId === NONE ? undefined : filters.siteId })); } catch (e) { setError(e instanceof Error ? e.message : "Could not load medication oversight."); } }, [filters]);
   useEffect(() => { load(); }, [load]);

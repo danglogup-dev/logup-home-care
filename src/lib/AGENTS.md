@@ -1,6 +1,6 @@
 # src/lib rules
 
-- LogUp sign-in and medication gates share the existing Cloud client/session; demo perspectives never provision backend staff access — prevents duplicate credentials and client-side privilege escalation. Signed out = fictional demo: MedicationSourceGate swaps in medicationDemoStore and visit notes use simulateDemoNoteDraft/confirmDemo, all in memory and labelled simulated; no screen shows a second login form — demo visitors never touch backend records or AI.
+- Prototype mode (REAL_AUTH_ENABLED=false in featureFlags.ts): SignIn checks no credentials and sets the chosen roleStore preset; MedicationSourceGate always serves medicationDemoStore (permissions follow the demo view), eMAR client pages read loadDemoClientEmar, corrections append and never overwrite; real-auth/Cloud medication code stays intact for when real accounts return — avoids a second login while keeping the backend path.
 
 - Controlled medication support uses medicationRules for task-specific outcomes and medicationStore/medication-workspace for authenticated, scoped, append-only Cloud records; visit checkout never completes medication, AI never selects outcomes, and exceptions require separate human acknowledgement/follow-up — preserves clinical intent and an auditable trail.
 

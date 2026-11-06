@@ -13,7 +13,7 @@ const displayTime = (iso: string) => new Date(iso).toLocaleString("en-IE", { day
 type Draft = { outcome?: MedicationOutcome; reason: string; eventAt: string; correctionReason: string; correcting: boolean };
 
 function MedicationRecords({ visitId, expected, editable, onChange }: { visitId: string; expected: boolean; editable: boolean; onChange?: (data: VisitMedicationData) => void }) {
-  const { store, demo } = useMedicationSource();
+  const { store } = useMedicationSource();
   const [data, setData] = useState<VisitMedicationData>();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState("");
@@ -67,7 +67,7 @@ function MedicationRecords({ visitId, expected, editable, onChange }: { visitId:
             <label className="mt-4 block text-base font-semibold" htmlFor={`reason-${task.id}`}>Reason / explanatory observation{draft.outcome && reasonRequired(draft.outcome) ? " (required)" : ""}</label>
             <Textarea id={`reason-${task.id}`} className="mt-2 min-h-24 text-base" value={draft.reason} onChange={(e) => update(task.id, { reason: e.target.value })} />
             {draft.correcting && <><label className="mt-4 block text-base font-semibold" htmlFor={`correction-${task.id}`}>Why is this correction needed? (required)</label><Textarea id={`correction-${task.id}`} className="mt-2 min-h-24 text-base" value={draft.correctionReason} onChange={(e) => update(task.id, { correctionReason: e.target.value })} /></>}
-            <Button className="mt-4 min-h-14 w-full text-base" disabled={busy === task.id || !online} onClick={() => submit(task)}>{busy === task.id ? "Saving securely…" : demo ? (record ? "Submit correction (demo only)" : "Record outcome (demo only)") : record ? "Submit correction" : "Save medication outcome"}</Button>
+            <Button className="mt-4 min-h-14 w-full text-base" disabled={busy === task.id || !online} onClick={() => submit(task)}>{busy === task.id ? "Saving securely…" : record ? "Submit correction" : "Save medication outcome"}</Button>
           </>}
         </fieldset>}
       </article>;

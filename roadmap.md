@@ -1,3 +1,4 @@
+- [x] Restore access: demo-first welcome page, plain sign-in errors, simulated fictional eMAR + visit-note drafts when signed out, no in-page login forms. 98 tests pass; demo flow browser-verified. Signed-in journey unverifiable: no LogUp accounts exist yet.
 # Roadmap
 
 - [x] eMAR authentication UI: main LogUp sign-in now authenticates with the existing client; medication-only credential forms removed from oversight and visits. Demo switcher explicitly labels fictional perspectives and never grants Cloud access. Desktop/mobile sign-out ends the shared session. All 92 tests pass; browser verified no internal login form, central return destination, manager demo access blocked, refresh/navigation safe and frontline oversight denial with no runtime errors. No medication records or database permissions changed.

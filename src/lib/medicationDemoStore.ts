@@ -199,6 +199,19 @@ export const medicationDemoStore: typeof medicationStore = {
   async createTask() { return { simulated: true }; },
 };
 
+function ownerOf(medicationId: string): { clientId: string; siteId: string; version?: MedicationInstructionVersion } {
+  const extra = extraMedications.find((m) => m.id === medicationId);
+  if (extra) return { clientId: extra.client_id, siteId: extra.site_id };
+  for (const t of visitsState().templates) for (let i = 0; i < t.medications.length; i++) {
+    const mid = `DEMO-MED-${t.id}-${i}`;
+    if (mid === medicationId) {
+      const siteId = visitsState().visits.find((v) => v.clientId === t.clientId)?.serviceAreaId ?? "";
+      return { clientId: t.clientId, siteId, version: baseMedicationFor(t, i, siteId, mid, `${mid}-V1`, t.windowStart, t.medications[i]).version };
+    }
+  }
+  return { clientId: "", siteId: "" };
+}
+
 function draftVersion(medicationId: string, number: number, input: Record<string, unknown>, staff: string, now: string): MedicationInstructionVersion {
   return { id: id("DEMO-VER"), medication_id: medicationId, version_number: number, dose: String(input.dose ?? ""), route: String(input.route ?? ""), frequency: String(input.frequency ?? ""), scheduled_times: (input.scheduledTimes as string[]) ?? [], regularity: (input.regularity as "regular" | "prn") ?? "regular", support_level: (input.supportLevel as MedicationInstructionVersion["support_level"]) ?? "prompt", start_date: String(input.startDate ?? now.slice(0, 10)), end_date: (input.endDate as string | null) ?? null, source_document: String(input.sourceDocument ?? ""), provider_instructions: String(input.providerInstructions ?? ""), verification_status: "draft", created_by_staff_id: staff, created_at: now };
 }

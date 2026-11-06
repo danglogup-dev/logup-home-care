@@ -82,7 +82,9 @@ function seed() {
     const visit = visitsState().visits.find((v) => v.id === task.visit_id);
     const at = new Date(Date.parse(task.scheduled_at) + 10 * 60_000).toISOString();
     const rec = record(task, outcome, visit?.staffIds[0] ?? "STAFF-AISLING", at, outcome === "refused" ? "Said they would take it later with their tea. Left in blister pack, not removed." : outcome === "not_completed" ? "Medication not in the home. Pharmacy delivery delayed; office informed." : "");
-    outcomes = outcomes.map((o) => o.id === rec.id ? { ...o, submitted_at: new Date(Date.parse(at) + 5 * 60_000).toISOString() } : o);
+    const submitted = new Date(Date.parse(at) + 5 * 60_000).toISOString();
+    outcomes = outcomes.map((o) => o.id === rec.id ? { ...o, submitted_at: submitted } : o);
+    audit = audit.map((a) => a.entity_id === rec.id ? { ...a, created_at: submitted } : a);
   });
   // Older exceptions were already handled by the coordinator.
   exceptions = exceptions.map((e) => {

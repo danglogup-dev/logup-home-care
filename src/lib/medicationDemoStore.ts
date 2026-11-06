@@ -83,7 +83,7 @@ function record(task: MedicationTask, outcome: MedicationOutcome, staffId: strin
 function seed() {
   if (seeded) return; seeded = true; seeding = true;
   const now = Date.now();
-  const past = visitsState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && Date.parse(v.scheduledEnd) < now && now - Date.parse(v.scheduledEnd) < 7 * DAY).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart)).flatMap(tasksForVisit);
+  const past = visitsState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && v.status !== "in_progress" && Date.parse(v.scheduledEnd) < now && now - Date.parse(v.scheduledEnd) < 7 * DAY).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart)).flatMap(tasksForVisit);
   past.forEach((task, i) => {
     const support = task.instruction.support_level;
     const outcome: MedicationOutcome = i % 23 === 2 ? "refused" : i % 41 === 7 ? "not_completed" : support === "prompt" ? "prompted" : support === "assist" ? "assistance_provided" : "administered";

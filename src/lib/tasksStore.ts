@@ -4,7 +4,7 @@ import { STAFF_BY_ID } from "./demoDataRegistry";
 // In-memory store, demo-only. Subscribe pattern matches workforceStore.
 
 export type TaskType = "recurring" | "follow_up" | "one_off";
-export type TaskSourceType = "manual" | "incident" | "audit" | "recurring_template" | "medication_exception";
+export type TaskSourceType = "manual" | "incident" | "audit" | "recurring_template" | "medication_exception" | "insight";
 export type TaskStatus = "open" | "in_progress" | "completed" | "skipped";
 export type TaskPriority = "low" | "normal" | "high";
 export type Recurrence = "daily" | "weekly" | "monthly" | "custom";
@@ -65,6 +65,8 @@ export interface TaskRecord {
   createdAt: string;
   /** Medication follow-up links (IDs only). Closing the task never changes these records. */
   medicationLinks?: MedicationTaskLinks;
+  /** Care Assurance insight that prompted this task, with the source record IDs a manager reviewed. */
+  insightLinks?: { insightId: string; serviceUserId?: string; sourceIds: string[] };
 }
 
 export interface MedicationTaskLinks {
@@ -193,6 +195,7 @@ export const sourceLabel = (s: TaskSourceType) =>
     audit: "Audit",
     recurring_template: "Recurring",
     medication_exception: "Medication exception",
+    insight: "Care Assurance insight",
   }[s]);
 
 // ---------- Multi-location & recurrence helpers ----------

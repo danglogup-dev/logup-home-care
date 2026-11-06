@@ -60,10 +60,10 @@ export default function TaskDetail() {
   const own = taskOwnership(t);
   // Medication follow-ups act as the current (demo) role, not the residential demo user.
   const med = t.medicationLinks;
-  const roleActs = !!(t.medicationLinks || t.insightLinks);
+  const roleActs = !!(t.medicationLinks || t.insightLinks || t.visitReviewLinks);
   const me = roleActs ? { ...CURRENT_USER, id: role.staffId, name: role.displayName } : CURRENT_USER;
-  const meName = me.name;
-  const medCanAct = roleActs && (isManagerRole(role.role) || role.role === "admin");
+  const meName = t.visitReviewLinks ? role.staffId : me.name;
+  const medCanAct = roleActs && (isManagerRole(role.role) || role.role === "admin") && (!t.visitReviewLinks || role.role === "admin" || role.scopeSiteIds.some((id) => id === t.siteId));
 
   const canActOnThis = medCanAct ||
     isAssignedToUser(t, me.id) ||
@@ -196,6 +196,12 @@ export default function TaskDetail() {
         </Card>
       </div>
 
+      {t.visitReviewLinks && <Card><CardHeader><CardTitle className="text-base">Linked visit review</CardTitle></CardHeader><CardContent className="text-sm space-y-2">
+        <p><Link className="text-primary underline" to={`/app/org/service-users/${t.visitReviewLinks.serviceUserId}`}>{serviceUsersStore.getById(t.visitReviewLinks.serviceUserId)?.name ?? t.visitReviewLinks.serviceUserId}</Link></p>
+        <Button asChild variant="outline"><Link to={`/app/visits/live#visit-${encodeURIComponent(t.visitReviewLinks.visitId)}`}>Open visit and review history</Link></Button>
+        <p className="break-words text-muted-foreground">Visit: {t.visitReviewLinks.visitId} · Alert: {t.visitReviewLinks.alertId} · Review: {t.visitReviewLinks.reviewId}</p>
+        <p>Completing this task never changes attendance evidence or the manager assessment.</p>
+      </CardContent></Card>}
       {t.insightLinks && (
         <Card>
           <CardHeader><CardTitle className="text-base">Prompted by a Care Assurance insight</CardTitle></CardHeader>

@@ -16,7 +16,7 @@ describe("fictional demo eMAR", () => {
     const data = await medicationDemoStore.loadVisit("VIS-DEMO-MARY-0930");
     expect(data.tasks.length).toBe(1);
     expect(data.tasks[0].medication.name).toBe("Paracetamol (fictional)");
-    expect(data.organisation_id ?? data.access.organisation_id).toMatch(/^DEMO-/);
+    expect(data.access.organisation_id).toMatch(/^DEMO-/);
     expect(backend.calls).toBe(0);
   });
 

@@ -19,6 +19,7 @@ let extraVersions: MedicationInstructionVersion[] = [];
 let statusOverrides: Record<string, MedicationInstructionVersion["verification_status"]> = {};
 let audit: MedicationOversightData["audit"] = [];
 let seeded = false;
+let seeding = false;
 const listeners = new Set<() => void>();
 let version = 0;
 const emit = () => { version++; listeners.forEach((l) => l()); };
@@ -74,13 +75,13 @@ function record(task: MedicationTask, outcome: MedicationOutcome, staffId: strin
   const kind = exceptionKind(outcome);
   if (kind) exceptions = [...exceptions, { id: id("DEMO-EXC"), organisation_id: ORG, client_id: task.client_id, site_id: task.site_id, task_id: task.id, outcome_id: rec.id, kind, status: "open", created_at: rec.submitted_at, notifications: [{ id: id("n"), status: "simulated", detail: "Demo only: no one was notified." }] }];
   audit = [...audit, { id: id("DEMO-AUD"), client_id: task.client_id, site_id: task.site_id, actor_staff_id: staffId, action: correction ? "outcome_corrected" : "outcome_recorded", entity_type: "medication_outcome", entity_id: rec.id, details: { outcome, simulated: true }, created_at: rec.submitted_at }];
-  if (seeded) emit();
+  if (!seeding) emit();
   return rec;
 }
 
 /** A week of fictional past outcomes (a few refusals) so every chart is populated. */
 function seed() {
-  if (seeded) return; seeded = true;
+  if (seeded) return; seeded = true; seeding = true;
   const now = Date.now();
   const past = visitsState().visits.filter((v) => v.rosterStatus === "published" && v.staffIds.length && Date.parse(v.scheduledEnd) < now && now - Date.parse(v.scheduledEnd) < 7 * DAY).sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart)).flatMap(tasksForVisit);
   past.forEach((task, i) => {

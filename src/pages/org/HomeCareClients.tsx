@@ -25,7 +25,7 @@ import { useVisitNotes, visitNotesStore } from "@/lib/visitNotesStore";
 import { incidentsStore, type IncidentCard } from "@/lib/incidentsStore";
 import { canViewFullRecord } from "@/lib/eventVisibility";
 import { NOTE_SECTIONS } from "@/lib/visitNoteRules";
-import { buildTimeline } from "@/lib/serviceUserTimeline";
+import { ChronologyList, useClientTimeline } from "@/components/clients/ClientChronology";
 import { clientDisplayName, clientTown } from "@/lib/visitPresentation";
 import { getStaffName, type StaffId } from "@/lib/demoDataRegistry";
 import { NoAccessPanel } from "@/components/RoleContextBanner";
@@ -307,6 +307,7 @@ function HistoryTab({ u, visits, events }: { u: ServiceUser; visits: Visit[]; ev
     if (!visits.length) return;
     visitNotesStore.loadForClient(u.id, visits.map((v) => v.id), role).then(() => setNoteError(""), () => setNoteError(""));
   }, [u.id, ids, role.staffId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const h = window.location.hash.slice(1); if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView({ block: "center" }), 50); }, []);
   return (
     <Card className="mt-4">
       <CardContent className="p-0 divide-y">
@@ -318,7 +319,7 @@ function HistoryTab({ u, visits, events }: { u: ServiceUser; visits: Visit[]; ev
           const linked = events.filter((e) => e.visitId === v.id || v.sosEventIds?.includes(e.id));
           const refused = (v.log?.tasks ?? []).filter((t) => t.outcome === "refused").length + (v.log?.medications ?? []).filter((m) => m.outcome === "refused").length;
           return (
-            <div key={v.id} className="p-4 space-y-2">
+            <div key={v.id} id={`visit-${v.id}`} className="p-4 space-y-2 scroll-mt-4 target:bg-primary/5">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium">{dayTime(v.scheduledStart)}</span>
                 <Badge variant={v.status === "missed" ? "destructive" : "secondary"}>{VISIT_STATUS_LABELS[v.status]}</Badge>
@@ -368,19 +369,19 @@ function EventsTab({ events }: { events: IncidentCard[] }) {
 }
 
 function TimelineTab({ clientId }: { clientId: string }) {
-  const items = buildTimeline(clientId);
+  const [days, setDays] = useState("30");
+  const from = new Date(Date.now() - Number(days) * 86_400_000).toISOString().slice(0, 10);
+  const items = useClientTimeline(clientId, days === "all" ? undefined : from);
   return (
     <Card className="mt-4">
-      <CardContent className="p-0 divide-y">
-        {items.map((i) => (
-          <Link key={i.id} to={i.href} className="block p-3 hover:bg-secondary/50">
-            <div className="text-sm font-medium">{i.title}</div>
-            {i.detail && <div className="text-xs text-muted-foreground line-clamp-2">{i.detail}</div>}
-            <div className="text-xs text-muted-foreground mt-0.5">{formatDate(i.date)}{i.who && ` · ${i.who}`}</div>
-          </Link>
-        ))}
-        {items.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nothing to show.</p>}
-      </CardContent>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
+        <p className="text-sm text-muted-foreground">Newest first. Each entry links to its source record.</p>
+        <div className="flex items-center gap-2">
+          <Select value={days} onValueChange={setDays}><SelectTrigger className="w-36" aria-label="Period"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7">Last 7 days</SelectItem><SelectItem value="30">Last 30 days</SelectItem><SelectItem value="all">All time</SelectItem></SelectContent></Select>
+          <Button asChild size="sm"><Link to={`/app/org/service-users/${clientId}/evidence`}>Evidence pack</Link></Button>
+        </div>
+      </div>
+      <CardContent className="p-0"><ChronologyList items={items} /></CardContent>
     </Card>
   );
 }

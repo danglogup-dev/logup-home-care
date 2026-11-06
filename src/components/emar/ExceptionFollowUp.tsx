@@ -13,7 +13,7 @@ import { OUTCOME_LABELS } from "@/lib/medicationRules";
 import { fmt, staffName } from "@/lib/emarPresentation";
 import { STAFF } from "@/lib/demoDataRegistry";
 import { getState as visitsState } from "@/lib/visitsStore";
-import { VISIT_STATUS_LABELS } from "@/lib/visitPresentation";
+import { VISIT_STATUS_LABELS } from "@/lib/visitsStore";
 import { createTask, effectiveStatus, statusLabel, statusBadgeClass, useTasksStore, type TaskPriority } from "@/lib/tasksStore";
 import { useRole } from "@/hooks/useRole";
 import { isManagerRole } from "@/lib/roleStore";

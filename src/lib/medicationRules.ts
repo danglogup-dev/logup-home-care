@@ -43,4 +43,11 @@ export function currentOutcome<T extends { id: string; task_id: string; correcti
     current = next;
   }
 }
+export function documentationProgress<T extends { id: string }>(tasks: T[], outcomes: { task_id: string }[]) {
+  const recorded = tasks.filter((task) => outcomes.some((outcome) => outcome.task_id === task.id)).length;
+  return { recorded, total: tasks.length, outstanding: tasks.length - recorded };
+}
+export function canResolveException(exception: { status: string; acknowledged_at?: string | null; follow_up?: string | null }) {
+  return exception.status !== "resolved" && !!exception.acknowledged_at && !!exception.follow_up?.trim();
+}
 export const CONTROLLED_TEST_NOTICE = "Controlled testing with fictional records only. Not approved for live medication use. Qualified medication-safety, Irish regulatory/EU medical-device, provider-policy, privacy, security, failure and usability reviews are still required.";

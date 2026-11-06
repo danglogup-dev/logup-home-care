@@ -45,8 +45,10 @@ describe("care recording and SOS", () => {
       expect(() => visitsStore.recordMedication(visit.id, i, "refused", "", role.staffId)).toThrow();
       visitsStore.recordMedication(visit.id, i, "refused", "Client declined", role.staffId);
     });
+    const medicationCount = visitsStore.getVisit(visit.id)?.medicationRecords?.length;
     visitsStore.checkOut(visit.id, role.staffId);
     const finished = visitsStore.getVisit(visit.id);
+    expect(finished?.medicationRecords?.length).toBe(medicationCount);
     expect(finished?.status).toBe("completed");
     expect(finished?.log?.tasks.filter((r) => r.index === 0).map((r) => r.outcome)).toEqual(["done", "refused"]);
     expect(finished?.log?.recordedByStaffId).toBe(role.staffId);

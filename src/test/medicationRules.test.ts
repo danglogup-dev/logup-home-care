@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentOutcome, exceptionKind, permittedOutcomes, validateOutcome } from "@/lib/medicationRules";
+import { canResolveException, currentOutcome, documentationProgress, exceptionKind, permittedOutcomes, validateOutcome } from "@/lib/medicationRules";
 
 describe("authorised medication outcomes", () => {
   it("never offers administration for prompting or assistance", () => {

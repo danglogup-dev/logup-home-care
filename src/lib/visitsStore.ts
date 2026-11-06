@@ -298,7 +298,7 @@ const demoTemplates: VisitTemplate[] = [
 ];
 const demoVisits: Visit[] = demoTemplates.map((template, index): Visit => {
   const start = at(demoDay, template.windowStart), end = at(demoDay, template.windowStart, template.durationMinutes);
-  return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: "scheduled", organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
+  return { id: index === 0 ? "VIS-DEMO-MARY-0930" : "VIS-DEMO-MARY-NOMED", templateId: template.id, clientId: "PS-002", staffIds: ["STAFF-AISLING"], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), status: index === 0 ? "in_progress" : "scheduled", checkInAt: index === 0 ? start.toISOString() : undefined, checkInByStaffId: index === 0 ? "STAFF-AISLING" : undefined, organisationId: ORGANISATION_ID, serviceAreaId: "SITE-ECK", expectedDurationMinutes: template.durationMinutes, carersRequired: 1, rosterStatus: "published", createdBy: "STAFF-DANIEL", createdAt: new Date().toISOString(), rosterHistory: [] };
 });
 const initialTemplates = [...baseTemplates, ...demoTemplates];
 let state: State = { templates: initialTemplates, visits: [...initialVisits, ...seedOneOffs(initialVisits), ...demoVisits] };

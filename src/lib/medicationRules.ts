@@ -32,7 +32,7 @@ export function exceptionKind(outcome: MedicationOutcome) {
   if (outcome === "not_observed") return "outcome_unknown" as const;
   return undefined;
 }
-export function currentOutcome<T extends { task_id: string; correction_of: string | null; submitted_at: string }>(records: T[], taskId: string) {
+export function currentOutcome<T extends { id: string; task_id: string; correction_of?: string | null; submitted_at: string }>(records: T[], taskId: string) {
   const chain = records.filter((r) => r.task_id === taskId).sort((a, b) => a.submitted_at.localeCompare(b.submitted_at));
   const original = chain.find((r) => !r.correction_of);
   if (!original) return undefined;

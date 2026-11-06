@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-export function CareAiSignIn({ children }: { children: React.ReactNode }) {
+export function CareAiSignIn({ children, title = "Sign in for voice & notes" }: { children: React.ReactNode; title?: string }) {
   const [signedIn, setSignedIn] = useState(false); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session)); const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session)); return () => data.subscription.unsubscribe(); }, []);
   if (signedIn) return <>{children}</>;

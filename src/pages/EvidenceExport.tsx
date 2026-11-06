@@ -1,6 +1,6 @@
 import { useTerms } from "@/hooks/useTerms";
 import { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Download, FileText, Clock, User as UserIcon, CheckCircle2, Paperclip, Building2, Calendar, Shield, Search, Filter, ArrowUpDown, Package, X, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -382,14 +382,17 @@ const EvidenceExportMain = () => {
     setSearchParams({});
   };
 
-  const handleExport = (id: string) => {
-    toast("Exporting PDF…", { description: `Evidence pack for ${id} is being generated.` });
+  const navigate = useNavigate();
+  /** Opens the real, printable fictional evidence pack for the linked client (or prints this view). */
+  const openPack = (incident?: Incident) => {
+    if (incident?.serviceUserId) navigate(`/app/org/service-users/${incident.serviceUserId}/evidence`);
+    else { toast("No client linked — printing this view instead."); window.print(); }
   };
+  const handleExport = (id: string) => openPack(getIncidentById(id));
 
   const handleConfirmExport = () => {
     if (!exportTarget) return;
-    toast("Evidence pack ready", { description: `Inspection-ready pack for ${exportTarget.id} has been generated.` });
-    setExportTarget(null);
+    const target = exportTarget; setExportTarget(null); openPack(target);
   };
 
   // ---- Incident Pack (filtered export) -----------------------------------

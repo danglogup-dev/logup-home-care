@@ -49,6 +49,7 @@ import TasksReporting from "./pages/tasks/TasksReporting";
 import TasksToday from "./pages/tasks/TasksToday";
 import Insights from "./pages/Insights";
 import OperationalHome from "./pages/OperationalHome";
+import ClientEvidencePack from "./pages/org/ClientEvidencePack";
 import CarePlansOverview from "./pages/care-plans/Overview";
 import CarePlansPeople from "./pages/care-plans/PeopleSupported";
 import CarePlansPersonDetail from "./pages/care-plans/PersonDetail";
@@ -196,6 +197,7 @@ const App = () => (
             <Route path="org/sites/:siteId" element={<Guarded moduleKey="org.sites" moduleLabel="Site"><OrgSitePage /></Guarded>} />
             <Route path="org/service-users" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service users"><HomeSupportSwitch home={<HomeCareClientList />} residential={<OrgServiceUsers />} /></Guarded>} />
             <Route path="org/service-users/admit" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Admit"><OrgAdmitResident /></Guarded>} />
+            <Route path="org/service-users/:id/evidence" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Evidence pack"><ClientEvidencePack /></Guarded>} />
             <Route path="org/service-users/:id" element={<Guarded moduleKey="org.serviceUsers" moduleLabel="Service user"><HomeSupportSwitch home={<HomeCareClientRecord />} residential={<OrgServiceUserProfile />} /></Guarded>} />
             <Route path="team" element={<Guarded moduleKey="team" moduleLabel="Team"><Team /></Guarded>} />
 

@@ -1,3 +1,4 @@
+import { CareAssurance } from "@/components/insights/CareAssurance";
 import { isManagerRole } from "@/lib/roleStore";
 import { getTerms } from "@/lib/orgSettingsStore";
 import { useTerms } from "@/hooks/useTerms";
@@ -323,6 +324,9 @@ export default function Insights({ asHome = false }: { asHome?: boolean } = {}) 
           </Button>
         </div>
       </div>
+
+      <CareAssurance />
+      <h2 className="pt-4 text-lg font-semibold">Trends and organisation-wide themes</h2>
 
       {/* Overview cards — by category */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">

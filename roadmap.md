@@ -42,3 +42,4 @@
 - [x] Demo tidy-up: Aisling as sign-in carer, role switch redirect, no Visit History sign-in error
 - [x] Mobile care plan in visit; simulated voice note, missing-info questions
 - [ ] Next (awaiting pick): simulated AI brief, family summaries, Operational Home
+- [x] Phase 2 (connect frontline to oversight): Aisling default persona with a 6-visit day; medication exception → linked follow-up task in Tasks; operational Home; Events & Concerns / Tasks & Follow-up in menu; unrecorded-medication warning on finish. Browser-verified carer refusal → Home → task → close; exception stays open until resolved.

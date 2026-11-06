@@ -46,7 +46,7 @@ export default function OperationalHome() {
 
   return <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:px-8">
     <header className="flex flex-wrap items-end justify-between gap-3">
-      <div><h1 className="text-3xl font-heading font-bold">What needs my attention today?</h1><p className="mt-1 text-muted-foreground">{role.scope.join(" + ") || "Your service areas"} · live from today's records</p></div>
+      <div><h1 className="text-3xl font-heading font-bold">What needs my attention today?</h1><p className="mt-1 text-muted-foreground">{[...new Set(role.scope)].join(" + ") || "Your service areas"} · live from today's records</p></div>
       <Button asChild variant="outline"><Link to="/app/insights/overview"><Sparkles aria-hidden="true" />Trends & insights</Link></Button>
     </header>
 

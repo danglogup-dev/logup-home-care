@@ -119,7 +119,7 @@ export function buildCareAssurance(input: CareAssuranceInput): Insight[] {
     if (resolved && now.getTime() - Date.parse(e.resolved_at ?? e.created_at) > 2 * DAY) continue;
     const id = `INS-MED-${e.id}`;
     out.push({ id, kind: "rule", category: "medication_exception", group: e.status === "open" ? "needs_attention" : "medication", priority: e.status === "open" ? 0 : 2, clientId: e.client_id, siteId: e.site_id, at: e.created_at, reviewerStaffId: reviewerFor(e.site_id),
-      title: `${e.kind === "refusal" ? "Medication refused" : e.kind.replace(/_/g, " ")} · ${task?.medication.name ?? "medicine"} · ${name(e.client_id)}`,
+      title: `${e.kind === "refusal" ? "Medication refused" : (e.kind.charAt(0).toUpperCase() + e.kind.slice(1)).replace(/_/g, " ")} · ${task?.medication.name ?? "medicine"} · ${name(e.client_id)}`,
       observed: outcome ? `Recorded by hand: ${outcome.outcome.replace(/_/g, " ")}${outcome.reason ? ` — “${outcome.reason}”` : ""}.` : "Exception recorded.",
       why: e.status === "open" ? "Rule: a medication exception has not yet been acknowledged by a manager." : resolved ? "Rule: recently resolved — shown so the outcome can be checked." : "Rule: acknowledged but not yet resolved.",
       sources: [{ id: e.id, label: "Exception and original dose record (eMAR)", to: `/app/visits/medication/${e.client_id}?exception=${e.id}`, at: e.created_at }],

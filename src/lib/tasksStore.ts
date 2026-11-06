@@ -152,7 +152,8 @@ const todayISO = (offsetDays = 0, hours = 9, minutes = 0) => {
   return d.toISOString();
 };
 
-export const siteName = (id: string) => SITES.find(s => s.id === id)?.name ?? id;
+export const siteName = (id: string) => SITES.find(s => s.id === id)?.name ?? STAFF_SITE_NAME(id);
+const STAFF_SITE_NAME = (id: string) => ({ "SITE-ECK": "East Cork", "SITE-WWD": "West Waterford" } as Record<string, string>)[id] ?? id;
 // Units are intentionally hidden in the current demo UI (site-only geography).
 // Kept in the type system to preserve future support.
 export const unitName = (_siteId: string, _unitId?: string) => "";

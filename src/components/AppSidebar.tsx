@@ -51,6 +51,8 @@ const homeCareModules: ModuleItem[] = [
   },
   { title: "eMAR", icon: Pill, basePath: "/app/visits/medication", defaultPath: "/app/visits/medication", key: "visits.medication" },
   { title: "Clients", icon: Users, basePath: "/app/org/service-users", defaultPath: "/app/org/service-users", key: "org.serviceUsers" },
+  { title: "Events & Concerns", icon: AlertTriangle, basePath: "/app/incidents", defaultPath: "/app/incidents/board", key: "incidents.board" },
+  { title: "Tasks & Follow-up", icon: ListChecks, basePath: "/app/tasks", defaultPath: "/app/tasks/register", key: "tasks.register" },
   {
     title: "Policy Hub",
     icon: BookOpen,

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CareAiSignIn } from "@/components/visits/CareAiSignIn";
 import { medicationStore, type MedicationOversightData, type Medication, type MedicationInstructionVersion } from "@/lib/medicationStore";
-import { CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS } from "@/lib/medicationRules";
+import { canResolveException, CONTROLLED_TEST_NOTICE, currentOutcome, OUTCOME_LABELS } from "@/lib/medicationRules";
 import { serviceUsersStore } from "@/lib/serviceUsersStore";
 import { SITE_BY_ID, STAFF_BY_ID } from "@/lib/demoDataRegistry";
 import { useRole } from "@/hooks/useRole";

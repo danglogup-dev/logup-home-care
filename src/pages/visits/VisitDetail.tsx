@@ -18,6 +18,7 @@ import { STAFF_BY_ID } from "@/lib/demoDataRegistry";
 import { VisitBrief } from "@/components/visits/VisitBrief";
 import { MedicationPanel } from "@/components/visits/MedicationPanel";
 import type { VisitMedicationData } from "@/lib/medicationStore";
+import { documentationProgress } from "@/lib/medicationRules";
 
 const taskOptions: { value: TaskOutcome; label: string }[] = [{ value: "done", label: "Done" }, { value: "part_completed", label: "Part completed" }, { value: "refused", label: "Declined" }, { value: "not_needed", label: "Not required" }, { value: "concern", label: "Concern" }];
 const timestamp = (iso: string) => new Date(iso).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
